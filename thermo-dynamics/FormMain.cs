@@ -20,19 +20,19 @@ namespace thermo_dynamics
         public FormMain()
         {
             InitializeComponent();
-            if (Directory.Exists(MineralDirPath))
+            if (!Directory.Exists(MineralDirPath))
             {
                 Directory.CreateDirectory(MineralDirPath);
             }
-            if (Directory.Exists(PTProfileDirPath))
+            if (!Directory.Exists(PTProfileDirPath))
             {
                 Directory.CreateDirectory(PTProfileDirPath);
             }
-            if (Directory.Exists(VProfileDirPath))
+            if (!Directory.Exists(VProfileDirPath))
             {
                 Directory.CreateDirectory(VProfileDirPath);
             }
-            if (Directory.Exists(ResultsDirPath))
+            if (!Directory.Exists(ResultsDirPath))
             {
                 Directory.CreateDirectory(ResultsDirPath);
             }
