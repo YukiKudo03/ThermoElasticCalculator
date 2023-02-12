@@ -23,6 +23,9 @@ namespace thermo_dynamics
         public static void ShowForm()
         {
             var f = new FormPTProfile();
+            f.openFileDialogReadMineralProperty.InitialDirectory = FormMain.MineralDirPath;
+            f.openFileDialogReadPTProfile.InitialDirectory = FormMain.PTProfileDirPath;
+            f.saveFileDialogExportPTProfile.InitialDirectory = FormMain.PTProfileDirPath;
             f.ShowDialog();
             f.Dispose();
         }

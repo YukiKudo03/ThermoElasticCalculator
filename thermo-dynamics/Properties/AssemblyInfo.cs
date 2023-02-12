@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // 制御されます。アセンブリに関連付けられている情報を変更するには、
 // これらの属性値を変更します。
 [assembly: AssemblyTitle("thermo-dynamics")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Calculate Elasticities of minerals under high-T and high-P conditions")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("thermo-dynamics")]

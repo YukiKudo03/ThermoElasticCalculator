@@ -77,7 +77,7 @@ namespace thermo_dynamics
             this.Controls.Add(this.buttonShoMineralInfo);
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "FormMain";
-            this.Text = "ThermoElasticCalculator";
+            this.Text = "ThermoElasticCalculator β";
             this.ResumeLayout(false);
 
         }

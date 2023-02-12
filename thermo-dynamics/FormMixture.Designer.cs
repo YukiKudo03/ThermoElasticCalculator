@@ -47,6 +47,7 @@ namespace thermo_dynamics
             this.openFileDialogReadElem2 = new System.Windows.Forms.OpenFileDialog();
             this.openFileDialogReadVProfile = new System.Windows.Forms.OpenFileDialog();
             this.buttonExecCalculate = new System.Windows.Forms.Button();
+            this.comboBoxSelectMixMethod = new System.Windows.Forms.ComboBox();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownPressure)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownTemperature)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewVProfile)).BeginInit();
@@ -65,7 +66,7 @@ namespace thermo_dynamics
             // 
             this.buttonReadElem1.Location = new System.Drawing.Point(321, 8);
             this.buttonReadElem1.Name = "buttonReadElem1";
-            this.buttonReadElem1.Size = new System.Drawing.Size(124, 29);
+            this.buttonReadElem1.Size = new System.Drawing.Size(140, 29);
             this.buttonReadElem1.TabIndex = 2;
             this.buttonReadElem1.Text = "ReadElem1..";
             this.buttonReadElem1.UseVisualStyleBackColor = true;
@@ -84,7 +85,7 @@ namespace thermo_dynamics
             // 
             this.buttonReadElem2.Location = new System.Drawing.Point(321, 36);
             this.buttonReadElem2.Name = "buttonReadElem2";
-            this.buttonReadElem2.Size = new System.Drawing.Size(124, 29);
+            this.buttonReadElem2.Size = new System.Drawing.Size(140, 29);
             this.buttonReadElem2.TabIndex = 4;
             this.buttonReadElem2.Text = "ReadElem2..";
             this.buttonReadElem2.UseVisualStyleBackColor = true;
@@ -102,6 +103,11 @@ namespace thermo_dynamics
             this.numericUpDownPressure.Name = "numericUpDownPressure";
             this.numericUpDownPressure.Size = new System.Drawing.Size(119, 22);
             this.numericUpDownPressure.TabIndex = 6;
+            this.numericUpDownPressure.Value = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
             // 
             // labelPressure
             // 
@@ -133,6 +139,11 @@ namespace thermo_dynamics
             this.numericUpDownTemperature.Name = "numericUpDownTemperature";
             this.numericUpDownTemperature.Size = new System.Drawing.Size(119, 22);
             this.numericUpDownTemperature.TabIndex = 8;
+            this.numericUpDownTemperature.Value = new decimal(new int[] {
+            300,
+            0,
+            0,
+            0});
             // 
             // dataGridViewVProfile
             // 
@@ -167,15 +178,15 @@ namespace thermo_dynamics
             // 
             this.textBoxVProfile.Location = new System.Drawing.Point(158, 122);
             this.textBoxVProfile.Name = "textBoxVProfile";
-            this.textBoxVProfile.Size = new System.Drawing.Size(287, 22);
+            this.textBoxVProfile.Size = new System.Drawing.Size(303, 22);
             this.textBoxVProfile.TabIndex = 12;
             this.textBoxVProfile.Text = "VProfile Name...";
             // 
             // buttonExportVProfile
             // 
-            this.buttonExportVProfile.Location = new System.Drawing.Point(347, 154);
+            this.buttonExportVProfile.Location = new System.Drawing.Point(347, 205);
             this.buttonExportVProfile.Name = "buttonExportVProfile";
-            this.buttonExportVProfile.Size = new System.Drawing.Size(98, 38);
+            this.buttonExportVProfile.Size = new System.Drawing.Size(114, 38);
             this.buttonExportVProfile.TabIndex = 13;
             this.buttonExportVProfile.Text = "Export...";
             this.buttonExportVProfile.UseVisualStyleBackColor = true;
@@ -206,19 +217,28 @@ namespace thermo_dynamics
             // 
             // buttonExecCalculate
             // 
-            this.buttonExecCalculate.Location = new System.Drawing.Point(347, 218);
+            this.buttonExecCalculate.Location = new System.Drawing.Point(347, 263);
             this.buttonExecCalculate.Name = "buttonExecCalculate";
-            this.buttonExecCalculate.Size = new System.Drawing.Size(98, 38);
+            this.buttonExecCalculate.Size = new System.Drawing.Size(114, 38);
             this.buttonExecCalculate.TabIndex = 14;
             this.buttonExecCalculate.Text = "Calculate...";
             this.buttonExecCalculate.UseVisualStyleBackColor = true;
             this.buttonExecCalculate.Click += new System.EventHandler(this.buttonExecCalculate_Click);
             // 
+            // comboBoxSelectMixMethod
+            // 
+            this.comboBoxSelectMixMethod.FormattingEnabled = true;
+            this.comboBoxSelectMixMethod.Location = new System.Drawing.Point(347, 154);
+            this.comboBoxSelectMixMethod.Name = "comboBoxSelectMixMethod";
+            this.comboBoxSelectMixMethod.Size = new System.Drawing.Size(114, 23);
+            this.comboBoxSelectMixMethod.TabIndex = 15;
+            // 
             // FormMixture
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(458, 594);
+            this.ClientSize = new System.Drawing.Size(475, 594);
+            this.Controls.Add(this.comboBoxSelectMixMethod);
             this.Controls.Add(this.buttonExecCalculate);
             this.Controls.Add(this.buttonExportVProfile);
             this.Controls.Add(this.textBoxVProfile);
@@ -233,7 +253,7 @@ namespace thermo_dynamics
             this.Controls.Add(this.textBoxMineralPropertyElem1);
             this.Controls.Add(this.buttonReadElem1);
             this.Name = "FormMixture";
-            this.Text = "FormMixture";
+            this.Text = "MixtureCalculator";
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownPressure)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownTemperature)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewVProfile)).EndInit();
@@ -262,5 +282,6 @@ namespace thermo_dynamics
         private System.Windows.Forms.OpenFileDialog openFileDialogReadElem2;
         private System.Windows.Forms.OpenFileDialog openFileDialogReadVProfile;
         private System.Windows.Forms.Button buttonExecCalculate;
+        private System.Windows.Forms.ComboBox comboBoxSelectMixMethod;
     }
 }

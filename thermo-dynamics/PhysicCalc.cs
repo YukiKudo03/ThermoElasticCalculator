@@ -17,24 +17,15 @@ namespace thermo_dynamics
 
         public static double RefTemperature = 300.0d;
     }
-    public class AveMethods
+    public class CommonMethods
     {
-        public static double ReussAverage(List<(double VolumeRatio, double param)> inputParams)
+        public static bool DoubleEquals(double val1, double val2)
         {
-            double sumVolume = inputParams.Sum(param => param.VolumeRatio);
-            return inputParams.Sum(param => param.VolumeRatio * param.param / sumVolume);
+            return (Math.Abs(val2 - val1) < 1.0e-5);
         }
-
-        public static double VaugtAverage(List<(double VolumeRatio, double param)> inputParams)
+        public static double GetDensity(double elem1Ratio, ResultSummary elem1, ResultSummary elem2)
         {
-            double sumVolume = inputParams.Sum(param => param.VolumeRatio);
-            return 1.0d / inputParams.Sum(param => param.VolumeRatio / param.param / sumVolume);
+            return (elem1Ratio * elem1.Volume * elem1.Density + (1.0d - elem1Ratio) * elem2.Volume * elem2.Density) / (elem1Ratio * elem1.Volume + (1.0d - elem1Ratio) * elem2.Volume);
         }
-
-        public static double HillAverage(List<(double VolumeRatio, double param)> inputParams)
-        {
-            return (ReussAverage(inputParams) + VaugtAverage(inputParams)) / 2.0d;
-        }
-
     }
 }

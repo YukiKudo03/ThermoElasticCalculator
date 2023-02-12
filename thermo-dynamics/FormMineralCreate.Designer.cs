@@ -93,7 +93,7 @@ namespace thermo_dynamics
             // numericUpDownRefTemp
             // 
             this.numericUpDownRefTemp.Location = new System.Drawing.Point(127, 324);
-            this.numericUpDownRefTemp.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.numericUpDownRefTemp.Margin = new System.Windows.Forms.Padding(4);
             this.numericUpDownRefTemp.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -112,7 +112,7 @@ namespace thermo_dynamics
             // 
             this.numericUpDownEthaZero.DecimalPlaces = 4;
             this.numericUpDownEthaZero.Location = new System.Drawing.Point(879, 269);
-            this.numericUpDownEthaZero.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.numericUpDownEthaZero.Margin = new System.Windows.Forms.Padding(4);
             this.numericUpDownEthaZero.Name = "numericUpDownEthaZero";
             this.numericUpDownEthaZero.Size = new System.Drawing.Size(160, 22);
             this.numericUpDownEthaZero.TabIndex = 30;
@@ -121,7 +121,7 @@ namespace thermo_dynamics
             // 
             this.numericUpDownQZero.DecimalPlaces = 4;
             this.numericUpDownQZero.Location = new System.Drawing.Point(879, 300);
-            this.numericUpDownQZero.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.numericUpDownQZero.Margin = new System.Windows.Forms.Padding(4);
             this.numericUpDownQZero.Name = "numericUpDownQZero";
             this.numericUpDownQZero.Size = new System.Drawing.Size(160, 22);
             this.numericUpDownQZero.TabIndex = 29;
@@ -130,7 +130,7 @@ namespace thermo_dynamics
             // 
             this.numericUpDownGammaZero.DecimalPlaces = 4;
             this.numericUpDownGammaZero.Location = new System.Drawing.Point(879, 235);
-            this.numericUpDownGammaZero.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.numericUpDownGammaZero.Margin = new System.Windows.Forms.Padding(4);
             this.numericUpDownGammaZero.Name = "numericUpDownGammaZero";
             this.numericUpDownGammaZero.Size = new System.Drawing.Size(160, 22);
             this.numericUpDownGammaZero.TabIndex = 28;
@@ -139,7 +139,7 @@ namespace thermo_dynamics
             // 
             this.numericUpDownDebyeTempZero.DecimalPlaces = 3;
             this.numericUpDownDebyeTempZero.Location = new System.Drawing.Point(879, 204);
-            this.numericUpDownDebyeTempZero.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.numericUpDownDebyeTempZero.Margin = new System.Windows.Forms.Padding(4);
             this.numericUpDownDebyeTempZero.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -162,7 +162,7 @@ namespace thermo_dynamics
             // numericUpDownG2Prime
             // 
             this.numericUpDownG2Prime.Location = new System.Drawing.Point(511, 266);
-            this.numericUpDownG2Prime.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.numericUpDownG2Prime.Margin = new System.Windows.Forms.Padding(4);
             this.numericUpDownG2Prime.Name = "numericUpDownG2Prime";
             this.numericUpDownG2Prime.Size = new System.Drawing.Size(160, 22);
             this.numericUpDownG2Prime.TabIndex = 26;
@@ -171,7 +171,7 @@ namespace thermo_dynamics
             // 
             this.numericUpDownG1Prime.DecimalPlaces = 4;
             this.numericUpDownG1Prime.Location = new System.Drawing.Point(511, 235);
-            this.numericUpDownG1Prime.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.numericUpDownG1Prime.Margin = new System.Windows.Forms.Padding(4);
             this.numericUpDownG1Prime.Name = "numericUpDownG1Prime";
             this.numericUpDownG1Prime.Size = new System.Drawing.Size(160, 22);
             this.numericUpDownG1Prime.TabIndex = 25;
@@ -180,7 +180,7 @@ namespace thermo_dynamics
             // 
             this.numericUpDownGZero.DecimalPlaces = 3;
             this.numericUpDownGZero.Location = new System.Drawing.Point(511, 204);
-            this.numericUpDownGZero.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.numericUpDownGZero.Margin = new System.Windows.Forms.Padding(4);
             this.numericUpDownGZero.Maximum = new decimal(new int[] {
             100000,
             0,
@@ -203,7 +203,7 @@ namespace thermo_dynamics
             // numericUpDownK2Prime
             // 
             this.numericUpDownK2Prime.Location = new System.Drawing.Point(127, 266);
-            this.numericUpDownK2Prime.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.numericUpDownK2Prime.Margin = new System.Windows.Forms.Padding(4);
             this.numericUpDownK2Prime.Name = "numericUpDownK2Prime";
             this.numericUpDownK2Prime.Size = new System.Drawing.Size(160, 22);
             this.numericUpDownK2Prime.TabIndex = 23;
@@ -212,7 +212,7 @@ namespace thermo_dynamics
             // 
             this.numericUpDownK1Prime.DecimalPlaces = 4;
             this.numericUpDownK1Prime.Location = new System.Drawing.Point(127, 235);
-            this.numericUpDownK1Prime.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.numericUpDownK1Prime.Margin = new System.Windows.Forms.Padding(4);
             this.numericUpDownK1Prime.Name = "numericUpDownK1Prime";
             this.numericUpDownK1Prime.Size = new System.Drawing.Size(160, 22);
             this.numericUpDownK1Prime.TabIndex = 22;
@@ -221,7 +221,7 @@ namespace thermo_dynamics
             // 
             this.numericUpDownKZero.DecimalPlaces = 3;
             this.numericUpDownKZero.Location = new System.Drawing.Point(127, 204);
-            this.numericUpDownKZero.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.numericUpDownKZero.Margin = new System.Windows.Forms.Padding(4);
             this.numericUpDownKZero.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -245,7 +245,7 @@ namespace thermo_dynamics
             // 
             this.numericUpDownMolarWeight.DecimalPlaces = 4;
             this.numericUpDownMolarWeight.Location = new System.Drawing.Point(511, 125);
-            this.numericUpDownMolarWeight.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.numericUpDownMolarWeight.Margin = new System.Windows.Forms.Padding(4);
             this.numericUpDownMolarWeight.Maximum = new decimal(new int[] {
             100000,
             0,
@@ -259,7 +259,7 @@ namespace thermo_dynamics
             // 
             this.numericUpDownMolarVolume.DecimalPlaces = 3;
             this.numericUpDownMolarVolume.Location = new System.Drawing.Point(127, 125);
-            this.numericUpDownMolarVolume.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.numericUpDownMolarVolume.Margin = new System.Windows.Forms.Padding(4);
             this.numericUpDownMolarVolume.Maximum = new decimal(new int[] {
             1000,
             0,
@@ -282,7 +282,7 @@ namespace thermo_dynamics
             // numericUpDownNumAtoms
             // 
             this.numericUpDownNumAtoms.Location = new System.Drawing.Point(879, 125);
-            this.numericUpDownNumAtoms.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.numericUpDownNumAtoms.Margin = new System.Windows.Forms.Padding(4);
             this.numericUpDownNumAtoms.Name = "numericUpDownNumAtoms";
             this.numericUpDownNumAtoms.Size = new System.Drawing.Size(160, 22);
             this.numericUpDownNumAtoms.TabIndex = 18;
@@ -363,7 +363,7 @@ namespace thermo_dynamics
             // buttonReadFile
             // 
             this.buttonReadFile.Location = new System.Drawing.Point(20, 15);
-            this.buttonReadFile.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.buttonReadFile.Margin = new System.Windows.Forms.Padding(4);
             this.buttonReadFile.Name = "buttonReadFile";
             this.buttonReadFile.Size = new System.Drawing.Size(100, 29);
             this.buttonReadFile.TabIndex = 37;
@@ -374,7 +374,7 @@ namespace thermo_dynamics
             // buttonExportFile
             // 
             this.buttonExportFile.Location = new System.Drawing.Point(939, 15);
-            this.buttonExportFile.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.buttonExportFile.Margin = new System.Windows.Forms.Padding(4);
             this.buttonExportFile.Name = "buttonExportFile";
             this.buttonExportFile.Size = new System.Drawing.Size(100, 29);
             this.buttonExportFile.TabIndex = 38;
@@ -506,7 +506,7 @@ namespace thermo_dynamics
             // buttonTestCalc
             // 
             this.buttonTestCalc.Location = new System.Drawing.Point(425, 28);
-            this.buttonTestCalc.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.buttonTestCalc.Margin = new System.Windows.Forms.Padding(4);
             this.buttonTestCalc.Name = "buttonTestCalc";
             this.buttonTestCalc.Size = new System.Drawing.Size(100, 29);
             this.buttonTestCalc.TabIndex = 50;
@@ -527,7 +527,7 @@ namespace thermo_dynamics
             // numericUpDownCalcTestTemp
             // 
             this.numericUpDownCalcTestTemp.Location = new System.Drawing.Point(321, 31);
-            this.numericUpDownCalcTestTemp.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.numericUpDownCalcTestTemp.Margin = new System.Windows.Forms.Padding(4);
             this.numericUpDownCalcTestTemp.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -556,7 +556,7 @@ namespace thermo_dynamics
             // 
             this.numericUpDownCalcTestPressure.DecimalPlaces = 2;
             this.numericUpDownCalcTestPressure.Location = new System.Drawing.Point(137, 31);
-            this.numericUpDownCalcTestPressure.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.numericUpDownCalcTestPressure.Margin = new System.Windows.Forms.Padding(4);
             this.numericUpDownCalcTestPressure.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -574,9 +574,9 @@ namespace thermo_dynamics
             this.groupBoxCalcTest.Controls.Add(this.numericUpDownCalcTestTemp);
             this.groupBoxCalcTest.Controls.Add(this.labelCalcTestTemp);
             this.groupBoxCalcTest.Location = new System.Drawing.Point(511, 366);
-            this.groupBoxCalcTest.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBoxCalcTest.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxCalcTest.Name = "groupBoxCalcTest";
-            this.groupBoxCalcTest.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBoxCalcTest.Padding = new System.Windows.Forms.Padding(4);
             this.groupBoxCalcTest.Size = new System.Drawing.Size(547, 66);
             this.groupBoxCalcTest.TabIndex = 55;
             this.groupBoxCalcTest.TabStop = false;
@@ -622,9 +622,9 @@ namespace thermo_dynamics
             this.Controls.Add(this.numericUpDownNumAtoms);
             this.Controls.Add(this.textBoxPaper);
             this.Controls.Add(this.textBoxMineralName);
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "FormMineralCreate";
-            this.Text = "FormMineralCreate";
+            this.Text = "MineralLibrary";
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownRefTemp)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownEthaZero)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownQZero)).EndInit();

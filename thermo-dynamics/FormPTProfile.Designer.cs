@@ -33,14 +33,14 @@ namespace thermo_dynamics
             this.textBoxMineralProperty = new System.Windows.Forms.TextBox();
             this.openFileDialogReadMineralProperty = new System.Windows.Forms.OpenFileDialog();
             this.dataGridViewPTProfile = new System.Windows.Forms.DataGridView();
+            this.ColumnPressure = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ColumnTemperature = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.buttonCalculate = new System.Windows.Forms.Button();
             this.textBoxProfileName = new System.Windows.Forms.TextBox();
             this.buttonReadPTProfile = new System.Windows.Forms.Button();
             this.buttonExportPTProfile = new System.Windows.Forms.Button();
             this.openFileDialogReadPTProfile = new System.Windows.Forms.OpenFileDialog();
             this.saveFileDialogExportPTProfile = new System.Windows.Forms.SaveFileDialog();
-            this.ColumnPressure = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ColumnTemperature = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewPTProfile)).BeginInit();
             this.SuspendLayout();
             // 
@@ -79,6 +79,20 @@ namespace thermo_dynamics
             this.dataGridViewPTProfile.RowTemplate.Height = 24;
             this.dataGridViewPTProfile.Size = new System.Drawing.Size(304, 477);
             this.dataGridViewPTProfile.TabIndex = 2;
+            // 
+            // ColumnPressure
+            // 
+            this.ColumnPressure.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.ColumnPressure.HeaderText = "P[GPa]";
+            this.ColumnPressure.MinimumWidth = 6;
+            this.ColumnPressure.Name = "ColumnPressure";
+            // 
+            // ColumnTemperature
+            // 
+            this.ColumnTemperature.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.ColumnTemperature.HeaderText = "T[K]";
+            this.ColumnTemperature.MinimumWidth = 6;
+            this.ColumnTemperature.Name = "ColumnTemperature";
             // 
             // buttonCalculate
             // 
@@ -128,20 +142,6 @@ namespace thermo_dynamics
             this.saveFileDialogExportPTProfile.DefaultExt = "ptp";
             this.saveFileDialogExportPTProfile.Filter = "PTProfile Files|*.ptp";
             // 
-            // ColumnPressure
-            // 
-            this.ColumnPressure.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            this.ColumnPressure.HeaderText = "P[GPa]";
-            this.ColumnPressure.MinimumWidth = 6;
-            this.ColumnPressure.Name = "ColumnPressure";
-            // 
-            // ColumnTemperature
-            // 
-            this.ColumnTemperature.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            this.ColumnTemperature.HeaderText = "T[K]";
-            this.ColumnTemperature.MinimumWidth = 6;
-            this.ColumnTemperature.Name = "ColumnTemperature";
-            // 
             // FormPTProfile
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
@@ -155,7 +155,7 @@ namespace thermo_dynamics
             this.Controls.Add(this.textBoxMineralProperty);
             this.Controls.Add(this.buttonReadMineralProperty);
             this.Name = "FormPTProfile";
-            this.Text = "FormPTProfile";
+            this.Text = "PTProfileCalculator";
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewPTProfile)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

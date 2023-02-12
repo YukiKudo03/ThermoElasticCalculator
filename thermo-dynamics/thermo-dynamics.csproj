@@ -108,6 +108,7 @@
     <Compile Include="FormShowResults.Designer.cs">
       <DependentUpon>FormShowResults.cs</DependentUpon>
     </Compile>
+    <Compile Include="MolMixtureProfile.cs" />
     <Compile Include="optimizer.cs" />
     <Compile Include="PhysicCalc.cs" />
     <Compile Include="ProfileData.cs" />

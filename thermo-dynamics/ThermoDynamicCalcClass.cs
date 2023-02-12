@@ -438,6 +438,7 @@ namespace thermo_dynamics
         {
             return new ResultSummary
             {
+                Name = Mineral.MineralName,
                 GivenP = Pressure,
                 GivenT = Temperature,
                 Alpha = Alpha,
@@ -460,6 +461,7 @@ namespace thermo_dynamics
         {
 
         }
+        public string Name { get; set; }
         public double GivenP { get; set; }
         public double GivenT { get; set; }
         public double KS { get; set; }

@@ -13,16 +13,30 @@ using System.Text.Json.Serialization;
 
 namespace thermo_dynamics
 {
+    public enum MixtureMethod
+    {
+        Hill=0,
+        Voigt=1,
+        Reuss=2,
+        HS=3,
+    }
+
     public partial class FormMixture : Form
     {
         public FormMixture()
         {
             InitializeComponent();
+            comboBoxSelectMixMethod.Items.AddRange(Enum.GetNames(typeof(MixtureMethod)));
+            comboBoxSelectMixMethod.SelectedIndex = 0;
         }
 
         public static void ShowForm()
         {
             var f = new FormMixture();
+            f.openFileDialogReadElem1.InitialDirectory = FormMain.MineralDirPath;
+            f.openFileDialogReadElem2.InitialDirectory = FormMain.MineralDirPath;
+            f.openFileDialogReadVProfile.InitialDirectory = FormMain.VProfileDirPath;
+            f.saveFileDialogExportVProfile.InitialDirectory = FormMain.VProfileDirPath;
             f.ShowDialog();
             f.Dispose();
         }
@@ -153,7 +167,7 @@ namespace thermo_dynamics
                 {
                     var row = new DataGridViewRow();
                     row.CreateCells(dataGridViewVProfile);
-                    row.Cells[ColumnVolumeRatio.Index].Value = ratio.ToString();
+                    row.Cells[ColumnVolumeRatio.Index].Value = (ratio*100.0d).ToString();
                     dataGridViewVProfile.Rows.Add(row);
                 });
                 textBoxVProfile.Text = ret.Name;
@@ -184,7 +198,8 @@ namespace thermo_dynamics
                     Temperature = (double)numericUpDownTemperature.Value,
                 });
             VProfileCalculator vProfileCalculator = new VProfileCalculator(DataGridViewToList(), elem1Res.ExecOptimize().ExportResults(), elem2Res.ExecOptimize().ExportResults(), textBoxVProfile.Text);
-            FormShowResults.ShowResultsSummary(vProfileCalculator);
+            var method = (MixtureMethod)Enum.Parse(typeof(MixtureMethod), comboBoxSelectMixMethod.SelectedItem.ToString());
+            FormShowResults.ShowResultsSummary(vProfileCalculator, method);
         }
     }
 }

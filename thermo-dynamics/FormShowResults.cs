@@ -16,6 +16,7 @@ namespace thermo_dynamics
         public FormShowResults()
         {
             InitializeComponent();
+            saveFileDialogExportCSV.InitialDirectory = FormMain.ResultsDirPath;
         }
 
         public static void ShowResultsSummary(PTProfileCalculator calculator)
@@ -56,47 +57,124 @@ namespace thermo_dynamics
             f.Dispose();
         }
 
-        public static void ShowResultsSummary(VProfileCalculator v)
+        public static void ShowResultsSummary(VProfileCalculator v, MixtureMethod method=MixtureMethod.Hill)
         {
             var f = new FormShowResults();
-            f.textBoxMineral.Text = $"{v.Name} (Hill)";
-            f.textBoxProfile.Text = $"{v.Elem1.GivenP} GPa, {v.Elem1.GivenT} K";
+            f.textBoxMineral.Text = $"{v.Name} ({Enum.GetName(typeof(MixtureMethod), method)})";
+            f.textBoxProfile.Text = $"{v.Elem1.GivenP.ToString("0.00")} GPa, {v.Elem1.GivenT} K";
             var dt = new DataTable();
-            dt.Columns.Add("Elem2", typeof(string));
+            var columTag = "Param";
+            dt.Columns.Add(columTag, typeof(string));
+            var columnElem2 = v.Elem2.Name;
+            dt.Columns.Add(columnElem2, typeof(double));
             v.Elem1RatioList.ForEach(ratio =>
             {
-                dt.Columns.Add(ratio.ToString("0.00"), typeof(double));
+                dt.Columns.Add((ratio*100.0d).ToString("0.00"), typeof(double));
             });
-            dt.Columns.Add("Elem1", typeof(string));
+            var columnElem1 = v.Elem1.Name;
+            dt.Columns.Add(columnElem1, typeof(double));
             var rowDensity = dt.NewRow();
-            rowDensity["Elem2"] = ResultSummary.ColumnStrs[5];
+            rowDensity[columTag] = ResultSummary.ColumnStrs[5];
+            rowDensity[columnElem2] = v.Elem2.Density;
+            rowDensity[columnElem1] = v.Elem1.Density;
             var rowVolume = dt.NewRow();
-            rowVolume["Elem2"] = ResultSummary.ColumnStrs[6];
+            rowVolume[columTag] = ResultSummary.ColumnStrs[6];
+            rowVolume[columnElem2] = v.Elem2.Volume;
+            rowVolume[columnElem1] = v.Elem1.Volume;
             var rowVp = dt.NewRow();
-            rowVp["Elem2"] = ResultSummary.ColumnStrs[2];
+            rowVp[columTag] = ResultSummary.ColumnStrs[2];
+            rowVp[columnElem2] = v.Elem2.Vp;
+            rowVp[columnElem1] = v.Elem1.Vp;
             var rowVs = dt.NewRow();
-            rowVs["Elem2"] = ResultSummary.ColumnStrs[3];
+            rowVs[columTag] = ResultSummary.ColumnStrs[3];
+            rowVs[columnElem2] = v.Elem2.Vs;
+            rowVs[columnElem1] = v.Elem1.Vs;
             var rowVb = dt.NewRow();
-            rowVb["Elem2"] = ResultSummary.ColumnStrs[4];
+            rowVb[columTag] = ResultSummary.ColumnStrs[4];
+            rowVb[columnElem2] = v.Elem2.Vb;
+            rowVb[columnElem1] = v.Elem1.Vb;
             var rowKS = dt.NewRow();
-            rowKS["Elem2"] = ResultSummary.ColumnStrs[7];
+            rowKS[columTag] = ResultSummary.ColumnStrs[7];
+            rowKS[columnElem2] = v.Elem2.KS;
+            rowKS[columnElem1] = v.Elem1.KS;
             var rowKT = dt.NewRow();
-            rowKT["Elem2"] = ResultSummary.ColumnStrs[8];
+            rowKT[columTag] = ResultSummary.ColumnStrs[8];
+            rowKT[columnElem2] = v.Elem2.KT;
+            rowKT[columnElem1] = v.Elem1.KT;
             var rowGS = dt.NewRow();
-            rowGS["Elem2"] = ResultSummary.ColumnStrs[9];
-
-            v.HillResults().ForEach(hill => 
+            rowGS[columTag] = ResultSummary.ColumnStrs[9];
+            rowGS[columnElem2] = v.Elem2.GS;
+            rowGS[columnElem1] = v.Elem1.GS;
+            switch (method)
             {
-                var tag = hill.elem1Ratio.ToString("0.00");
-                rowDensity[tag] = hill.ret.Density;
-                rowVolume[tag] = hill.ret.Volume;
-                rowVp[tag] = hill.ret.Vp;
-                rowVs[tag] = hill.ret.Vs;
-                rowVb[tag] = hill.ret.Vb;
-                rowKS[tag] = hill.ret.KS;
-                rowKT[tag] = hill.ret.KT;
-                rowGS[tag] = hill.ret.GS;                
-            });
+                case MixtureMethod.Hill:
+                    v.HillResults().ForEach(summary =>
+                    {
+                        var tag = (summary.elem1Ratio * 100.0d).ToString("0.00");
+                        rowDensity[tag] = summary.ret.Density;
+                        rowVolume[tag] = summary.ret.Volume;
+                        rowVp[tag] = summary.ret.Vp;
+                        rowVs[tag] = summary.ret.Vs;
+                        rowVb[tag] = summary.ret.Vb;
+                        rowKS[tag] = summary.ret.KS;
+                        rowKT[tag] = summary.ret.KT;
+                        rowGS[tag] = summary.ret.GS;
+                    });
+                    break;
+                case MixtureMethod.Voigt:
+                    v.VoigtResults().ForEach(summary =>
+                    {
+                        var tag = (summary.elem1Ratio * 100.0d).ToString("0.00");
+                        rowDensity[tag] = summary.ret.Density;
+                        rowVolume[tag] = summary.ret.Volume;
+                        rowVp[tag] = summary.ret.Vp;
+                        rowVs[tag] = summary.ret.Vs;
+                        rowVb[tag] = summary.ret.Vb;
+                        rowKS[tag] = summary.ret.KS;
+                        rowKT[tag] = summary.ret.KT;
+                        rowGS[tag] = summary.ret.GS;
+                    });
+                    break;
+                case MixtureMethod.Reuss:
+                    v.ReussResults().ForEach(summary =>
+                    {
+                        var tag = (summary.elem1Ratio * 100.0d).ToString("0.00");
+                        rowDensity[tag] = summary.ret.Density;
+                        rowVolume[tag] = summary.ret.Volume;
+                        rowVp[tag] = summary.ret.Vp;
+                        rowVs[tag] = summary.ret.Vs;
+                        rowVb[tag] = summary.ret.Vb;
+                        rowKS[tag] = summary.ret.KS;
+                        rowKT[tag] = summary.ret.KT;
+                        rowGS[tag] = summary.ret.GS;
+                    });
+                    break;
+                case MixtureMethod.HS:
+                    v.HSResults().ForEach(summary =>
+                    {
+                        var tag = (summary.elem1Ratio * 100.0d).ToString("0.00");
+                        rowDensity[tag] = summary.ret.Density;
+                        rowVolume[tag] = summary.ret.Volume;
+                        rowVp[tag] = summary.ret.Vp;
+                        rowVs[tag] = summary.ret.Vs;
+                        rowVb[tag] = summary.ret.Vb;
+                        rowKS[tag] = summary.ret.KS;
+                        rowKT[tag] = summary.ret.KT;
+                        rowGS[tag] = summary.ret.GS;
+                    });
+                    break;
+                default:
+                    break;
+            }
+
+            dt.Rows.Add(rowDensity);
+            dt.Rows.Add(rowVolume);
+            dt.Rows.Add(rowVp);
+            dt.Rows.Add(rowVs);
+            dt.Rows.Add(rowVb);
+            dt.Rows.Add(rowKS);
+            dt.Rows.Add(rowKT);
+            dt.Rows.Add(rowGS);
 
             f.dataGridViewShowData.AllowUserToAddRows = false;
             f.dataGridViewShowData.DataSource = dt;

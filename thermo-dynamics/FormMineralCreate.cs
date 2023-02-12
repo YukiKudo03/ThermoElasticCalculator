@@ -21,6 +21,8 @@ namespace thermo_dynamics
         public static void ShowMineralCreatePanel()
         {
             var f = new FormMineralCreate();
+            f.openFileDialogReadMineralFile.InitialDirectory = FormMain.MineralDirPath;
+            f.saveFileDialogExportMineralFile.InitialDirectory = FormMain.MineralDirPath;
             f.ShowDialog();
             f.Dispose();
         }

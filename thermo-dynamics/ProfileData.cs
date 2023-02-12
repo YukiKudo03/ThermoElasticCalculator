@@ -75,6 +75,8 @@ namespace thermo_dynamics
         }
     }
 
+
+
     public class VProfileCalculator
     {
         public VProfileCalculator(List<double> elem1RatioList, ResultSummary elem1, ResultSummary elem2, string name)
@@ -82,6 +84,7 @@ namespace thermo_dynamics
             Elem1RatioList = elem1RatioList;
             Elem1 = elem1;
             Elem2 = elem2;
+            Name = name;
         }
 
         public List<double> Elem1RatioList { get; set; }
@@ -123,6 +126,10 @@ namespace thermo_dynamics
         {
             return Elem1RatioList.Select(rto => (rto, HillAverage(rto, Elem1, Elem2))).ToList();
         }
+        public List<(double elem1Ratio, ResultSummary ret)> HSResults()
+        {
+            return Elem1RatioList.Select(rto => (rto, HashinShtrikmanBond(rto, Elem1, Elem2))).ToList();
+        }
 
         public static ResultSummary VoigtAverage(double elem1Ratio, ResultSummary elem1, ResultSummary elem2)
         {
@@ -130,20 +137,21 @@ namespace thermo_dynamics
             {
                 return null;
             }
-            if(elem1.GivenP != elem2.GivenP || elem1.GivenT != elem2.GivenT)
+            if(!CommonMethods.DoubleEquals(elem1.GivenP, elem2.GivenP) || !CommonMethods.DoubleEquals(elem1.GivenT, elem2.GivenT))
             {
                 return null;
             }
 
             return new ResultSummary
             {
+                Name = $"{elem1.Name} : {elem2.Name} = {elem1Ratio} : {1.0d - elem1Ratio} Voigt",
                 GivenP = elem1.GivenP,
                 GivenT = elem1.GivenT,
                 KT = elem1Ratio * elem1.KT + (1.0d - elem1Ratio) * elem2.KT,
                 KS = elem1Ratio * elem1.KS + (1.0d - elem1Ratio) * elem2.KS,
                 GS = elem1Ratio * elem1.GS + (1.0d - elem1Ratio) * elem2.GS,
                 Volume = elem1Ratio * elem1.Volume + (1.0d - elem1Ratio) * elem2.Volume,
-                Density = (elem1Ratio * elem1.Volume * elem1.Density + (1.0d - elem1Ratio) * elem2.Volume + elem2.Density) / (elem1Ratio * elem1.Volume + (1.0d - elem1Ratio) * elem2.Volume),
+                Density = CommonMethods.GetDensity(elem1Ratio, elem1, elem2),
             };
         }
 
@@ -153,20 +161,21 @@ namespace thermo_dynamics
             {
                 return null;
             }
-            if (elem1.GivenP != elem2.GivenP || elem1.GivenT != elem2.GivenT)
+            if (!CommonMethods.DoubleEquals(elem1.GivenP, elem2.GivenP) || !CommonMethods.DoubleEquals(elem1.GivenT, elem2.GivenT))
             {
                 return null;
             }
 
             return new ResultSummary
             {
+                Name = $"{elem1.Name} : {elem2.Name} = {elem1Ratio} : {1.0d - elem1Ratio} Reuss",
                 GivenP = elem1.GivenP,
                 GivenT = elem1.GivenT,
                 KT = 1.0d / ((elem1Ratio / elem1.KT) + (1.0d - elem1Ratio) / elem2.KT),
                 KS = 1.0d / ((elem1Ratio / elem1.KS) + (1.0d - elem1Ratio) / elem2.KS),
                 GS = 1.0d / ((elem1Ratio / elem1.GS) + (1.0d - elem1Ratio) / elem2.GS),
                 Volume = elem1Ratio * elem1.Volume + (1.0d - elem1Ratio) * elem2.Volume,
-                Density = (elem1Ratio * elem1.Volume * elem1.Density + (1.0d - elem1Ratio) * elem2.Volume + elem2.Density) / (elem1Ratio * elem1.Volume + (1.0d - elem1Ratio) * elem2.Volume),
+                Density = CommonMethods.GetDensity(elem1Ratio, elem1, elem2),
             };
         }
 
@@ -176,7 +185,7 @@ namespace thermo_dynamics
             {
                 return null;
             }
-            if (elem1.GivenP != elem2.GivenP || elem1.GivenT != elem2.GivenT)
+            if (!CommonMethods.DoubleEquals(elem1.GivenP, elem2.GivenP) || !CommonMethods.DoubleEquals(elem1.GivenT, elem2.GivenT))
             {
                 return null;
             }
@@ -185,13 +194,14 @@ namespace thermo_dynamics
 
             return new ResultSummary
             {
+                Name = $"{elem1.Name} : {elem2.Name} = {elem1Ratio} : {1.0d - elem1Ratio} Hill",
                 GivenP = elem1.GivenP,
                 GivenT = elem1.GivenT,
                 KT = (VoigtResult.KT + ReussResult.KT) / 2.0d,
                 KS = (VoigtResult.KS + ReussResult.KS) / 2.0d,
                 GS = (VoigtResult.GS + ReussResult.GS) / 2.0d,
                 Volume = elem1Ratio * elem1.Volume + (1.0d - elem1Ratio) * elem2.Volume,
-                Density = (elem1Ratio * elem1.Volume * elem1.Density + (1.0d - elem1Ratio) * elem2.Volume * elem2.Density) / (elem1Ratio * elem1.Volume + (1.0d - elem1Ratio) * elem2.Volume),
+                Density = CommonMethods.GetDensity(elem1Ratio, elem1, elem2),
             };
         }
 
@@ -201,17 +211,20 @@ namespace thermo_dynamics
             {
                 return null;
             }
-            if (elem1.GivenP != elem2.GivenP || elem1.GivenT != elem2.GivenT)
+            if (!CommonMethods.DoubleEquals(elem1.GivenP, elem2.GivenP) || !CommonMethods.DoubleEquals(elem1.GivenT, elem2.GivenT))
             {
                 return null;
             }
             return new ResultSummary
             {
+                Name = $"{elem1.Name} : {elem2.Name} = {elem1Ratio} : {1.0d - elem1Ratio} H-S",
                 GivenP = elem1.GivenP,
                 GivenT = elem1.GivenT,
                 KS = elem1.KS + (1.0d - elem1Ratio) / (1.0d / (elem2.KS - elem1.KS) + elem1Ratio / (elem1.KS + 4.0d / 3.0d * elem1.GS)),
                 KT = elem1.KT + (1.0d - elem1Ratio) / (1.0d / (elem2.KT - elem1.KT) + elem1Ratio / (elem1.KT + 4.0d / 3.0d * elem1.GS)),
                 GS = elem1.GS + (1.0d - elem1Ratio) / (1.0d / (elem2.GS - elem1.GS) + 2.0d * elem1Ratio * (elem1.KS + 2.0d * elem1.GS) / 5.0d * elem1.GS * (elem1.KS + 4.0d / 3.0d * elem1.GS)),
+                Volume = elem1Ratio * elem1.Volume + (1.0d - elem1Ratio) * elem2.Volume,
+                Density = CommonMethods.GetDensity(elem1Ratio, elem1, elem2),
             };
         }
     }
