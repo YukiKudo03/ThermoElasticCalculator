@@ -192,7 +192,7 @@ namespace thermo_dynamics
             __vibrationalDebyeTemp = Math.Sqrt(__mu) * __mineral.DebyeTempZero;
             __debyeCondition = new DebyeFunctionCalculator(__vibrationalDebyeTemp);
             __deltaP = (__gamma / Volume) * DeltaE / 1000.0d;
- //           __q = 
+            __q = 1.0d / 9.0d * (18.0d * Gamma * Gamma - 6.0 * Gamma - 1.0d / 2.0d / __mu * (2.0d * Finite + 1.0d) * (2.0d * Finite + 1.0d) * Mineral.Aiikk) / Gamma;
         }
 
         private double __mu;
