@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.MixtureView"
+             x:DataType="vm:MixtureViewModel">
+
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="2-Mineral Mixture Calculator" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
+
+        <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,8">
+            <!-- Mineral Loading -->
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Load Mineral 1..." Click="OnLoadMineral1" />
+                <TextBlock Text="{Binding Mineral1Name}" VerticalAlignment="Center" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Load Mineral 2..." Click="OnLoadMineral2" />
+                <TextBlock Text="{Binding Mineral2Name}" VerticalAlignment="Center" />
+            </StackPanel>
+
+            <!-- P-T and Method -->
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="P [GPa]:" VerticalAlignment="Center" />
+                <TextBox Text="{Binding Pressure}" Width="100" />
+                <TextBlock Text="T [K]:" VerticalAlignment="Center" />
+                <TextBox Text="{Binding Temperature}" Width="100" />
+                <TextBlock Text="Method:" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding MethodNames}" SelectedIndex="{Binding SelectedMethodIndex}" Width="120" />
+                <Button Content="Calculate" Command="{Binding CalculateCommand}" />
+            </StackPanel>
+        </StackPanel>
+
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Foreground="Gray" Margin="0,4" />
+
+        <!-- Results -->
+        <DataGrid ItemsSource="{Binding Results}" AutoGenerateColumns="True" IsReadOnly="True" />
+    </DockPanel>
+</UserControl>
