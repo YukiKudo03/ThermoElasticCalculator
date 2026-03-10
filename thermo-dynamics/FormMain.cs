@@ -52,5 +52,10 @@ namespace thermo_dynamics
         {
             FormMixture.ShowForm();
         }
+
+        private void buttonRockCalculator_Click(object sender, EventArgs e)
+        {
+            FormRockCalculator.ShowForm();
+        }
     }
 }

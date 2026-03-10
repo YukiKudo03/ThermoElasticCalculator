@@ -176,6 +176,95 @@ namespace thermo_dynamics
 
             return succeed;
         }
+
+        /// <summary>
+        /// CSV header row
+        /// </summary>
+        public static string CsvHeader
+        {
+            get
+            {
+                return "MineralName,PaperName,NumAtoms,MolarVolume,MolarWeight,KZero,K1Prime,K2Prime,GZero,G1Prime,G2Prime,DebyeTempZero,GammaZero,QZero,EhtaZero,RefTemp";
+            }
+        }
+
+        /// <summary>
+        /// Export this mineral as a CSV row
+        /// </summary>
+        public string ExportCsvRow()
+        {
+            return $"{MineralName},{PaperName},{NumAtoms},{MolarVolume},{MolarWeight},{KZero},{K1Prime},{K2Prime},{GZero},{G1Prime},{G2Prime},{DebyeTempZero},{GammaZero},{QZero},{EhtaZero},{RefTemp}";
+        }
+
+        /// <summary>
+        /// Import mineral params from a CSV row
+        /// </summary>
+        public static bool ImportCsvRow(string csvRow, out MineralParams ret)
+        {
+            ret = null;
+            try
+            {
+                var fields = csvRow.Split(',');
+                if (fields.Length < 16) return false;
+
+                ret = new MineralParams
+                {
+                    MineralName = fields[0].Trim(),
+                    PaperName = fields[1].Trim(),
+                    NumAtoms = int.Parse(fields[2].Trim()),
+                    MolarVolume = double.Parse(fields[3].Trim()),
+                    MolarWeight = double.Parse(fields[4].Trim()),
+                    KZero = double.Parse(fields[5].Trim()),
+                    K1Prime = double.Parse(fields[6].Trim()),
+                    K2Prime = double.Parse(fields[7].Trim()),
+                    GZero = double.Parse(fields[8].Trim()),
+                    G1Prime = double.Parse(fields[9].Trim()),
+                    G2Prime = double.Parse(fields[10].Trim()),
+                    DebyeTempZero = double.Parse(fields[11].Trim()),
+                    GammaZero = double.Parse(fields[12].Trim()),
+                    QZero = double.Parse(fields[13].Trim()),
+                    EhtaZero = double.Parse(fields[14].Trim()),
+                    RefTemp = double.Parse(fields[15].Trim()),
+                };
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Import multiple minerals from a CSV file (first row = header)
+        /// </summary>
+        public static List<MineralParams> ImportCsvFile(string filePath)
+        {
+            var results = new List<MineralParams>();
+            var lines = System.IO.File.ReadAllLines(filePath, Encoding.UTF8);
+            for (int i = 1; i < lines.Length; i++) // skip header
+            {
+                if (string.IsNullOrWhiteSpace(lines[i])) continue;
+                if (ImportCsvRow(lines[i], out MineralParams mineral))
+                {
+                    results.Add(mineral);
+                }
+            }
+            return results;
+        }
+
+        /// <summary>
+        /// Export multiple minerals to a CSV file
+        /// </summary>
+        public static void ExportCsvFile(string filePath, List<MineralParams> minerals)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(CsvHeader);
+            foreach (var m in minerals)
+            {
+                sb.AppendLine(m.ExportCsvRow());
+            }
+            System.IO.File.WriteAllText(filePath, sb.ToString(), Encoding.UTF8);
+        }
     }
 
     public class ThermoMineralParams

@@ -184,6 +184,59 @@ namespace thermo_dynamics
             f.Dispose();
         }
 
+        /// <summary>
+        /// Show results for rock (multi-mineral mixture) calculation
+        /// </summary>
+        public static void ShowRockResults(string rockName, MixtureMethod method, ResultSummary mixedResult, List<(string name, double ratio, ResultSummary result)> individualResults)
+        {
+            var f = new FormShowResults();
+            f.textBoxMineral.Text = $"{rockName} ({Enum.GetName(typeof(MixtureMethod), method)})";
+            f.textBoxProfile.Text = $"{mixedResult.GivenP:0.00} GPa, {mixedResult.GivenT} K";
+
+            var dt = new DataTable();
+            dt.Columns.Add("Property", typeof(string));
+
+            // Add a column for each mineral
+            foreach (var entry in individualResults)
+            {
+                dt.Columns.Add($"{entry.name} ({entry.ratio:0.00})", typeof(double));
+            }
+            // Add mixed result column
+            dt.Columns.Add($"Mixed ({Enum.GetName(typeof(MixtureMethod), method)})", typeof(double));
+
+            // Rows for each property
+            var properties = new (string label, Func<ResultSummary, double> getter)[]
+            {
+                ("Vp [m/s]", r => r.Vp),
+                ("Vs [m/s]", r => r.Vs),
+                ("Vb [m/s]", r => r.Vb),
+                ("Density [g/cm3]", r => r.Density),
+                ("Volume [cm3/mol]", r => r.Volume),
+                ("KS [GPa]", r => r.KS),
+                ("KT [GPa]", r => r.KT),
+                ("GS [GPa]", r => r.GS),
+            };
+
+            foreach (var prop in properties)
+            {
+                var row = dt.NewRow();
+                row["Property"] = prop.label;
+                foreach (var entry in individualResults)
+                {
+                    row[$"{entry.name} ({entry.ratio:0.00})"] = Math.Round(prop.getter(entry.result), 4);
+                }
+                row[$"Mixed ({Enum.GetName(typeof(MixtureMethod), method)})"] = Math.Round(prop.getter(mixedResult), 4);
+                dt.Rows.Add(row);
+            }
+
+            f.dataGridViewShowData.AllowUserToAddRows = false;
+            f.dataGridViewShowData.DataSource = dt;
+            f.dataGridViewShowData.Columns.Cast<DataGridViewColumn>().ToList().ForEach(column => { column.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells; });
+            f.dataGridViewShowData.ReadOnly = true;
+            f.ShowDialog();
+            f.Dispose();
+        }
+
         private void buttonExportCSV_Click(object sender, EventArgs e)
         {
             if(saveFileDialogExportCSV.ShowDialog() != DialogResult.OK)

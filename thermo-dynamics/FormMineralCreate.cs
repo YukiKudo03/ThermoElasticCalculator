@@ -108,5 +108,50 @@ namespace thermo_dynamics
             var thResults = th.ExecOptimize();
             MessageBox.Show($"Vp: {thResults.Vp.ToString("0.00")} m/s, Vs: {thResults.Vs.ToString("0.00")} m/s, ρ: {thResults.Density.ToString("0.000")} g/cm3,  KT: {thResults.KT.ToString("0.00")} GPa, Gs: {thResults.GS.ToString("0.00")} GPa");
         }
+
+        private void buttonExportCsv_Click(object sender, EventArgs e)
+        {
+            saveFileDialogExportCsv.InitialDirectory = FormMain.MineralDirPath;
+            if (saveFileDialogExportCsv.ShowDialog() != DialogResult.OK)
+            {
+                return;
+            }
+            var mineral = GetMineralParams();
+            MineralParams.ExportCsvFile(saveFileDialogExportCsv.FileName, new List<MineralParams> { mineral });
+            MessageBox.Show("CSV exported.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void buttonImportCsv_Click(object sender, EventArgs e)
+        {
+            openFileDialogImportCsv.InitialDirectory = FormMain.MineralDirPath;
+            if (openFileDialogImportCsv.ShowDialog() != DialogResult.OK)
+            {
+                return;
+            }
+            try
+            {
+                var minerals = MineralParams.ImportCsvFile(openFileDialogImportCsv.FileName);
+                if (minerals.Count == 0)
+                {
+                    MessageBox.Show("No mineral data found in CSV.");
+                    return;
+                }
+                // Load the first mineral into the form
+                SetMineralParams(minerals[0]);
+                // Save all minerals as individual .mine files
+                int saved = 0;
+                foreach (var m in minerals)
+                {
+                    string fileName = Path.Combine(FormMain.MineralDirPath, $"{m.MineralName}.mine");
+                    File.WriteAllText(fileName, m.ExportJson(), Encoding.UTF8);
+                    saved++;
+                }
+                MessageBox.Show($"Imported {saved} mineral(s). Files saved to Minerals folder.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Import failed: {ex.Message}");
+            }
+        }
     }
 }

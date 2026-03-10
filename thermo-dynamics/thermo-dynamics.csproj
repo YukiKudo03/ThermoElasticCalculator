@@ -109,6 +109,13 @@
       <DependentUpon>FormShowResults.cs</DependentUpon>
     </Compile>
     <Compile Include="MolMixtureProfile.cs" />
+    <Compile Include="RockComposition.cs" />
+    <Compile Include="FormRockCalculator.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FormRockCalculator.Designer.cs">
+      <DependentUpon>FormRockCalculator.cs</DependentUpon>
+    </Compile>
     <Compile Include="optimizer.cs" />
     <Compile Include="PhysicCalc.cs" />
     <Compile Include="ProfileData.cs" />
@@ -126,6 +133,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="FormPTProfile.resx">
       <DependentUpon>FormPTProfile.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormRockCalculator.resx">
+      <DependentUpon>FormRockCalculator.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormShowResults.resx">
       <DependentUpon>FormShowResults.cs</DependentUpon>

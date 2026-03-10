@@ -32,6 +32,7 @@ namespace thermo_dynamics
             this.buttonShoMineralInfo = new System.Windows.Forms.Button();
             this.buttonPTProfile = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
+            this.buttonRockCalculator = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // buttonShoMineralInfo
@@ -66,12 +67,24 @@ namespace thermo_dynamics
             this.button1.Text = "Calculate Mixture...";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
-            // 
+            //
+            // buttonRockCalculator
+            //
+            this.buttonRockCalculator.Location = new System.Drawing.Point(529, 22);
+            this.buttonRockCalculator.Margin = new System.Windows.Forms.Padding(4);
+            this.buttonRockCalculator.Name = "buttonRockCalculator";
+            this.buttonRockCalculator.Size = new System.Drawing.Size(164, 85);
+            this.buttonRockCalculator.TabIndex = 3;
+            this.buttonRockCalculator.Text = "Rock Calculator...";
+            this.buttonRockCalculator.UseVisualStyleBackColor = true;
+            this.buttonRockCalculator.Click += new System.EventHandler(this.buttonRockCalculator_Click);
+            //
             // FormMain
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.buttonRockCalculator);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.buttonPTProfile);
             this.Controls.Add(this.buttonShoMineralInfo);
@@ -87,6 +100,7 @@ namespace thermo_dynamics
         private System.Windows.Forms.Button buttonShoMineralInfo;
         private System.Windows.Forms.Button buttonPTProfile;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button buttonRockCalculator;
     }
 }
 

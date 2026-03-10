@@ -581,12 +581,50 @@ namespace thermo_dynamics
             this.groupBoxCalcTest.TabIndex = 55;
             this.groupBoxCalcTest.TabStop = false;
             this.groupBoxCalcTest.Text = "CalcTest";
-            // 
+            //
+            // buttonExportCsv
+            //
+            this.buttonExportCsv = new System.Windows.Forms.Button();
+            this.buttonExportCsv.Location = new System.Drawing.Point(127, 366);
+            this.buttonExportCsv.Margin = new System.Windows.Forms.Padding(4);
+            this.buttonExportCsv.Name = "buttonExportCsv";
+            this.buttonExportCsv.Size = new System.Drawing.Size(120, 29);
+            this.buttonExportCsv.TabIndex = 56;
+            this.buttonExportCsv.Text = "Export CSV...";
+            this.buttonExportCsv.UseVisualStyleBackColor = true;
+            this.buttonExportCsv.Click += new System.EventHandler(this.buttonExportCsv_Click);
+            //
+            // buttonImportCsv
+            //
+            this.buttonImportCsv = new System.Windows.Forms.Button();
+            this.buttonImportCsv.Location = new System.Drawing.Point(127, 401);
+            this.buttonImportCsv.Margin = new System.Windows.Forms.Padding(4);
+            this.buttonImportCsv.Name = "buttonImportCsv";
+            this.buttonImportCsv.Size = new System.Drawing.Size(120, 29);
+            this.buttonImportCsv.TabIndex = 57;
+            this.buttonImportCsv.Text = "Import CSV...";
+            this.buttonImportCsv.UseVisualStyleBackColor = true;
+            this.buttonImportCsv.Click += new System.EventHandler(this.buttonImportCsv_Click);
+            //
+            // saveFileDialogExportCsv
+            //
+            this.saveFileDialogExportCsv = new System.Windows.Forms.SaveFileDialog();
+            this.saveFileDialogExportCsv.DefaultExt = "csv";
+            this.saveFileDialogExportCsv.Filter = "CSV Files|*.csv";
+            //
+            // openFileDialogImportCsv
+            //
+            this.openFileDialogImportCsv = new System.Windows.Forms.OpenFileDialog();
+            this.openFileDialogImportCsv.DefaultExt = "csv";
+            this.openFileDialogImportCsv.Filter = "CSV Files|*.csv";
+            //
             // FormMineralCreate
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1067, 448);
+            this.Controls.Add(this.buttonExportCsv);
+            this.Controls.Add(this.buttonImportCsv);
             this.Controls.Add(this.groupBoxCalcTest);
             this.Controls.Add(this.labelRefTemp);
             this.Controls.Add(this.labelEtha0);
@@ -692,5 +730,9 @@ namespace thermo_dynamics
         private System.Windows.Forms.Label labelCalcTestPress;
         private System.Windows.Forms.NumericUpDown numericUpDownCalcTestPressure;
         private System.Windows.Forms.GroupBox groupBoxCalcTest;
+        private System.Windows.Forms.Button buttonExportCsv;
+        private System.Windows.Forms.Button buttonImportCsv;
+        private System.Windows.Forms.SaveFileDialog saveFileDialogExportCsv;
+        private System.Windows.Forms.OpenFileDialog openFileDialogImportCsv;
     }
 }
