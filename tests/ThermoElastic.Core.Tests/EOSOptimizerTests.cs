@@ -1,3 +1,4 @@
+using Xunit;
 using ThermoElastic.Core.Calculations;
 using ThermoElastic.Core.Models;
 

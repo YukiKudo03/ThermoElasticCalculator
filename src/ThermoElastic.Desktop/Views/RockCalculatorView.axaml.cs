@@ -3,6 +3,7 @@ using System.Text;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using ThermoElastic.Core.IO;
 using ThermoElastic.Core.Models;
 using ThermoElastic.Desktop.ViewModels;
 
@@ -77,6 +78,24 @@ public partial class RockCalculatorView : UserControl
         {
             var rock = ViewModel.ToRockComposition();
             await File.WriteAllTextAsync(file.Path.LocalPath, rock.ExportJson(), Encoding.UTF8);
+        }
+    }
+
+    private async void OnExportCsv(object? sender, RoutedEventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel == null || ViewModel == null) return;
+
+        var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Export CSV",
+            SuggestedFileName = "rock_results.csv",
+            FileTypeChoices = new[] { new FilePickerFileType("CSV File") { Patterns = new[] { "*.csv" } } },
+        });
+
+        if (file != null)
+        {
+            MineralCsvIO.ExportResults(file.Path.LocalPath, ViewModel.Results.ToList());
         }
     }
 }

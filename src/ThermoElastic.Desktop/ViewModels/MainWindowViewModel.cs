@@ -15,6 +15,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly PTProfileViewModel _ptProfileViewModel = new();
     private readonly MixtureViewModel _mixtureViewModel = new();
     private readonly RockCalculatorViewModel _rockCalculatorViewModel = new();
+    private readonly ResultsViewModel _resultsViewModel = new();
 
     [RelayCommand]
     private void ShowMineralEditor()
@@ -38,5 +39,11 @@ public partial class MainWindowViewModel : ObservableObject
     private void ShowRockCalculator()
     {
         CurrentView = _rockCalculatorViewModel;
+    }
+
+    [RelayCommand]
+    private void ShowResults()
+    {
+        CurrentView = _resultsViewModel;
     }
 }

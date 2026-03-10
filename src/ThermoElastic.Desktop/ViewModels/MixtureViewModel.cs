@@ -14,6 +14,9 @@ public partial class MixtureViewModel : ObservableObject
     [ObservableProperty] private double _temperature = 300.0;
     [ObservableProperty] private int _selectedMethodIndex;
     [ObservableProperty] private string _statusMessage = string.Empty;
+    [ObservableProperty] private double _ratioStart;
+    [ObservableProperty] private double _ratioEnd = 1.0;
+    [ObservableProperty] private double _ratioStep = 0.1;
 
     private MineralParams? _mineral1;
     private MineralParams? _mineral2;
@@ -22,6 +25,22 @@ public partial class MixtureViewModel : ObservableObject
     public ObservableCollection<ResultSummary> Results { get; } = new();
 
     public string[] MethodNames => Enum.GetNames<MixtureMethod>();
+
+    [RelayCommand]
+    private void GenerateRatioList()
+    {
+        RatioList.Clear();
+        if (RatioStep <= 0)
+        {
+            StatusMessage = "Step must be > 0.";
+            return;
+        }
+        for (double r = RatioStart; r <= RatioEnd + 1e-10; r += RatioStep)
+        {
+            RatioList.Add(Math.Round(r, 10));
+        }
+        StatusMessage = $"Generated {RatioList.Count} ratio values.";
+    }
 
     public void LoadMineral1(MineralParams mineral)
     {
@@ -33,6 +52,27 @@ public partial class MixtureViewModel : ObservableObject
     {
         _mineral2 = mineral;
         Mineral2Name = mineral.ParamSymbol;
+    }
+
+    public VProfileCalculator? CreateVProfileCalculator()
+    {
+        if (_mineral1 == null || _mineral2 == null || RatioList.Count == 0) return null;
+
+        var pt = new PTData { Pressure = Pressure, Temperature = Temperature };
+        var res1 = new MieGruneisenEOSOptimizer(_mineral1, pt).ExecOptimize().ExportResults();
+        var res2 = new MieGruneisenEOSOptimizer(_mineral2, pt).ExecOptimize().ExportResults();
+
+        return new VProfileCalculator(RatioList.ToList(), res1, res2, $"{_mineral1.MineralName}-{_mineral2.MineralName}");
+    }
+
+    public void LoadFromVProfile(VProfileCalculator vpc)
+    {
+        RatioList.Clear();
+        foreach (var r in vpc.Elem1RatioList)
+        {
+            RatioList.Add(r);
+        }
+        StatusMessage = $"Loaded VProfile '{vpc.Name}' with {vpc.Elem1RatioList.Count} ratios.";
     }
 
     [RelayCommand]

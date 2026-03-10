@@ -19,6 +19,7 @@
             <Button Content="PT Profile" Command="{Binding ShowPTProfileCommand}" HorizontalAlignment="Stretch" />
             <Button Content="Mixture" Command="{Binding ShowMixtureCommand}" HorizontalAlignment="Stretch" />
             <Button Content="Rock Calculator" Command="{Binding ShowRockCalculatorCommand}" HorizontalAlignment="Stretch" />
+            <Button Content="Results" Command="{Binding ShowResultsCommand}" HorizontalAlignment="Stretch" />
         </StackPanel>
 
         <!-- Content Area -->
@@ -35,6 +36,9 @@
                 </DataTemplate>
                 <DataTemplate DataType="vm:RockCalculatorViewModel">
                     <views:RockCalculatorView />
+                </DataTemplate>
+                <DataTemplate DataType="vm:ResultsViewModel">
+                    <views:ResultsView />
                 </DataTemplate>
             </ContentControl.DataTemplates>
         </ContentControl>

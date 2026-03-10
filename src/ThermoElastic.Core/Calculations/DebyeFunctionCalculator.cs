@@ -1,13 +1,7 @@
-﻿using System;
+﻿namespace ThermoElastic.Core.Calculations;
 
-
-
-
-
-namespace ThermoElastic.Core.Calculations
+public class DebyeFunctionCalculator
 {
-    public class DebyeFunctionCalculator
-    {
         public DebyeFunctionCalculator(double debyeTemp)
         {
             __debyeTemp = debyeTemp;
@@ -30043,5 +30037,4 @@ namespace ThermoElastic.Core.Calculations
 0.009591625263d,
 0.009589069278d,
         };
-    }
 }

@@ -14,13 +14,15 @@ public class MixtureCalculator
     private bool IsNotCalculatable =>
         _results.Any(res => res.elemRatio < 0 || res.elemRatio > 1) ||
         _results.Sum(res => res.elemRatio) < 0.0d || _results.Sum(res => res.elemRatio) > 1.01d ||
-        _results.Any(res => res.elemResult.GivenP != _results[0].elemResult.GivenP || res.elemResult.GivenT != _results[0].elemResult.GivenT);
+        _results.Any(res => Math.Abs(res.elemResult.GivenP - _results[0].elemResult.GivenP) > 0.01d ||
+                            Math.Abs(res.elemResult.GivenT - _results[0].elemResult.GivenT) > 0.01d);
 
     public ResultSummary? VoigtAverage()
     {
         if (IsNotCalculatable) return null;
         return new ResultSummary
         {
+            Name = "Voigt Average",
             GivenP = _results[0].elemResult.GivenP,
             GivenT = _results[0].elemResult.GivenT,
             Volume = _results.Sum(res => res.elemRatio * res.elemResult.Volume),
@@ -36,6 +38,7 @@ public class MixtureCalculator
         if (IsNotCalculatable) return null;
         return new ResultSummary
         {
+            Name = "Reuss Average",
             GivenP = _results[0].elemResult.GivenP,
             GivenT = _results[0].elemResult.GivenT,
             Volume = _results.Sum(res => res.elemRatio * res.elemResult.Volume),
@@ -53,6 +56,7 @@ public class MixtureCalculator
         var voigt = VoigtAverage()!;
         return new ResultSummary
         {
+            Name = "Hill Average",
             GivenP = reuss.GivenP,
             GivenT = reuss.GivenT,
             Volume = reuss.Volume,

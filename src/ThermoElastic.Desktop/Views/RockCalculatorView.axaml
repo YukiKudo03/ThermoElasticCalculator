@@ -12,6 +12,7 @@
             <Button Content="Add Mineral..." Click="OnAddMineral" />
             <Button Content="Load Rock..." Click="OnLoadRock" />
             <Button Content="Save Rock..." Click="OnSaveRock" />
+            <Button Content="Export CSV..." Click="OnExportCsv" />
         </StackPanel>
 
         <!-- Rock Name -->

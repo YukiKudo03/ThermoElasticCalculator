@@ -20,9 +20,9 @@ public class ResultSummary
     public double EthaS { get; set; }
     public double Q { get; set; }
 
-    public double Vb => Math.Sqrt(KS / Density);
-    public double Vs => Math.Sqrt(GS / Density);
-    public double Vp => Math.Sqrt((KS + 4.0d / 3.0d * GS) / Density);
+    public double Vb => 1000.0d * Math.Sqrt(KS / Density);
+    public double Vs => 1000.0d * Math.Sqrt(GS / Density);
+    public double Vp => 1000.0d * Math.Sqrt((KS + 4.0d / 3.0d * GS) / Density);
 
     public static string ColumnsCSV =>
         "P[GPa], T[K], Vp[m/s], Vs[m/s], Vb[m/s], ρ[g/cm3], V[cm3/mol], KS[GPa], KT[GPa], GS[GPa], α[K-1], θd[K], γ, ηs, q";

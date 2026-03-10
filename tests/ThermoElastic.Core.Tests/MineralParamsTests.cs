@@ -1,3 +1,4 @@
+using Xunit;
 using ThermoElastic.Core.Models;
 
 namespace ThermoElastic.Core.Tests;

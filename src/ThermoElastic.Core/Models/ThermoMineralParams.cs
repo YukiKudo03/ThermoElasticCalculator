@@ -108,13 +108,13 @@ public class ThermoMineralParams
     }
 
     /// <summary>Primary wave velocity [m/s]</summary>
-    public double Vp => Math.Sqrt((KS + 4.0d / 3.0d * GS) / Density);
+    public double Vp => 1000.0d * Math.Sqrt((KS + 4.0d / 3.0d * GS) / Density);
 
     /// <summary>Secondary wave velocity [m/s]</summary>
-    public double Vs => Math.Sqrt(GS / Density);
+    public double Vs => 1000.0d * Math.Sqrt(GS / Density);
 
     /// <summary>Bulk Sound Velocity [m/s]</summary>
-    public double Vb => Math.Sqrt(KS / Density);
+    public double Vb => 1000.0d * Math.Sqrt(KS / Density);
 
     public ResultSummary ExportResults()
     {
