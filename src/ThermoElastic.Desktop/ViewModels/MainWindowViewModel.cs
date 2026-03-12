@@ -9,13 +9,15 @@ public partial class MainWindowViewModel : ObservableObject
     private object? _currentView;
 
     [ObservableProperty]
-    private string _title = "ThermoElasticCalculator v0.3.0";
+    private string _title = "ThermoElasticCalculator v0.4.0";
 
     private readonly MineralEditorViewModel _mineralEditorViewModel = new();
     private readonly PTProfileViewModel _ptProfileViewModel = new();
     private readonly MixtureViewModel _mixtureViewModel = new();
     private readonly RockCalculatorViewModel _rockCalculatorViewModel = new();
     private readonly ResultsViewModel _resultsViewModel = new();
+    private readonly MineralDatabaseViewModel _mineralDatabaseViewModel = new();
+    private readonly ChartViewModel _chartViewModel = new();
 
     [RelayCommand]
     private void ShowMineralEditor()
@@ -45,5 +47,17 @@ public partial class MainWindowViewModel : ObservableObject
     private void ShowResults()
     {
         CurrentView = _resultsViewModel;
+    }
+
+    [RelayCommand]
+    private void ShowDatabase()
+    {
+        CurrentView = _mineralDatabaseViewModel;
+    }
+
+    [RelayCommand]
+    private void ShowChart()
+    {
+        CurrentView = _chartViewModel;
     }
 }

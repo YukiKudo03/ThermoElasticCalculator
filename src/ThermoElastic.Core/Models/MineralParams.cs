@@ -39,6 +39,21 @@ public class MineralParams
     /// <summary>Reference Temperature [K]</summary>
     public double RefTemp { get; set; } = 300.0d;
 
+    /// <summary>Reference Helmholtz free energy [kJ/mol]</summary>
+    public double F0 { get; set; }
+
+    /// <summary>Landau critical temperature at P=0 [K] (0=disabled)</summary>
+    public double Tc0 { get; set; }
+    /// <summary>Landau maximum excess volume [cm³/mol]</summary>
+    public double VD { get; set; }
+    /// <summary>Landau maximum excess entropy [J/mol/K]</summary>
+    public double SD { get; set; }
+
+    /// <summary>Spin quantum number S (0=disabled)</summary>
+    public double SpinQuantumNumber { get; set; }
+    /// <summary>Magnetic atoms per formula unit r (0=disabled)</summary>
+    public double MagneticAtomCount { get; set; }
+
     public double Aii => 6.0d * GammaZero;
 
     public double Aiikk => -12.0d * GammaZero + 36.0 * GammaZero * GammaZero - 18.0d * GammaZero * QZero;
@@ -64,8 +79,12 @@ public class MineralParams
 
     public double BM3Finite(double targetPressure, OptimizerType optimizerType = OptimizerType.ReglaFalsi)
     {
+        if (targetPressure < 0.0001) return 0.0001; // near-zero strain for very low/negative pressure
         Func<double, double> func = (double finite) => GetPressure(finite) - targetPressure;
-        var opt = OptimizerFactory.CreateOptimizer(func, 0.0005, 0.02, optimizerType);
+        // Dynamic upper bound: estimate f from P ≈ 3*K0*f, then add margin
+        double fEstimate = targetPressure / (3.0 * KZero);
+        double fMax = Math.Max(0.02, fEstimate * 3.0 + 0.01);
+        var opt = OptimizerFactory.CreateOptimizer(func, 0.0001, fMax, optimizerType);
         return opt.DoOptimize();
     }
 
@@ -107,11 +126,11 @@ public class MineralParams
     }
 
     public static string CsvHeader =>
-        "MineralName,PaperName,NumAtoms,MolarVolume,MolarWeight,KZero,K1Prime,K2Prime,GZero,G1Prime,G2Prime,DebyeTempZero,GammaZero,QZero,EhtaZero,RefTemp";
+        "MineralName,PaperName,NumAtoms,MolarVolume,MolarWeight,KZero,K1Prime,K2Prime,GZero,G1Prime,G2Prime,DebyeTempZero,GammaZero,QZero,EhtaZero,RefTemp,F0,Tc0,VD,SD,SpinQuantumNumber,MagneticAtomCount";
 
     public string ExportCsvRow()
     {
-        return $"{MineralName},{PaperName},{NumAtoms},{MolarVolume},{MolarWeight},{KZero},{K1Prime},{K2Prime},{GZero},{G1Prime},{G2Prime},{DebyeTempZero},{GammaZero},{QZero},{EhtaZero},{RefTemp}";
+        return $"{MineralName},{PaperName},{NumAtoms},{MolarVolume},{MolarWeight},{KZero},{K1Prime},{K2Prime},{GZero},{G1Prime},{G2Prime},{DebyeTempZero},{GammaZero},{QZero},{EhtaZero},{RefTemp},{F0},{Tc0},{VD},{SD},{SpinQuantumNumber},{MagneticAtomCount}";
     }
 
     public static bool ImportCsvRow(string csvRow, out MineralParams? ret)
@@ -141,6 +160,15 @@ public class MineralParams
                 EhtaZero = double.Parse(fields[14].Trim()),
                 RefTemp = double.Parse(fields[15].Trim()),
             };
+
+            // Extended fields (backward compatible — absent fields default to 0)
+            if (fields.Length > 16) ret.F0 = double.Parse(fields[16].Trim());
+            if (fields.Length > 17) ret.Tc0 = double.Parse(fields[17].Trim());
+            if (fields.Length > 18) ret.VD = double.Parse(fields[18].Trim());
+            if (fields.Length > 19) ret.SD = double.Parse(fields[19].Trim());
+            if (fields.Length > 20) ret.SpinQuantumNumber = double.Parse(fields[20].Trim());
+            if (fields.Length > 21) ret.MagneticAtomCount = double.Parse(fields[21].Trim());
+
             return true;
         }
         catch

@@ -20,6 +20,9 @@
             <Button Content="Mixture" Command="{Binding ShowMixtureCommand}" HorizontalAlignment="Stretch" />
             <Button Content="Rock Calculator" Command="{Binding ShowRockCalculatorCommand}" HorizontalAlignment="Stretch" />
             <Button Content="Results" Command="{Binding ShowResultsCommand}" HorizontalAlignment="Stretch" />
+            <Separator Margin="0,8" />
+            <Button Content="Database" Command="{Binding ShowDatabaseCommand}" HorizontalAlignment="Stretch" />
+            <Button Content="Chart" Command="{Binding ShowChartCommand}" HorizontalAlignment="Stretch" />
         </StackPanel>
 
         <!-- Content Area -->
@@ -39,6 +42,12 @@
                 </DataTemplate>
                 <DataTemplate DataType="vm:ResultsViewModel">
                     <views:ResultsView />
+                </DataTemplate>
+                <DataTemplate DataType="vm:MineralDatabaseViewModel">
+                    <views:MineralDatabaseView />
+                </DataTemplate>
+                <DataTemplate DataType="vm:ChartViewModel">
+                    <views:ChartView />
                 </DataTemplate>
             </ContentControl.DataTemplates>
         </ContentControl>

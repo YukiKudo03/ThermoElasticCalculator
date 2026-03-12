@@ -16,8 +16,19 @@ public class RockCalculator
     public double Pressure { get; }
     public double Temperature { get; }
     public MixtureMethod Method { get; }
+    public bool UseEquilibrium { get; set; }
 
     public (ResultSummary? mixedResult, List<(string name, double ratio, ResultSummary result)> individualResults) Calculate()
+    {
+        if (UseEquilibrium)
+        {
+            return CalculateEquilibrium();
+        }
+
+        return CalculateMechanical();
+    }
+
+    private (ResultSummary? mixedResult, List<(string name, double ratio, ResultSummary result)> individualResults) CalculateMechanical()
     {
         var pt = new PTData { Pressure = Pressure, Temperature = Temperature };
 
@@ -39,6 +50,30 @@ public class RockCalculator
             MixtureMethod.Reuss => mixer.ReussAverage(),
             _ => mixer.HillAverage(),
         };
+
+        if (mixedResult != null)
+        {
+            mixedResult.Name = Rock.Name;
+            mixedResult.GivenP = Pressure;
+            mixedResult.GivenT = Temperature;
+        }
+
+        return (mixedResult, individualResults);
+    }
+
+    private (ResultSummary? mixedResult, List<(string name, double ratio, ResultSummary result)> individualResults) CalculateEquilibrium()
+    {
+        var phases = Rock.Minerals.Select(entry => new Models.PhaseEntry
+        {
+            Name = entry.Mineral.ParamSymbol,
+            Mineral = entry.Mineral,
+            Amount = entry.VolumeRatio,
+            Solution = entry.Solution,
+            Composition = entry.SolutionComposition,
+        }).ToList();
+
+        var calc = new EquilibriumAggregateCalculator();
+        var (mixedResult, individualResults) = calc.CalculateMechanical(phases, Pressure, Temperature, Method);
 
         if (mixedResult != null)
         {

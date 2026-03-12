@@ -1,0 +1,23 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.ChartView"
+             x:DataType="vm:ChartViewModel">
+
+    <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Text="{Binding ChartTitle}" FontWeight="Bold" FontSize="16" Margin="0,0,0,8" />
+        <TextBlock DockPanel.Dock="Top" Text="{Binding StatusMessage}" Margin="0,0,0,8" />
+
+        <DataGrid ItemsSource="{Binding DataPoints}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="Horizontal">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="P [GPa]" Binding="{Binding Pressure}" Width="100" />
+                <DataGridTextColumn Header="T [K]" Binding="{Binding Temperature}" Width="100" />
+                <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="150" />
+                <DataGridTextColumn Header="Property" Binding="{Binding PropertyName}" Width="100" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

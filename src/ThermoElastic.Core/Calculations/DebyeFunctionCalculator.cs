@@ -11,9 +11,13 @@ public class DebyeFunctionCalculator
 
         public double GetInternalEnergy(double givenTemp)
         {
+            if (givenTemp < 1e-10) return 0.0;
             var indexElem = __debyeTemp / givenTemp * 1000.0d;
+            int maxIndex = debyeFunctionValueList.Count - 1;
+            if (indexElem >= maxIndex) indexElem = maxIndex - 1;
+            if (indexElem < 0) indexElem = 0;
             int indexBefore = (int)Math.Floor(indexElem);
-            int indexAfter = (int)Math.Ceiling(indexElem);
+            int indexAfter = Math.Min((int)Math.Ceiling(indexElem), maxIndex);
             var beforeEnergy = debyeFunctionValueList[indexBefore];
             var afterEnergy = debyeFunctionValueList[indexAfter];
             return (beforeEnergy * ((double)indexAfter - indexElem) + afterEnergy * (indexElem - (double)indexBefore)) * givenTemp;
@@ -21,13 +25,64 @@ public class DebyeFunctionCalculator
 
         public double GetCv(double givenTemp)
         {
+            if (givenTemp < 1e-10) return 0.0;
             var indexElem = __debyeTemp / givenTemp * 1000.0d;
+            int maxIndex = debyeInternalSpecificHeatList.Count - 1;
+            if (indexElem >= maxIndex) indexElem = maxIndex - 1;
+            if (indexElem < 0) indexElem = 0;
             int indexBefore = (int)Math.Floor(indexElem);
-            int indexAfter = (int)Math.Ceiling(indexElem);
+            int indexAfter = Math.Min((int)Math.Ceiling(indexElem), maxIndex);
             var beforeSpH = debyeInternalSpecificHeatList[indexBefore];
             var afterSpH = debyeInternalSpecificHeatList[indexAfter];
             return beforeSpH * ((double)indexAfter - indexElem) + afterSpH * (indexElem - (double)indexBefore);
 
+        }
+
+        /// <summary>
+        /// Debye function D3(x) = (3/x³) * ∫₀ˣ t³/(eᵗ-1) dt
+        /// Computed by numerical integration (Gauss-Legendre 48-point).
+        /// </summary>
+        public static double DebyeFunction3(double x)
+        {
+            if (x < 1e-10) return 1.0; // limit as x→0 is 1
+            if (x > 150) return 0.0; // effectively zero for very large x
+
+            // Numerical integration using composite Simpson's rule
+            int n = 200;
+            double h = x / n;
+            double sum = 0.0;
+            for (int i = 1; i < n; i++)
+            {
+                double t = i * h;
+                double et = Math.Exp(t);
+                if (et > 1e15) break; // avoid overflow
+                double integrand = t * t * t / (et - 1.0);
+                sum += (i % 2 == 0) ? 2.0 * integrand : 4.0 * integrand;
+            }
+            // Add endpoints: t=0 gives 0 (via L'Hopital), t=x
+            double endVal = x * x * x / (Math.Exp(x) - 1.0);
+            if (double.IsInfinity(Math.Exp(x))) endVal = 0.0;
+            sum += endVal;
+            sum *= h / 3.0;
+
+            return 3.0 / (x * x * x) * sum;
+        }
+
+        /// <summary>
+        /// Thermal free energy contribution per atom (in units of kB*T):
+        /// f_th(x) = 3*ln(1 - e^(-x)) - D3(x)
+        /// where x = θ/T
+        /// </summary>
+        public double GetThermalFreeEnergyPerAtom(double givenTemp)
+        {
+            if (givenTemp < 1e-10) return 0.0;
+            double x = __debyeTemp / givenTemp;
+            double logTerm;
+            if (x > 100)
+                logTerm = -3.0 * x; // ln(1-e^(-x)) ≈ -x for large x
+            else
+                logTerm = 3.0 * Math.Log(1.0 - Math.Exp(-x));
+            return logTerm - DebyeFunction3(x);
         }
 
         public static List<double> debyeInternalSpecificHeatList = new List<double>

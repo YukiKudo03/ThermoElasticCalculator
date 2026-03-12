@@ -17,6 +17,21 @@ public class ThermoMineralParams
         _debyeCondition = new DebyeFunctionCalculator(_vibrationalDebyeTemp);
         _deltaP = (Gamma / Volume) * DeltaE / 1000.0d;
         _q = 1.0d / 9.0d * (18.0d * Gamma * Gamma - 6.0 * Gamma - 1.0d / 2.0d / _mu * (2.0d * Finite + 1.0d) * (2.0d * Finite + 1.0d) * Mineral.Aiikk) / Gamma;
+
+        // Landau phase transition: compute Tc at current pressure, then corrections
+        _landauTc = LandauCalculator.GetTc(Pressure, mineral.Tc0, mineral.VD, mineral.SD);
+        _landauVolume = LandauCalculator.GetVolume(targetTemperature, _landauTc, mineral.VD);
+        _landauEntropy = LandauCalculator.GetEntropy(targetTemperature, _landauTc, mineral.SD);
+        _landauFreeEnergy = LandauCalculator.GetFreeEnergy(targetTemperature, _landauTc, mineral.SD);
+
+        // Magnetic contribution: F_mag = -T * r * R * ln(2S+1)
+        if (mineral.MagneticAtomCount > 0 && mineral.SpinQuantumNumber > 0)
+        {
+            _magneticFreeEnergy = -targetTemperature * mineral.MagneticAtomCount
+                * PhysicConstants.GasConst * Math.Log(2.0 * mineral.SpinQuantumNumber + 1.0);
+            _magneticEntropy = mineral.MagneticAtomCount
+                * PhysicConstants.GasConst * Math.Log(2.0 * mineral.SpinQuantumNumber + 1.0);
+        }
     }
 
     private readonly double _mu;
@@ -30,6 +45,16 @@ public class ThermoMineralParams
     private readonly double _gamma;
     private readonly double _ethaS;
     private readonly double _q;
+
+    // Landau phase transition fields
+    private readonly double _landauTc;
+    private readonly double _landauVolume;
+    private readonly double _landauEntropy;
+    private readonly double _landauFreeEnergy;
+
+    // Magnetic contribution fields
+    private readonly double _magneticFreeEnergy;
+    private readonly double _magneticEntropy;
 
     /// <summary>Temperature Effect on Pressure [GPa]</summary>
     public double DeltaP => _deltaP;
@@ -45,8 +70,22 @@ public class ThermoMineralParams
     /// <summary>Finite Strain</summary>
     public double Finite => _targetFinite;
 
-    /// <summary>Molar Volume under Condition [cm3/mol]</summary>
-    public double Volume => _mineral.FiniteToVolume(Finite);
+    /// <summary>Molar Volume under Condition [cm3/mol] (includes Landau correction)</summary>
+    public double Volume => _mineral.FiniteToVolume(Finite) + _landauVolume;
+
+    /// <summary>Landau critical temperature at current pressure [K]</summary>
+    public double LandauTc => _landauTc;
+    /// <summary>Landau free energy contribution [J/mol]</summary>
+    public double LandauFreeEnergy => _landauFreeEnergy;
+    /// <summary>Landau entropy contribution [J/mol/K]</summary>
+    public double LandauEntropy => _landauEntropy;
+    /// <summary>Landau volume contribution [cm³/mol]</summary>
+    public double LandauVolume => _landauVolume;
+
+    /// <summary>Magnetic free energy contribution [J/mol]</summary>
+    public double MagneticFreeEnergy => _magneticFreeEnergy;
+    /// <summary>Magnetic entropy contribution [J/mol/K]</summary>
+    public double MagneticEntropy => _magneticEntropy;
 
     /// <summary>Calculate Temperature [K]</summary>
     public double Temperature => _targetTemperature;
@@ -116,6 +155,69 @@ public class ThermoMineralParams
     /// <summary>Bulk Sound Velocity [m/s]</summary>
     public double Vb => 1000.0d * Math.Sqrt(KS / Density);
 
+    /// <summary>
+    /// Cold (compression) energy: F_cold = 9*K0*V0 * [f²/2 + a1*f³/6]
+    /// where a1 = K'0 - 4. Result in kJ/mol (V0 in cm³/mol, K0 in GPa).
+    /// </summary>
+    public double FCold
+    {
+        get
+        {
+            double f = Finite;
+            double a1 = Mineral.K1Prime - 4.0;
+            // 9*K0*V0 in GPa*cm³/mol = 0.001 * kJ/mol (since 1 GPa·cm³ = 0.001 kJ)
+            return 9.0 * Mineral.KZero * Mineral.MolarVolume * (f * f / 2.0 + a1 * f * f * f / 6.0) * 0.001;
+        }
+    }
+
+    /// <summary>
+    /// Thermal free energy: n*kB*T * [3*ln(1-e^(-θ/T)) - D3(θ/T)]
+    /// minus the reference at T_ref. Result in kJ/mol.
+    /// </summary>
+    public double FThermal
+    {
+        get
+        {
+            var refDebye = new DebyeFunctionCalculator(Mineral.DebyeTempZero);
+            double fAtT = _debyeCondition.GetThermalFreeEnergyPerAtom(Temperature);
+            double fAtRef = refDebye.GetThermalFreeEnergyPerAtom(Mineral.RefTemp);
+            // kB*T per atom, n atoms, convert J→kJ
+            double kB = PhysicConstants.Boltzman;
+            return Mineral.NumAtoms * (kB * Temperature * fAtT - kB * Mineral.RefTemp * fAtRef)
+                * PhysicConstants.NA / 1000.0;
+        }
+    }
+
+    /// <summary>
+    /// Total Helmholtz free energy F = F0 + F_cold + F_thermal + F_Landau + F_mag [kJ/mol]
+    /// </summary>
+    public double HelmholtzF =>
+        Mineral.F0 + FCold + FThermal + LandauFreeEnergy / 1000.0 + MagneticFreeEnergy / 1000.0;
+
+    /// <summary>
+    /// Entropy S = -∂F/∂T (numerical central difference) [J/mol/K]
+    /// </summary>
+    public double Entropy
+    {
+        get
+        {
+            double dT = 0.5;
+            double T = Temperature;
+            if (T < dT + 1) return 0.0;
+
+            // Compute F at T+dT and T-dT using same finite strain
+            var thPlus = new ThermoMineralParams(Finite, T + dT, Mineral);
+            var thMinus = new ThermoMineralParams(Finite, T - dT, Mineral);
+            return -(thPlus.HelmholtzF - thMinus.HelmholtzF) / (2.0 * dT) * 1000.0; // kJ→J
+        }
+    }
+
+    /// <summary>
+    /// Gibbs free energy G = F + PV [kJ/mol]
+    /// P in GPa, V in cm³/mol → PV in GPa·cm³/mol = 0.001 kJ/mol
+    /// </summary>
+    public double GibbsG => HelmholtzF + Pressure * Volume * 0.001;
+
     public ResultSummary ExportResults()
     {
         return new ResultSummary
@@ -133,6 +235,9 @@ public class ThermoMineralParams
             KT = KT,
             Q = Q,
             Volume = Volume,
+            HelmholtzF = HelmholtzF,
+            GibbsG = GibbsG,
+            Entropy = Entropy,
         };
     }
 }

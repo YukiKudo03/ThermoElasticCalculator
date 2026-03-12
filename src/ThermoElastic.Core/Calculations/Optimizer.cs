@@ -12,6 +12,7 @@ public abstract class Optimizer
 
     public Func<double, double> OptimizeFunction { get; set; }
     protected double Thresh = 1e-8;
+    protected int MaxIterations = 1000;
     public double InitMin { get; set; }
     public double InitMax { get; set; }
 
@@ -32,10 +33,13 @@ public class ReglaFalsiOptimizer : Optimizer
         var high = InitMax;
         var fa = OptimizeFunction(InitMin);
         var fb = OptimizeFunction(InitMax);
-        double x;
-        while (true)
+        double x = (low + high) / 2.0;
+        for (int i = 0; i < MaxIterations; i++)
         {
-            x = (low * OptimizeFunction(high) - high * OptimizeFunction(low)) / (OptimizeFunction(high) - OptimizeFunction(low));
+            double fh = OptimizeFunction(high);
+            double fl = OptimizeFunction(low);
+            if (Math.Abs(fh - fl) < 1e-15) break;
+            x = (low * fh - high * fl) / (fh - fl);
             double fx = OptimizeFunction(x);
             if (Math.Abs(fx) < Thresh)
             {
@@ -63,14 +67,17 @@ public class SecantOptimizer : Optimizer
 
     private double df(double a, double b)
     {
-        return OptimizeFunction(b) * (b - a) / (OptimizeFunction(b) - OptimizeFunction(a));
+        double fb = OptimizeFunction(b);
+        double fa = OptimizeFunction(a);
+        if (Math.Abs(fb - fa) < 1e-15) return 0;
+        return fb * (b - a) / (fb - fa);
     }
 
     public override double DoOptimize()
     {
         double x0 = InitMin;
         double x1 = InitMax;
-        while (true)
+        for (int i = 0; i < MaxIterations; i++)
         {
             double x2 = x1 - df(x1, x0);
             if (Math.Abs(x2 - x1) < Thresh)
@@ -95,8 +102,8 @@ public class BisectionOptimizer : Optimizer
         double high = InitMax;
         double fa = OptimizeFunction(low);
         double fb = OptimizeFunction(high);
-        double x;
-        while (true)
+        double x = (low + high) / 2.0;
+        for (int i = 0; i < MaxIterations; i++)
         {
             x = (low + high) / 2.0d;
             double fx = OptimizeFunction(x);

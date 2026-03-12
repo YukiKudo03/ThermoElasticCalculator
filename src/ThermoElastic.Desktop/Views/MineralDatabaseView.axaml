@@ -1,0 +1,71 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.MineralDatabaseView"
+             x:DataType="vm:MineralDatabaseViewModel">
+
+    <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Text="SLB2011 Mineral Database" FontWeight="Bold" FontSize="16" Margin="0,0,0,8" />
+
+        <!-- Search bar -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBox Text="{Binding SearchText}" Width="300" Watermark="Search minerals..." />
+            <Button Content="Search" Command="{Binding SearchCommand}" />
+            <Button Content="Clear" Command="{Binding ClearSearchCommand}" />
+        </StackPanel>
+
+        <!-- Selected mineral details -->
+        <Border DockPanel.Dock="Bottom" BorderBrush="Gray" BorderThickness="1" Padding="8" Margin="0,8,0,0"
+                IsVisible="{Binding SelectedMineral, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <StackPanel DataContext="{Binding SelectedMineral}" Spacing="4">
+                <TextBlock FontWeight="Bold" FontSize="14">
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="{}{0} ({1})">
+                            <Binding Path="MineralName" />
+                            <Binding Path="PaperName" />
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+                <WrapPanel>
+                    <TextBlock Text="{Binding NumAtoms, StringFormat='n={0}'}" Margin="0,0,16,0" />
+                    <TextBlock Text="{Binding MolarVolume, StringFormat='V0={0} cm³/mol'}" Margin="0,0,16,0" />
+                    <TextBlock Text="{Binding MolarWeight, StringFormat='M={0} g/mol'}" Margin="0,0,16,0" />
+                    <TextBlock Text="{Binding KZero, StringFormat='K0={0} GPa'}" Margin="0,0,16,0" />
+                    <TextBlock Text="{Binding K1Prime, StringFormat='Kp={0}'}" Margin="0,0,16,0" />
+                    <TextBlock Text="{Binding GZero, StringFormat='G0={0} GPa'}" Margin="0,0,16,0" />
+                    <TextBlock Text="{Binding G1Prime, StringFormat='Gp={0}'}" Margin="0,0,16,0" />
+                    <TextBlock Text="{Binding DebyeTempZero, StringFormat='θ0={0} K'}" Margin="0,0,16,0" />
+                    <TextBlock Text="{Binding GammaZero, StringFormat='γ0={0}'}" Margin="0,0,16,0" />
+                    <TextBlock Text="{Binding QZero, StringFormat='q0={0}'}" Margin="0,0,16,0" />
+                    <TextBlock Text="{Binding EhtaZero, StringFormat='ηs0={0}'}" Margin="0,0,16,0" />
+                    <TextBlock Text="{Binding F0, StringFormat='F0={0} kJ/mol'}" Margin="0,0,16,0" />
+                </WrapPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Mineral list -->
+        <DataGrid ItemsSource="{Binding Minerals}"
+                  SelectedItem="{Binding SelectedMineral}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  CanUserSortColumns="True"
+                  GridLinesVisibility="Horizontal">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Name" Binding="{Binding MineralName}" Width="140" />
+                <DataGridTextColumn Header="Abbr" Binding="{Binding PaperName}" Width="60" />
+                <DataGridTextColumn Header="n" Binding="{Binding NumAtoms}" Width="40" />
+                <DataGridTextColumn Header="V0" Binding="{Binding MolarVolume}" Width="70" />
+                <DataGridTextColumn Header="M" Binding="{Binding MolarWeight}" Width="70" />
+                <DataGridTextColumn Header="K0" Binding="{Binding KZero}" Width="60" />
+                <DataGridTextColumn Header="K'" Binding="{Binding K1Prime}" Width="50" />
+                <DataGridTextColumn Header="G0" Binding="{Binding GZero}" Width="60" />
+                <DataGridTextColumn Header="G'" Binding="{Binding G1Prime}" Width="50" />
+                <DataGridTextColumn Header="θ0" Binding="{Binding DebyeTempZero}" Width="60" />
+                <DataGridTextColumn Header="γ0" Binding="{Binding GammaZero}" Width="50" />
+                <DataGridTextColumn Header="q0" Binding="{Binding QZero}" Width="50" />
+                <DataGridTextColumn Header="ηs0" Binding="{Binding EhtaZero}" Width="50" />
+                <DataGridTextColumn Header="F0" Binding="{Binding F0}" Width="80" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

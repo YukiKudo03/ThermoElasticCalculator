@@ -19,6 +19,9 @@ public class ResultSummary
     public double Alpha { get; set; }
     public double EthaS { get; set; }
     public double Q { get; set; }
+    public double HelmholtzF { get; set; }
+    public double GibbsG { get; set; }
+    public double Entropy { get; set; }
 
     public double Vb => 1000.0d * Math.Sqrt(KS / Density);
     public double Vs => 1000.0d * Math.Sqrt(GS / Density);

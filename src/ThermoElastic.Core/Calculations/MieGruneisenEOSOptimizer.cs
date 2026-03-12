@@ -26,16 +26,19 @@ public class MieGruneisenEOSOptimizer
     {
         double finite;
         double refPressure = _givenPressure;
-        while (true)
+        int maxIter = 500;
+        for (int i = 0; i < maxIter; i++)
         {
             finite = _mineral.BM3Finite(refPressure);
             var th = new ThermoMineralParams(finite, _givenTemp, _mineral);
             if (Math.Abs(_givenPressure - th.Pressure) < 1e-5)
             {
-                break;
+                return th;
             }
             refPressure = refPressure + (_givenPressure - th.Pressure);
         }
+        // Return best effort if not converged
+        finite = _mineral.BM3Finite(refPressure);
         return new ThermoMineralParams(finite, _givenTemp, _mineral);
     }
 }

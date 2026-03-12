@@ -6,6 +6,8 @@ public class RockMineralEntry
 {
     public MineralParams Mineral { get; set; } = new();
     public double VolumeRatio { get; set; }
+    public SolidSolution? Solution { get; set; }
+    public double[]? SolutionComposition { get; set; }
 }
 
 public class RockComposition
