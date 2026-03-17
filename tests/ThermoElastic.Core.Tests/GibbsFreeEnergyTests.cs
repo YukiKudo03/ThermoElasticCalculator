@@ -38,7 +38,7 @@ public class GibbsFreeEnergyTests
         var optimizer = new MieGruneisenEOSOptimizer(mineral, 10.0, 1500.0);
         var th = optimizer.ExecOptimize();
 
-        double expectedG = th.HelmholtzF + th.Pressure * th.Volume * 0.001;
+        double expectedG = th.HelmholtzF + th.Pressure * th.Volume;
         Assert.Equal(expectedG, th.GibbsG, 6);
     }
 

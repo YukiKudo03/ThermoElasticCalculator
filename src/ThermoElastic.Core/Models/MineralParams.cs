@@ -101,7 +101,7 @@ public class MineralParams
         var term1 = Math.Pow(1.0d + 2.0d * finite, 5.0d / 2.0d);
         var term2 = (3.0d * KZero * G1Prime - 5.0d * GZero) * finite;
         var term3 = (6.0 * KZero * G1Prime - 24.0d * KZero - 14.0d * GZero + 9.0d / 2.0d * KZero * K1Prime) * finite * finite;
-        return term1 * (GZero + term1 + term2 + term3);
+        return term1 * (GZero + term2 + term3);
     }
 
     public string ParamSymbol => $"{MineralName} ({PaperName})";
