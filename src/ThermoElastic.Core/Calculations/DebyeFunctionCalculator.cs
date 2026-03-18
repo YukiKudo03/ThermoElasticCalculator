@@ -123,6 +123,26 @@ public class DebyeFunctionCalculator
     }
 
     /// <summary>
+    /// Thermal entropy per atom [J/(mol_atom·K)]:
+    /// S_atom(T) = R · [4·D₃(x) - 3·ln(1 - e⁻ˣ)]  where x = θ/T
+    /// Derived from S = -∂F/∂T analytically.
+    /// </summary>
+    public double GetEntropy(double givenTemp)
+    {
+        if (givenTemp < 1e-10) return 0.0;
+        double x = _debyeTemp / givenTemp;
+
+        double d3 = DebyeFunction3(x);
+        double logTerm;
+        if (x > 100)
+            logTerm = -x; // ln(1 - e^(-x)) ≈ -x for large x
+        else
+            logTerm = Math.Log(1.0 - Math.Exp(-x));
+
+        return R * (4.0 * d3 - 3.0 * logTerm);
+    }
+
+    /// <summary>
     /// Thermal free energy contribution per atom (in units of kB·T):
     /// f_th(x) = 3·ln(1 - e⁻ˣ) - D₃(x)
     /// where x = θ/T
