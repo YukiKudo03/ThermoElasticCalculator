@@ -1,4 +1,4 @@
-<!-- Generated: 2026-03-18 | Files scanned: 3 | Token estimate: ~300 -->
+<!-- Generated: 2026-03-19 | Files scanned: 5 | Token estimate: ~400 -->
 # Dependencies
 
 ## NuGet Packages
@@ -28,10 +28,12 @@
 ## External Validation
 
 - **BurnMan** (Python, pip) — SLB2011 reference implementation for cross-validation
+- **PREM** (Dziewonski & Anderson, 1981) — built-in reference Earth model
 - Reference CSV files in `tests/ThermoElastic.Core.Tests/TestData/`
 
 ## CI/CD
 
 - GitHub Actions: `.github/workflows/ci.yml`
 - Matrix: ubuntu-latest, windows-latest, macos-latest
-- Pipeline: restore → build (Release) → test
+- Pipeline: restore → build (Release) → test → **publish (self-contained)** → **upload artifacts**
+- Artifacts: win-x64, linux-x64, osx-x64 (30-day retention)

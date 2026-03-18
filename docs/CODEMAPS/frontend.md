@@ -1,4 +1,4 @@
-<!-- Generated: 2026-03-18 | Files scanned: 18 | Token estimate: ~500 -->
+<!-- Generated: 2026-03-19 | Files scanned: 28 | Token estimate: ~550 -->
 # Frontend (ThermoElastic.Desktop)
 
 ## Technology
@@ -6,17 +6,18 @@
 - Avalonia 11.2 (cross-platform XAML)
 - CommunityToolkit.Mvvm 8.4 (source-generated ObservableObject, RelayCommand)
 - .NET 8.0
+- Version: v0.5.0
 
 ## View Hierarchy
 
 ```
 MainWindow
 ├── MineralEditorView     — Edit mineral params, test calc at single P,T
-├── MineralDatabaseView   — Browse SLB2011 endmember library
+├── MineralDatabaseView   — Browse SLB2011 endmember library (46 minerals)
 ├── PTProfileView         — Build P-T profile, calc along path
-├── MixtureView           — Two-mineral binary mixing
-├── RockCalculatorView    — Multi-mineral rock composition
-├── ResultsView           — Display/export result tables (CSV)
+├── MixtureView           — Two-mineral binary mixing (incl. HS bounds)
+├── RockCalculatorView    — Multi-mineral rock composition + predefined rocks
+├── ResultsView           — Display/export result tables (18-col CSV)
 └── ChartView             — Property vs P-T visualization
 ```
 
@@ -27,9 +28,9 @@ MainWindow
 | MineralEditorVM | MieGruneisenEOSOptimizer, MineralParams |
 | MineralDatabaseVM | MineralDatabase.GetAll() |
 | PTProfileVM | PTProfileCalculator, PTProfile |
-| MixtureVM | MixtureCalculator (Voigt/Reuss/Hill) |
-| RockCalculatorVM | RockCalculator, RockComposition |
-| ResultsVM | ResultSummary (CSV export) |
+| MixtureVM | MixtureCalculator (Voigt/Reuss/Hill/HS), VProfileCalculator |
+| RockCalculatorVM | RockCalculator, RockComposition, PredefinedRocks |
+| ResultsVM | ResultSummary (CSV 18-col export incl. F, G, S) |
 | ChartVM | ResultSummary data binding |
 
 ## Navigation
@@ -45,4 +46,4 @@ Each View binds to its ViewModel through Avalonia DataContext.
 | `.ptpf` | P-T profile | JSON |
 | `.vpf` | Composition profile | JSON |
 | `.rock` | Rock composition | JSON |
-| `.csv` | Import/export data | CSV |
+| `.csv` | Import/export data | CSV (18 columns) |

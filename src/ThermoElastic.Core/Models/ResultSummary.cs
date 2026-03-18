@@ -28,14 +28,14 @@ public class ResultSummary
     public double Vp => 1000.0d * Math.Sqrt((KS + 4.0d / 3.0d * GS) / Density);
 
     public static string ColumnsCSV =>
-        "P[GPa], T[K], Vp[m/s], Vs[m/s], Vb[m/s], ρ[g/cm3], V[cm3/mol], KS[GPa], KT[GPa], GS[GPa], α[K-1], θd[K], γ, ηs, q";
+        "P[GPa], T[K], Vp[m/s], Vs[m/s], Vb[m/s], ρ[g/cm3], V[cm3/mol], KS[GPa], KT[GPa], GS[GPa], α[K-1], θd[K], γ, ηs, q, F[kJ/mol], G[kJ/mol], S[J/mol/K]";
 
     public static List<string> ColumnStrs =>
-        new() { "P[GPa]", "T[K]", "Vp[m/s]", "Vs[m/s]", "Vb[m/s]", "ρ[g/cm3]", "V[cm3/mol]", "KS[GPa]", "KT[GPa]", "GS[GPa]", "α[K-1]", "θd[K]", "γ", "ηs", "q" };
+        new() { "P[GPa]", "T[K]", "Vp[m/s]", "Vs[m/s]", "Vb[m/s]", "ρ[g/cm3]", "V[cm3/mol]", "KS[GPa]", "KT[GPa]", "GS[GPa]", "α[K-1]", "θd[K]", "γ", "ηs", "q", "F[kJ/mol]", "G[kJ/mol]", "S[J/mol/K]" };
 
     public string ExportSummaryAsColumn()
     {
-        return $"{GivenP}, {GivenT}, {Vp}, {Vs}, {Vb}, {Density}, {Volume}, {KS}, {KT}, {GS}, {Alpha}, {DebyeTemp}, {Gamma}, {EthaS}, {Q}";
+        return $"{GivenP}, {GivenT}, {Vp}, {Vs}, {Vb}, {Density}, {Volume}, {KS}, {KT}, {GS}, {Alpha}, {DebyeTemp}, {Gamma}, {EthaS}, {Q}, {HelmholtzF}, {GibbsG}, {Entropy}";
     }
 
     public string ExportSummaryAsJson()

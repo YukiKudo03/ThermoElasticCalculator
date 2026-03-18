@@ -43,9 +43,11 @@ public class EquilibriumAggregateCalculator
                     var result = thermo.ExportResults();
                     individualResults.Add((phase.Name, ratio, result));
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Skip phases that can't be computed
+                    // Log warning: phase skipped due to computation failure
+                    System.Diagnostics.Debug.WriteLine(
+                        $"Warning: Phase '{phase.Name}' skipped at P={pt.Pressure} GPa, T={pt.Temperature} K: {ex.Message}");
                 }
             }
 
@@ -59,6 +61,7 @@ public class EquilibriumAggregateCalculator
                 {
                     MixtureMethod.Voigt => mixer.VoigtAverage(),
                     MixtureMethod.Reuss => mixer.ReussAverage(),
+                    MixtureMethod.HS => mixer.HashinShtrikmanAverage(),
                     _ => mixer.HillAverage(),
                 };
 
@@ -96,9 +99,10 @@ public class EquilibriumAggregateCalculator
                 var result = thermo.ExportResults();
                 individualResults.Add((phase.Name, ratio, result));
             }
-            catch
+            catch (Exception ex)
             {
-                // Skip phases that can't be computed
+                System.Diagnostics.Debug.WriteLine(
+                    $"Warning: Phase '{phase.Name}' skipped at P={P} GPa, T={T} K: {ex.Message}");
             }
         }
 
@@ -111,6 +115,7 @@ public class EquilibriumAggregateCalculator
             {
                 MixtureMethod.Voigt => mixer.VoigtAverage(),
                 MixtureMethod.Reuss => mixer.ReussAverage(),
+                MixtureMethod.HS => mixer.HashinShtrikmanAverage(),
                 _ => mixer.HillAverage(),
             };
         }

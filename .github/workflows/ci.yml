@@ -29,3 +29,18 @@ jobs:
 
     - name: Test
       run: dotnet test ThermoElasticCalculator.sln --no-build --configuration Release --verbosity normal
+
+    - name: Publish
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        dotnet publish src/ThermoElastic.Desktop/ThermoElastic.Desktop.csproj -c Release -r win-x64 --self-contained -o publish/win-x64
+        dotnet publish src/ThermoElastic.Desktop/ThermoElastic.Desktop.csproj -c Release -r linux-x64 --self-contained -o publish/linux-x64
+        dotnet publish src/ThermoElastic.Desktop/ThermoElastic.Desktop.csproj -c Release -r osx-x64 --self-contained -o publish/osx-x64
+
+    - name: Upload artifacts
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ThermoElasticCalculator-binaries
+        path: publish/
+        retention-days: 30

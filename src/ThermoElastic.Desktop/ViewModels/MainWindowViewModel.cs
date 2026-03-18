@@ -9,7 +9,7 @@ public partial class MainWindowViewModel : ObservableObject
     private object? _currentView;
 
     [ObservableProperty]
-    private string _title = "ThermoElasticCalculator v0.4.0";
+    private string _title = "ThermoElasticCalculator v0.5.0";
 
     private readonly MineralEditorViewModel _mineralEditorViewModel = new();
     private readonly PTProfileViewModel _ptProfileViewModel = new();

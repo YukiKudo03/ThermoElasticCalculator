@@ -186,6 +186,46 @@ public static class SolutionCalculator
     }
 
     /// <summary>
+    /// Rigorous solid solution property calculation: compute each endmember at P,T
+    /// individually, then mix the results (volume-weighted).
+    /// This avoids the approximation of linear EOS parameter interpolation.
+    /// </summary>
+    public static ResultSummary? ComputeRigorousSolution(
+        double[] x, List<MineralParams> endmembers, double P, double T)
+    {
+        if (x.Length != endmembers.Count) return null;
+
+        var results = new List<(double ratio, ResultSummary result)>();
+        for (int i = 0; i < x.Length; i++)
+        {
+            if (x[i] < 1e-15) continue;
+            try
+            {
+                var opt = new MieGruneisenEOSOptimizer(endmembers[i], Math.Max(P, 0.0001), T);
+                var thermo = opt.ExecOptimize();
+                results.Add((x[i], thermo.ExportResults()));
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        if (results.Count == 0) return null;
+
+        // Volume-weighted mixing (Voigt-Reuss-Hill average)
+        var mixer = new MixtureCalculator(results);
+        var mixed = mixer.HillAverage();
+        if (mixed != null)
+        {
+            mixed.Name = "SolidSolution";
+            mixed.GivenP = P;
+            mixed.GivenT = T;
+        }
+        return mixed;
+    }
+
+    /// <summary>
     /// Validates that composition fractions sum to 1.0 (within tolerance).
     /// </summary>
     public static bool ValidateComposition(double[] x, double tolerance = 1e-6)

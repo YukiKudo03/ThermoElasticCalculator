@@ -66,4 +66,76 @@ public class MixtureCalculator
             GS = (reuss.GS + voigt.GS) / 2.0d,
         };
     }
+
+    /// <summary>
+    /// Hashin-Shtrikman lower bound for N-component mixtures.
+    /// Uses the softest phase as reference (minimum K and G).
+    /// K_HS = K_ref + Σ f_i / (1/(K_i - K_ref) + 3*f_ref / (3*K_ref + 4*G_ref))
+    /// G_HS = G_ref + Σ f_i / (1/(G_i - G_ref) + 6*f_ref*(K_ref + 2*G_ref) / (5*G_ref*(3*K_ref + 4*G_ref)))
+    /// Reference: Watt, Davies & O'Connell (1976)
+    /// </summary>
+    public ResultSummary? HashinShtrikmanAverage()
+    {
+        if (IsNotCalculatable) return null;
+        if (_results.Count == 1)
+        {
+            return new ResultSummary
+            {
+                Name = "Hashin-Shtrikman",
+                GivenP = _results[0].elemResult.GivenP,
+                GivenT = _results[0].elemResult.GivenT,
+                Volume = _results[0].elemResult.Volume,
+                Density = _results[0].elemResult.Density,
+                KT = _results[0].elemResult.KT,
+                KS = _results[0].elemResult.KS,
+                GS = _results[0].elemResult.GS,
+            };
+        }
+
+        // Find the softest phase (minimum K and G) as reference for lower bound
+        double Kmin = _results.Min(r => r.elemResult.KS);
+        double Gmin = _results.Min(r => r.elemResult.GS);
+
+        double zK = 4.0 * Gmin / 3.0;  // ζ_K = 4G_min/3
+        double zG = Gmin * (9.0 * Kmin + 8.0 * Gmin) / (6.0 * (Kmin + 2.0 * Gmin)); // ζ_G
+
+        // K_HS- = <1/(K_i + ζ_K)>^{-1} - ζ_K
+        double sumInvKpZ = 0, sumInvGpZ = 0;
+        for (int i = 0; i < _results.Count; i++)
+        {
+            double fi = _results[i].elemRatio;
+            double Ki = _results[i].elemResult.KS;
+            double Gi = _results[i].elemResult.GS;
+
+            sumInvKpZ += fi / (Ki + zK);
+            sumInvGpZ += fi / (Gi + zG);
+        }
+
+        double KHS = 1.0 / sumInvKpZ - zK;
+        double GHS = 1.0 / sumInvGpZ - zG;
+
+        // Repeat for KT
+        double KTmin = _results.Min(r => r.elemResult.KT);
+        double sumInvKTpZ = 0;
+        for (int i = 0; i < _results.Count; i++)
+        {
+            double fi = _results[i].elemRatio;
+            double KTi = _results[i].elemResult.KT;
+            sumInvKTpZ += fi / (KTi + zK);
+        }
+        double KTHS = 1.0 / sumInvKTpZ - zK;
+
+        return new ResultSummary
+        {
+            Name = "Hashin-Shtrikman",
+            GivenP = _results[0].elemResult.GivenP,
+            GivenT = _results[0].elemResult.GivenT,
+            Volume = _results.Sum(r => r.elemRatio * r.elemResult.Volume),
+            Density = _results.Sum(r => r.elemRatio * r.elemResult.Volume * r.elemResult.Density)
+                / _results.Sum(r => r.elemRatio * r.elemResult.Volume),
+            KT = KTHS,
+            KS = KHS,
+            GS = GHS,
+        };
+    }
 }

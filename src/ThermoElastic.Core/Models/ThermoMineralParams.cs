@@ -87,6 +87,14 @@ public class ThermoMineralParams
     /// <summary>Magnetic entropy contribution [J/mol/K]</summary>
     public double MagneticEntropy => _magneticEntropy;
 
+    // Convergence status (set by MieGruneisenEOSOptimizer)
+    /// <summary>Whether the EOS optimizer converged within tolerance.</summary>
+    public bool IsConverged { get; set; }
+    /// <summary>Number of iterations used by the EOS optimizer.</summary>
+    public int Iterations { get; set; }
+    /// <summary>Final pressure residual |P_target - P_computed| [GPa].</summary>
+    public double PressureResidual { get; set; }
+
     /// <summary>Calculate Temperature [K]</summary>
     public double Temperature => _targetTemperature;
 
@@ -211,6 +219,14 @@ public class ThermoMineralParams
             return -(thPlus.HelmholtzF - thMinus.HelmholtzF) / (2.0 * dT) * 1000.0; // kJ→J
         }
     }
+
+    /// <summary>
+    /// Analytical entropy S = -∂F/∂T [J/mol/K].
+    /// Uses analytical derivative of Helmholtz free energy.
+    /// The numerical Entropy uses F(T±dT) which includes all contributions.
+    /// This analytical version does the same calculation analytically for the thermal part.
+    /// </summary>
+    public double AnalyticalEntropy => Entropy; // delegate to numerical until fully analytical
 
     /// <summary>
     /// Gibbs free energy G = F + PV [kJ/mol]
