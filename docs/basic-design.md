@@ -5,7 +5,7 @@
 | 項目 | 内容 |
 |------|------|
 | 文書名 | ThermoElasticCalculator 基本設計書 |
-| バージョン | 0.3.0 |
+| バージョン | 0.4.0 |
 | 作成日 | 2026-03-10 |
 
 ---
@@ -32,13 +32,15 @@
 │              ThermoElastic.Core                        │
 │              (.NET 8 クラスライブラリ)                    │
 │                                                        │
-│  ┌───────────────┐ ┌──────────────┐ ┌──────────────┐ │
-│  │    Models      │ │ Calculations │ │     IO       │ │
-│  │ MineralParams  │ │ EOSOptimizer │ │ JsonIO       │ │
-│  │ RockComposition│ │ MixtureCalc  │ │ CsvIO        │ │
-│  │ PTProfile      │ │ DebyeFunction│ │              │ │
-│  │ ResultSummary  │ │ Optimizer    │ │              │ │
-│  └───────────────┘ └──────────────┘ └──────────────┘ │
+│  ┌──────────────┐┌──────────────┐┌─────────┐┌──────┐│
+│  │   Models     ││ Calculations ││ Database ││  IO  ││
+│  │ MineralParams││ EOSOptimizer ││ SLB2011  ││JsonIO││
+│  │ ThermoMineral││ DebyeFunction││Endmembers││CsvIO ││
+│  │ SolidSolution││ LandauCalc   ││Solutions ││      ││
+│  │ PhaseAssem.  ││ GibbsMinim.  ││MineralDB ││      ││
+│  │ ResultSummary││ SolutionCalc ││          ││      ││
+│  │ RockComposit.││ MixtureCalc  ││          ││      ││
+│  └──────────────┘└──────────────┘└─────────┘└──────┘│
 └──────────────────────────────────────────────────────┘
 ```
 
@@ -62,20 +64,34 @@ ThermoElasticCalculator.sln
 ├── src/ThermoElastic.Core/              # 計算エンジン
 │   ├── ThermoElastic.Core.csproj        # net8.0 クラスライブラリ
 │   ├── Models/
-│   │   ├── MineralParams.cs             # 鉱物パラメータ
-│   │   ├── ThermoMineralParams.cs       # 計算済み熱弾性特性
+│   │   ├── MineralParams.cs             # 鉱物パラメータ（BM3 EOS含む）
+│   │   ├── ThermoMineralParams.cs       # 計算済み熱弾性特性（F, G, S含む）
 │   │   ├── ResultSummary.cs             # 結果集約
 │   │   ├── PTData.cs                    # P-T データ点
 │   │   ├── PTProfile.cs                 # P-T プロファイル
-│   │   └── RockComposition.cs           # 岩石組成
+│   │   ├── RockComposition.cs           # 岩石組成
+│   │   ├── PhaseAssemblage.cs           # 相集合体（Gibbs最小化用）
+│   │   ├── PhaseEntry.cs                # 単一相エントリ
+│   │   ├── SolidSolution.cs             # 固溶体定義
+│   │   ├── SolutionSite.cs              # 結晶学サイト
+│   │   └── InteractionParam.cs          # van Laar 相互作用パラメータ
 │   ├── Calculations/
 │   │   ├── MieGruneisenEOSOptimizer.cs  # EOS最適化
-│   │   ├── MixtureCalculator.cs         # 混合計算
+│   │   ├── DebyeFunctionCalculator.cs   # Debye関数（解析的Simpson積分）
+│   │   ├── LandauCalculator.cs          # Landau 変位型相転移
+│   │   ├── SolutionCalculator.cs        # 固溶体熱力学
+│   │   ├── GibbsMinimizer.cs            # Gibbs自由エネルギー最小化
+│   │   ├── EquilibriumAggregateCalculator.cs  # 平衡相+混合計算
+│   │   ├── PhaseDiagramCalculator.cs    # 相境界計算
+│   │   ├── MixtureCalculator.cs         # 機械的混合計算
 │   │   ├── VProfileCalculator.cs        # 組成プロファイル
 │   │   ├── PTProfileCalculator.cs       # P-Tプロファイル計算
 │   │   ├── RockCalculator.cs            # 岩石物性計算
-│   │   ├── DebyeFunctionCalculator.cs   # Debye関数
 │   │   └── Optimizer.cs                 # 数値最適化
+│   ├── Database/
+│   │   ├── SLB2011Endmembers.cs         # 42端成分（BurnMan検証済み）
+│   │   ├── SLB2011Solutions.cs          # 固溶体モデル定義
+│   │   └── MineralDatabase.cs           # 静的アクセサ
 │   ├── IO/
 │   │   ├── MineralCsvIO.cs              # CSV入出力
 │   │   └── JsonFileIO.cs               # JSON入出力ヘルパー
@@ -88,24 +104,40 @@ ThermoElasticCalculator.sln
 │   ├── Views/
 │   │   ├── MainWindow.axaml             # メインウィンドウ
 │   │   ├── MineralEditorView.axaml      # 鉱物パラメータ編集
+│   │   ├── MineralDatabaseView.axaml    # SLB2011 鉱物データベース閲覧
 │   │   ├── PTProfileView.axaml          # P-Tプロファイル計算
 │   │   ├── MixtureView.axaml            # 2鉱物混合
 │   │   ├── RockCalculatorView.axaml     # 岩石計算
-│   │   └── ResultsView.axaml            # 結果表示
+│   │   ├── ResultsView.axaml            # 結果表示
+│   │   └── ChartView.axaml              # グラフ可視化
 │   └── ViewModels/
 │       ├── MainWindowViewModel.cs
 │       ├── MineralEditorViewModel.cs
+│       ├── MineralDatabaseViewModel.cs
 │       ├── PTProfileViewModel.cs
 │       ├── MixtureViewModel.cs
 │       ├── RockCalculatorViewModel.cs
-│       └── ResultsViewModel.cs
+│       ├── ResultsViewModel.cs
+│       └── ChartViewModel.cs
 │
-├── tests/ThermoElastic.Core.Tests/      # ユニットテスト
+├── tests/ThermoElastic.Core.Tests/      # ユニットテスト（24クラス）
 │   ├── ThermoElastic.Core.Tests.csproj
-│   ├── MineralParamsTests.cs
-│   ├── EOSOptimizerTests.cs
-│   ├── MixtureCalculatorTests.cs
-│   └── CsvIOTests.cs
+│   ├── MineralParamsTests.cs            # BM3 EOS テスト
+│   ├── EOSOptimizerTests.cs             # EOS最適化テスト
+│   ├── DebyeFunctionCalculatorTests.cs  # Debye関数精度テスト
+│   ├── LandauCalculatorTests.cs         # Landau相転移テスト
+│   ├── MagneticContributionTests.cs     # 磁気寄与テスト
+│   ├── SolutionCalculatorTests.cs       # 固溶体テスト
+│   ├── GibbsFreeEnergyTests.cs          # 自由エネルギーテスト
+│   ├── GibbsMinimizerTests.cs           # 相平衡テスト
+│   ├── MixtureCalculatorTests.cs        # 混合モデルテスト
+│   ├── BurnManEndmemberVerificationTests.cs  # BurnManクロス検証
+│   ├── ThermodynamicIdentityTests.cs    # 熱力学恒等式検証
+│   ├── LandauSolutionVerificationTests.cs    # Landau・固溶体検証
+│   ├── MixingModelVerificationTests.cs  # 混合モデル・PREM比較
+│   ├── BurnManReferenceHelper.cs        # BurnMan CSV読込ヘルパー
+│   ├── TestData/                        # BurnManリファレンスCSV
+│   └── ... (他テストファイル)
 │
 └── thermo-dynamics/                     # 旧WinForms版（非推奨）
 ```
@@ -120,8 +152,9 @@ UI非依存な計算エンジン。全計算ロジック・データモデル・
 
 | パッケージ | 責務 |
 |-----------|------|
-| Models | データモデル定義（鉱物、岩石、プロファイル、結果） |
-| Calculations | EOS計算、混合計算、最適化、Debye関数 |
+| Models | データモデル定義（鉱物、固溶体、岩石、相集合体、プロファイル、結果） |
+| Calculations | EOS計算、Debye関数、Landau相転移、固溶体熱力学、Gibbs最小化、混合計算、最適化 |
+| Database | SLB2011 鉱物パラメータデータベース（42端成分 + 固溶体モデル） |
 | IO | JSON / CSV ファイル入出力 |
 
 #### 依存関係
@@ -129,7 +162,8 @@ UI非依存な計算エンジン。全計算ロジック・データモデル・
 ```
 Models ← Calculations ← IO
   │          │
-  └──────────┘ (Models は他に依存しない)
+  └──────────┘
+Database → Models (パラメータ生成)
 ```
 
 ### 2.2 ThermoElastic.Desktop モジュール
@@ -202,7 +236,33 @@ P,T入力  ──→ Pressure, Temperature
 結果表示 ←───── ResultsViewModel
 ```
 
-### 3.4 ファイル I/O フロー
+### 3.4 相平衡計算フロー（v0.4.0 追加）
+
+```
+[入力]                                     [Core]
+相集合体定義 ──→ EquilibriumAggregateCalculator
+  鉱物A (Fo)                                  │
+  鉱物B (Wa)          ┌──────────────────────┤
+  P-T条件              │                      │
+                       ▼                      │
+                  GibbsMinimizer              │
+                    │ 各端成分の G(P,T) 計算    │
+                    │ (MieGruneisenEOSOptimizer)│
+                    │                         │
+                    ▼                         │
+                  安定相比率の決定              │
+                    │ (SVDベース最適化)         │
+                    │                         │
+                    ▼                         ▼
+                  PhaseAssemblage ──→ MixtureCalculator
+                    (安定相+比率)       (Hill/Voigt/Reuss)
+                                          │
+                                          ▼
+                                    ResultSummary
+                                    (岩石バルク物性)
+```
+
+### 3.5 ファイル I/O フロー
 
 ```
 ┌─────────────────────┐
@@ -238,8 +298,9 @@ P,T入力  ──→ Pressure, Temperature
 ┌──────────────────────────────────────┐
 │           MainWindow                  │
 │                                      │
-│  [Mineral Library] [PT Profile]      │
-│  [Mixture]         [Rock Calculator] │
+│  [Mineral Library] [Mineral Database] │
+│  [PT Profile]      [Mixture]         │
+│  [Rock Calculator] [Chart]           │
 └──┬──────────┬──────────┬────────────┬┘
    │          │          │            │
    ▼          ▼          ▼            ▼
@@ -303,19 +364,25 @@ P,T入力  ──→ Pressure, Temperature
   "MineralName": "Forsterite",
   "PaperName": "fo",
   "NumAtoms": 7,
-  "MolarVolume": 43.6,
+  "MolarVolume": 43.603,
   "MolarWeight": 140.69,
-  "KZero": 128.0,
-  "K1Prime": 4.2,
+  "KZero": 127.96,
+  "K1Prime": 4.218,
   "K2Prime": 0,
-  "GZero": 82.0,
-  "G1Prime": 1.5,
+  "GZero": 81.60,
+  "G1Prime": 1.4626,
   "G2Prime": 0,
-  "DebyeTempZero": 809.0,
-  "GammaZero": 0.99,
-  "QZero": 2.1,
-  "EhtaZero": 2.3,
-  "RefTemp": 300.0
+  "DebyeTempZero": 809.17,
+  "GammaZero": 0.99282,
+  "QZero": 2.10672,
+  "EhtaZero": 2.2997,
+  "RefTemp": 300.0,
+  "F0": -2055.403,
+  "Tc0": 0,
+  "VD": 0,
+  "SD": 0,
+  "SpinQuantumNumber": 0,
+  "MagneticAtomCount": 0
 }
 ```
 

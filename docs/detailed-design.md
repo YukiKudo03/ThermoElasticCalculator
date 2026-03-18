@@ -5,7 +5,7 @@
 | 項目 | 内容 |
 |------|------|
 | 文書名 | ThermoElasticCalculator 詳細設計書 |
-| バージョン | 0.3.0 |
+| バージョン | 0.4.0 |
 | 作成日 | 2026-03-10 |
 
 ---
@@ -37,6 +37,12 @@
 | QZero | double | q₀ [-] |
 | EhtaZero | double | ηS₀ [-] |
 | RefTemp | double | T_ref [K] (default: 300) |
+| F0 | double | 基準状態 Helmholtz 自由エネルギー [kJ/mol] |
+| Tc0 | double | Landau 臨界温度 (P=0) [K] (0=無効) |
+| VD | double | Landau 最大過剰体積 [cm³/mol] |
+| SD | double | Landau 最大過剰エントロピー [J/(mol·K)] |
+| SpinQuantumNumber | double | スピン量子数 S (0=無効) |
+| MagneticAtomCount | double | 磁気原子数/格子単位 r (0=無効) |
 
 #### 算出プロパティ
 
@@ -76,7 +82,7 @@ KT_cold(f) = (1 + 2f)^(5/2) × K₀ × [1 + (3K₀' - 5)f + (27/2)(K₀' - 4)f²
 #### BM3 剪断弾性率
 
 ```
-GT_cold(f) = (1 + 2f)^(5/2) × [G₀ + (1+2f)^(5/2)
+GT_cold(f) = (1 + 2f)^(5/2) × [G₀
              + (3K₀G₀' - 5G₀)f
              + (6K₀G₀' - 24K₀ - 14G₀ + 9K₀K₀'/2)f²]
 ```
@@ -118,13 +124,29 @@ GT_cold(f) = (1 + 2f)^(5/2) × [G₀ + (1+2f)^(5/2)
 | KT | KT_cold + (γ+1-q₀)γΔE/V - γ²ΔCvT/V | 式(16)の熱補正 |
 | KS | KT + γ²CvT/V | KS = KT(1 + αγT) |
 | GS | GT_cold - ηs×ΔE/V | 式の熱補正 |
-| Alpha | γ × 3CvT / (nKTV) | 式(18) |
+| Alpha | γ × CvT / (T × KT × V × 1000) | SLB2005 α=γCv/(KTV) |
 | Density | Mw / V | - |
 | Vp | √[(KS + 4G/3) / ρ] | - |
 | Vs | √[G / ρ] | - |
 | Vb | √[KS / ρ] | - |
 
-**単位注意:** 内部計算は kJ/mol 系。GPa への変換は `/1000` 係数。
+**単位注意:** DeltaE/V は J/cm³ 単位。1 J/cm³ = 10⁻³ GPa のため `/1000` で GPa に変換。自由エネルギー F, G は kJ/mol。1 GPa·cm³/mol = 1 kJ/mol。
+
+#### v0.4.0 追加プロパティ
+
+| プロパティ | 計算式 | 説明 |
+|-----------|--------|------|
+| FCold | 9K₀V₀(f²/2 + a₁f³/6) | 圧縮自由エネルギー [kJ/mol] |
+| FThermal | n·kB·NA·(T·f_th(θ/T) - T_ref·f_th(θ₀/T_ref))/1000 | 熱自由エネルギー [kJ/mol] |
+| HelmholtzF | F₀ + F_cold + F_thermal + F_Landau/1000 + F_mag/1000 | Helmholtz自由エネルギー [kJ/mol] |
+| GibbsG | F + P×V | Gibbs自由エネルギー [kJ/mol] |
+| Entropy | -∂F/∂T（数値中心差分, ΔT=0.5K） | エントロピー [J/(mol·K)] |
+| LandauTc | Tc₀ + V_D×P/S_D | 現在圧力でのLandau臨界温度 [K] |
+| LandauFreeEnergy | S_D×[(T-Tc)Q² + Tc·Q⁶/3] | Landau自由エネルギー [J/mol] |
+| LandauEntropy | -S_D×Q² | Landauエントロピー [J/(mol·K)] |
+| LandauVolume | V_D×Q² | Landau体積補正 [cm³/mol] |
+| MagneticFreeEnergy | -T×r×R×ln(2S+1) | 磁気自由エネルギー [J/mol] |
+| MagneticEntropy | r×R×ln(2S+1) | 磁気エントロピー [J/(mol·K)] |
 
 ---
 
@@ -273,31 +295,35 @@ public List<ResultSummary> DoProfileCalculationAsSummary()
 ### 1.11 DebyeFunctionCalculator
 
 **ファイル:** `Core/Calculations/DebyeFunctionCalculator.cs`
-**責務:** Debyeモデルに基づく内部エネルギーと比熱をテーブル参照で計算。
+**責務:** Debyeモデルに基づく内部エネルギー・比熱・自由エネルギーを解析的数値積分で計算。
 
-#### テーブル構成
+#### 計算方式（v0.4.0 で解析的積分に移行）
 
-| テーブル | エントリ数 | キー | 説明 |
-|---------|----------|------|------|
-| debyeInternalSpecificHeatList | 1001 | θ/T × 1000 | Cv/(3nR) の値 |
-| debyeFunctionValueList | 1001 | θ/T × 1000 | 内部エネルギー値 |
+v0.3.0 まではルックアップテーブル（470KB）を使用していたが、v0.4.0 で composite Simpson's rule（500分点）による D₃(x) の直接積分に置き換え。精度向上とファイルサイズ削減（470KB → 4KB）を実現。
 
-**比率レンジ:** θ/T = 0 ～ 1000（刻み: 1）
-
-#### 補間方法
+#### 数式
 
 ```
-index = (int)(θ/T * 1000)
-fraction = θ/T * 1000 - index
-value = table[index] + fraction × (table[index+1] - table[index])
+D₃(x) = (3/x³) ∫₀ˣ t³/(eᵗ-1) dt    [Simpson 500分点]
+E_atom(T) = 3R·T·D₃(θ/T)             [J/(mol_atom)]
+Cv_atom(T) = 3R·[4D₃(x) - 3x/(eˣ-1)] [J/(mol_atom·K)]
+f_th(T) = 3·ln(1-e⁻ˣ) - D₃(x)       [無次元, kBT単位]
 ```
 
 #### メソッド
 
 | メソッド | 引数 | 戻り値 | 説明 |
 |---------|------|--------|------|
-| GetInternalEnergy(T) | T [K] | double [kJ/mol/atom] | ΔE from ref |
-| GetCv(T) | T [K] | double [kJ/mol/atom/K] | 定容比熱 |
+| DebyeFunction3(x) | x = θ/T | double | D₃(x) Debye関数（static） |
+| GetInternalEnergy(T) | T [K] | double [J/mol_atom] | 3R·D₃(θ/T)·T |
+| GetCv(T) | T [K] | double [J/(mol_atom·K)] | 3R·[4D₃-3x/(eˣ-1)] |
+| GetThermalFreeEnergyPerAtom(T) | T [K] | double [無次元] | 3ln(1-e⁻ˣ)-D₃(x) |
+
+#### 数値安定性
+
+- x < 1e-10: D₃ → 1.0（Dulong-Petit極限）
+- x > 150: D₃ → π⁴/(5x³)（漸近展開）
+- t > 40: t³/(eᵗ-1) → t³·e⁻ᵗ（オーバーフロー防止）
 
 ---
 
@@ -332,8 +358,10 @@ value = table[index] + fraction × (table[index+1] - table[index])
 #### CSV形式
 
 ```
-MineralName,PaperName,NumAtoms,MolarVolume,MolarWeight,KZero,K1Prime,K2Prime,GZero,G1Prime,G2Prime,DebyeTempZero,GammaZero,QZero,EhtaZero,RefTemp
+MineralName,PaperName,NumAtoms,MolarVolume,MolarWeight,KZero,K1Prime,K2Prime,GZero,G1Prime,G2Prime,DebyeTempZero,GammaZero,QZero,EhtaZero,RefTemp,F0,Tc0,VD,SD,SpinQuantumNumber,MagneticAtomCount
 ```
+
+**後方互換:** F0以降のフィールドは省略可能（デフォルト0）。
 
 #### メソッド
 
@@ -600,5 +628,202 @@ public void Forsterite_At10GPa_1500K_ShouldReturnExpectedVp()
 
 ### 5.4 ビルド・配布
 
-- [ ] 各プラットフォーム向けパブリッシュ確認
-- [ ] GitHub Actions CI 設定（任意）
+- [x] 各プラットフォーム向けパブリッシュ確認
+- [x] GitHub Actions CI 設定
+
+---
+
+## 6. v0.4.0 追加クラス詳細設計
+
+### 6.1 LandauCalculator
+
+**ファイル:** `Core/Calculations/LandauCalculator.cs`
+**責務:** 変位型相転移（三臨界 Landau モデル）の計算。SLB2011 式(28)-(32)。
+
+#### メソッド（全 static）
+
+| メソッド | 計算式 | 説明 |
+|---------|--------|------|
+| GetOrderParameter(T, Tc) | Q = (1 - T/Tc)^(1/4) | 秩序パラメータ（T < Tc） |
+| GetTc(P, Tc0, VD, SD) | Tc(P) = Tc₀ + V_D×P/S_D | 圧力依存臨界温度 |
+| GetFreeEnergy(T, Tc, SD) | G_t = S_D×[(T-Tc)Q² + Tc·Q⁶/3] | Landau自由エネルギー |
+| GetEntropy(T, Tc, SD) | S_L = -S_D×Q² | Landauエントロピー |
+| GetVolume(T, Tc, VD) | V_L = V_D×Q² | Landau体積補正 |
+
+**適用鉱物:** Quartz (Tc₀=847K), Stishovite (Tc₀=-4250K)
+
+---
+
+### 6.2 SolutionCalculator
+
+**ファイル:** `Core/Calculations/SolutionCalculator.cs`
+**責務:** 固溶体の熱力学計算。SLB2011 式(7), (33)-(37)。
+
+#### メソッド（全 static）
+
+| メソッド | 説明 |
+|---------|------|
+| GetIdealEntropy(x[], sites) | 配置エントロピー S_conf = -R·Σ[m_s·Σ(x_j·ln(x_j))] |
+| GetExcessGibbs(x[], interactions) | Van Laar 過剰 Gibbs: G_ex = Σ φ_a·φ_b·B_ab |
+| GetActivityCoefficients(x[], interactions, T) | 活動度係数 γ_i（数値微分） |
+| GetChemicalPotential(i, x[], interactions, G_i, T) | 化学ポテンシャル μ_i = G_i + RT·ln(x_i·γ_i) |
+| GetEffectiveParams(x[], endmembers) | 線形内挿パラメータ V=Σx_i·V_i 等 |
+| ValidateComposition(x[]) | 組成の妥当性検証 (Σx_i = 1) |
+
+---
+
+### 6.3 GibbsMinimizer
+
+**ファイル:** `Core/Calculations/GibbsMinimizer.cs`
+**責務:** Gibbs自由エネルギー最小化による安定相集合体の決定。
+
+#### アルゴリズム
+
+- **2相系:** 直接比較（G_A vs G_B）
+- **多相系:** SVDベース線形計画法（MathNet.Numerics）
+
+#### 入力/出力
+
+| 入力 | 型 |
+|------|------|
+| 初期相集合体 | PhaseAssemblage |
+| 圧力, 温度 | double, double |
+
+| 出力 | 型 |
+|------|------|
+| 安定相集合体 | PhaseAssemblage |
+
+---
+
+### 6.4 EquilibriumAggregateCalculator
+
+**ファイル:** `Core/Calculations/EquilibriumAggregateCalculator.cs`
+**責務:** P-Tパスに沿って相平衡を再計算し、機械的混合でバルク物性を算出。
+
+#### 処理フロー
+
+```
+1. 各P-T点で GibbsMinimizer を実行 → 安定相比率
+2. 各安定相の物性を MieGruneisenEOSOptimizer で計算
+3. MixtureCalculator で混合 → バルク Vp, Vs, ρ
+```
+
+---
+
+### 6.5 PhaseDiagramCalculator
+
+**ファイル:** `Core/Calculations/PhaseDiagramCalculator.cs`
+**責務:** 指定温度範囲で相境界圧力を探索。
+
+2相間の相境界: G_A(P,T) = G_B(P,T) を解く。Clapeyron勾配 dP/dT の符号も計算。
+
+---
+
+### 6.6 データモデル（v0.4.0 追加）
+
+#### SolidSolution
+
+```
+SolidSolution
+├── Name: string
+├── Endmembers: List<MineralParams>    # 端成分鉱物
+├── Sites: List<SolutionSite>          # 結晶学サイト
+└── InteractionParams: List<InteractionParam>  # 相互作用パラメータ
+```
+
+#### SolutionSite
+
+```
+SolutionSite
+├── SiteName: string
+├── Multiplicity: double               # サイト多重度 m
+└── Occupancies: Dictionary<int, double[]>  # 端成分→占有率マッピング
+```
+
+#### InteractionParam
+
+```
+InteractionParam
+├── EndmemberA: int                    # 端成分Aインデックス
+├── EndmemberB: int                    # 端成分Bインデックス
+├── W: double                          # 相互作用エネルギー [kJ/mol]
+├── SizeA: double                      # サイズパラメータ d_A (default 1.0)
+└── SizeB: double                      # サイズパラメータ d_B (default 1.0)
+```
+
+#### PhaseAssemblage / PhaseEntry
+
+```
+PhaseAssemblage
+├── BulkComposition: double[]          # バルク組成
+├── Phases: List<PhaseEntry>           # 相リスト
+└── TotalGibbs: double                 # 合計 Gibbs [kJ/mol]
+
+PhaseEntry
+├── PhaseName: string
+├── Endmember: MineralParams?          # 単一端成分の場合
+├── Solution: SolidSolution?           # 固溶体の場合
+├── Composition: double[]              # 固溶体組成
+├── Amount: double                     # モル量
+└── GibbsG: double                     # G [kJ/mol]
+```
+
+---
+
+### 6.7 SLB2011Endmembers
+
+**ファイル:** `Core/Database/SLB2011Endmembers.cs`
+**責務:** SLB2011 Table A1 の全42端成分鉱物パラメータ。
+
+パラメータはBurnManプロジェクトと同一の参照状態補正済み値を使用。v0.4.0 でBurnManとの包括的クロス検証を実施済み。
+
+#### 収録鉱物系
+
+| 系 | 鉱物 |
+|---|------|
+| Olivine | Forsterite (fo), Fayalite (fa) |
+| Wadsleyite | Mg-Wadsleyite (mw), Fe-Wadsleyite (fw) |
+| Ringwoodite | Mg-Ringwoodite (mrw), Fe-Ringwoodite (frw) |
+| Perovskite | Mg/Fe/Al-Perovskite (mpv, fpv, apv) |
+| Post-Perovskite | Mg/Fe/Al-PostPerovskite (mppv, fppv, appv) |
+| Ferropericlase | Periclase (pe), Wuestite (wu) |
+| SiO₂ | Quartz (qtz), Coesite (coe), Stishovite (st), Seifertite (seif) |
+| Garnet | Pyrope (py), Almandine (al), Grossular (gr), Majorite (maj) |
+| Pyroxene | Diopside (di), Hedenbergite (he), CaTs (cats), Jadeite (jd), Enstatite (en), Ferrosilite (fs), Mg-Tschermak (mgts), HP-Clinoenstatite (hpcen), HP-Clinoferrosilite (hpcfs) |
+| Akimotoite | Mg/Fe-Akimotoite (mak, fak), Corundum (cor) |
+| Spinel | Spinel (sp), Hercynite (hc) |
+| Other | Anorthite (an), Albite (ab), Ca-Perovskite (capv), Nepheline (neph), Kyanite (ky), Mg-Ilmenite (mil) |
+
+---
+
+## 7. ユニットテスト設計（v0.4.0 追加）
+
+### 7.1 BurnMan クロス検証テスト
+
+BurnMan (Python) で生成したリファレンスCSVデータと本ソフトウェアの計算結果を比較。
+
+| テストクラス | 対象 | テスト数 |
+|------------|------|---------|
+| BurnManEndmemberVerificationTests | 全端成分×P-Tグリッド | 53+ |
+| ThermodynamicIdentityTests | D₃(x), KS-KT, G=F+PV, Gibbs | 30+ |
+| LandauSolutionVerificationTests | Landau Q(T), F_mag, 固溶体 | 15+ |
+| MixingModelVerificationTests | VRH解析解, PREM比較 | 10+ |
+
+#### 検証精度基準
+
+| 条件 | 許容誤差 |
+|------|---------|
+| 常温常圧 (0.0001 GPa, 300K) | 密度 1%, KS/G 1%, Vp/Vs 1% |
+| 高温高圧 (10-100 GPa, 1500-2500K) | 密度 1%, KS/G/Vp/Vs 3% |
+| Debye関数 D₃(x) | scipy参照値と 1% |
+| Gibbs自由エネルギー | BurnManと 1% |
+
+#### リファレンスデータ
+
+`tests/ThermoElastic.Core.Tests/TestData/` に配置:
+
+| ファイル | 内容 |
+|---------|------|
+| burnman_endmember_reference.csv | 42端成分 × 7圧力 × 5温度 = 1468レコード |
+| burnman_solution_reference.csv | 固溶体 (olivine, ferropericlase) 28レコード |
+| burnman_debye_reference.csv | D₃(x) 参照値 12点 |

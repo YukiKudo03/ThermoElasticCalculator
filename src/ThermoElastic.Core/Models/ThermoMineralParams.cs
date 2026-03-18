@@ -119,8 +119,8 @@ public class ThermoMineralParams
         }
     }
 
-    /// <summary>Thermal Expansion under Condition</summary>
-    public double Alpha => Gamma * 3.0d * CvT / (double)Mineral.NumAtoms / KT / Volume / 1000.0d;
+    /// <summary>Thermal Expansion under Condition [1/K]</summary>
+    public double Alpha => Gamma * CvT / Temperature / KT / Volume / 1000.0d;
 
     /// <summary>Adiabatic Bulk Modulus under Condition [GPa]</summary>
     public double KS
@@ -158,6 +158,7 @@ public class ThermoMineralParams
     /// <summary>
     /// Cold (compression) energy: F_cold = 9*K0*V0 * [f²/2 + a1*f³/6]
     /// where a1 = K'0 - 4. Result in kJ/mol (V0 in cm³/mol, K0 in GPa).
+    /// 1 GPa·cm³/mol = 1 kJ/mol, so 9*K0*V0*(strain) is directly in kJ/mol.
     /// </summary>
     public double FCold
     {
@@ -165,8 +166,7 @@ public class ThermoMineralParams
         {
             double f = Finite;
             double a1 = Mineral.K1Prime - 4.0;
-            // 9*K0*V0 in GPa*cm³/mol = 0.001 * kJ/mol (since 1 GPa·cm³ = 0.001 kJ)
-            return 9.0 * Mineral.KZero * Mineral.MolarVolume * (f * f / 2.0 + a1 * f * f * f / 6.0) * 0.001;
+            return 9.0 * Mineral.KZero * Mineral.MolarVolume * (f * f / 2.0 + a1 * f * f * f / 6.0);
         }
     }
 
@@ -214,9 +214,9 @@ public class ThermoMineralParams
 
     /// <summary>
     /// Gibbs free energy G = F + PV [kJ/mol]
-    /// P in GPa, V in cm³/mol → PV in GPa·cm³/mol = 0.001 kJ/mol
+    /// P in GPa, V in cm³/mol → PV in GPa·cm³/mol = kJ/mol (1 GPa·cm³ = 1 kJ).
     /// </summary>
-    public double GibbsG => HelmholtzF + Pressure * Volume * 0.001;
+    public double GibbsG => HelmholtzF + Pressure * Volume;
 
     public ResultSummary ExportResults()
     {
