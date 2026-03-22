@@ -9,7 +9,7 @@ public partial class MainWindowViewModel : ObservableObject
     private object? _currentView;
 
     [ObservableProperty]
-    private string _title = "ThermoElasticCalculator v0.5.0";
+    private string _title = "ThermoElasticCalculator v1.0.0";
 
     private readonly MineralEditorViewModel _mineralEditorViewModel = new();
     private readonly PTProfileViewModel _ptProfileViewModel = new();
@@ -18,6 +18,11 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly ResultsViewModel _resultsViewModel = new();
     private readonly MineralDatabaseViewModel _mineralDatabaseViewModel = new();
     private readonly ChartViewModel _chartViewModel = new();
+    private readonly HugoniotViewModel _hugoniotViewModel = new();
+    private readonly PhaseDiagramExplorerViewModel _phaseDiagramExplorerViewModel = new();
+    private readonly LookupTableViewModel _lookupTableViewModel = new();
+    private readonly SensitivityKernelViewModel _sensitivityKernelViewModel = new();
+    private readonly PlanetaryInteriorViewModel _planetaryInteriorViewModel = new();
 
     [RelayCommand]
     private void ShowMineralEditor()
@@ -59,5 +64,35 @@ public partial class MainWindowViewModel : ObservableObject
     private void ShowChart()
     {
         CurrentView = _chartViewModel;
+    }
+
+    [RelayCommand]
+    private void ShowHugoniot()
+    {
+        CurrentView = _hugoniotViewModel;
+    }
+
+    [RelayCommand]
+    private void ShowPhaseDiagram()
+    {
+        CurrentView = _phaseDiagramExplorerViewModel;
+    }
+
+    [RelayCommand]
+    private void ShowLookupTable()
+    {
+        CurrentView = _lookupTableViewModel;
+    }
+
+    [RelayCommand]
+    private void ShowSensitivityKernel()
+    {
+        CurrentView = _sensitivityKernelViewModel;
+    }
+
+    [RelayCommand]
+    private void ShowPlanetaryInterior()
+    {
+        CurrentView = _planetaryInteriorViewModel;
     }
 }

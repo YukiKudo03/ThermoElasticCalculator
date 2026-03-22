@@ -1,0 +1,20 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.PlanetaryInteriorView"
+             x:DataType="vm:PlanetaryInteriorViewModel">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="Planetary Interior Model" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock Text="Planet:" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding PlanetNames}" SelectedIndex="{Binding SelectedPlanetIndex}" Width="150" />
+            <Button Content="Compute Interior" Command="{Binding CalculateCommand}" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="16" Margin="0,0,0,8">
+            <TextBlock Text="{Binding MomentOfInertiaFactor, StringFormat='MoI Factor: {0:F4}'}" FontWeight="Bold" />
+            <TextBlock Text="{Binding TotalMass, StringFormat='Total Mass: {0:E3} kg'}" />
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Margin="0,8,0,0" />
+        <DataGrid ItemsSource="{Binding ProfilePoints}" AutoGenerateColumns="True" IsReadOnly="True" />
+    </DockPanel>
+</UserControl>

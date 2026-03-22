@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.LookupTableView"
+             x:DataType="vm:LookupTableViewModel">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="Lookup Table Generator" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Mineral:" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding MineralNames}" SelectedIndex="{Binding SelectedMineralIndex}" Width="200" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="P min:" VerticalAlignment="Center" />
+                <TextBox Text="{Binding PMin}" Width="80" />
+                <TextBlock Text="P max:" VerticalAlignment="Center" />
+                <TextBox Text="{Binding PMax}" Width="80" />
+                <TextBlock Text="N(P):" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding NPressure}" Minimum="2" Maximum="50" Width="80" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="T min:" VerticalAlignment="Center" />
+                <TextBox Text="{Binding TMin}" Width="80" />
+                <TextBlock Text="T max:" VerticalAlignment="Center" />
+                <TextBox Text="{Binding TMax}" Width="80" />
+                <TextBlock Text="N(T):" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding NTemperature}" Minimum="2" Maximum="50" Width="80" />
+            </StackPanel>
+            <Button Content="Generate Table" Command="{Binding GenerateCommand}" />
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Margin="0,8,0,0" />
+        <Border />
+    </DockPanel>
+</UserControl>

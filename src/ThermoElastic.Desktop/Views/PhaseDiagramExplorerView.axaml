@@ -1,0 +1,29 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.PhaseDiagramExplorerView"
+             x:DataType="vm:PhaseDiagramExplorerViewModel">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="Phase Diagram Explorer" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Phase 1:" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding MineralNames}" SelectedIndex="{Binding SelectedPhase1Index}" Width="200" />
+                <TextBlock Text="Phase 2:" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding MineralNames}" SelectedIndex="{Binding SelectedPhase2Index}" Width="200" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="T [K]:" VerticalAlignment="Center" />
+                <TextBox Text="{Binding Temperature}" Width="100" />
+                <TextBlock Text="P min [GPa]:" VerticalAlignment="Center" />
+                <TextBox Text="{Binding PMin}" Width="80" />
+                <TextBlock Text="P max [GPa]:" VerticalAlignment="Center" />
+                <TextBox Text="{Binding PMax}" Width="80" />
+                <Button Content="Find Boundary" Command="{Binding CalculateCommand}" />
+            </StackPanel>
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Top" Text="{Binding StatusMessage}" Margin="0,8,0,0" FontSize="14" />
+        <TextBlock DockPanel.Dock="Top" Text="{Binding BoundaryPressure, StringFormat='Boundary Pressure: {0:F3} GPa'}" FontSize="16" FontWeight="Bold" Margin="0,8,0,0" />
+        <Border />
+    </DockPanel>
+</UserControl>

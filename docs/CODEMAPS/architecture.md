@@ -1,57 +1,97 @@
-<!-- Generated: 2026-03-19 | Files scanned: 80+ | Token estimate: ~750 -->
+<!-- Generated: 2026-03-23 | v1.0.0 | 42 calculators, 25 models, 13 views, 55 test classes, 391 test methods -->
+
 # Architecture
 
 ## System Overview
 
 ```
-┌──────────────────────────────────────────────┐
-│  ThermoElastic.Desktop (Avalonia 11 / MVVM)  │
-│  8 Views + 8 ViewModels                      │
-│  Windows / macOS / Linux                     │
-├──────────────────────────────────────────────┤
-│  ThermoElastic.Core (.NET 8 Library)         │
-│  Models (12) │ Calculations (15) │ DB (4)    │
-│  BM3+MGD EOS │ Debye │ Landau │ Gibbs min   │
-│  HS bounds │ PREM │ Isentrope │ Mixing       │
-├──────────────────────────────────────────────┤
-│  MathNet.Numerics (SVD, linear algebra)      │
-└──────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  ThermoElastic.Desktop (Avalonia 11 / MVVM)     │
+│  13 Views + 13 ViewModels                       │
+│  Windows / macOS / Linux                        │
+├─────────────────────────────────────────────────┤
+│  ThermoElastic.Core (.NET 9 Library)            │
+│  Models (25) │ Calculations (42) │ DB (4)       │
+│  Phase 1-9: EOS → Debye → Landau → Gibbs min   │
+│  Mixtures (HS bounds) → Isentropes → PREM      │
+│  Phase diagrams → Hugoniots → Interior models  │
+│  Advanced: spin crossover, LLSVP, planetary    │
+├─────────────────────────────────────────────────┤
+│  MathNet.Numerics | CommunityToolkit.Mvvm      │
+└─────────────────────────────────────────────────┘
      ↑ test
-┌──────────────────────────────────────────────┐
-│  ThermoElastic.Core.Tests (xUnit 2.9)       │
-│  29 test classes │ 286 tests                 │
-│  BurnMan cross-validation + SLB2011 lit. ref │
-└──────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  ThermoElastic.Core.Tests (xUnit 2.9)           │
+│  55 test classes │ 391 test methods             │
+│  BurnMan cross-validation + SLB2011 verification│
+└─────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────┐
+│  ThermoElastic.Desktop.E2E                      │
+│  45 E2E tests covering all views                │
+└─────────────────────────────────────────────────┘
 ```
 
-## Data Flow: P,T → Mineral Properties
+## Data Flow: Input → Calculation Pipeline → Output
 
 ```
-User Input (P, T, Mineral)
-  → MieGruneisenEOSOptimizer.ExecOptimize()
-    → BM3Finite(refP) → finite strain f
-    → ThermoMineralParams(f, T, mineral)
-      → DebyeFunctionCalculator: E_th, Cv, S_th (Simpson D₃ integral)
-      → LandauCalculator: phase transition correction
-      → Magnetic contribution: -T·r·R·ln(2S+1)
-      → KT, KS, GS, Vp, Vs, ρ, α, F, G, S
-    → iterate until |P_total - P_target| < 1e-5
-    → convergence status: IsConverged, Iterations, PressureResidual
-  → ResultSummary (CSV 18-col / JSON export)
+User Input (P, T, Composition)
+  ↓
+View (13 variants: Mineral, Database, Profile, etc.)
+  ↓
+ViewModel (data binding + validation)
+  ↓
+Calculator (phase 1-9 specialized engines)
+  │
+  ├─ Phase 1-5: Core thermodynamics
+  │   MieGruneisenEOSOptimizer → BM3 finite strain
+  │   ThermoMineralParams → Debye + Landau + magnetic
+  │
+  ├─ Phase 6-7: Mixtures & solutions
+  │   MixtureCalculator (Voigt/Reuss/Hill/HS bounds)
+  │   SolutionCalculator (van Laar + activity coeff)
+  │   GibbsMinimizer (SVD phase equilibrium)
+  │
+  ├─ Phase 8-9: Planetary & specialized
+  │   PlanetaryInteriorSolver → mass-radius profiles
+  │   IsentropeCalculator → adiabatic geotherms
+  │   HugoniotCalculator → shock equations of state
+  │   SpinCrossoverCalculator → Fe²⁺ spin transitions
+  │
+  └─ Database lookup (SLB2011 endmembers, predefined rocks)
+  ↓
+ResultSummary (18-column CSV export, JSON, tables)
+  ↓
+UI Results + Charts
 ```
 
-## Key Directories
+## Key Directories & File Counts
 
-| Path | Purpose | Files |
-|------|---------|-------|
-| `src/ThermoElastic.Core/Models/` | Data structures (MineralParams, PREM, etc.) | 12 |
-| `src/ThermoElastic.Core/Calculations/` | EOS, Debye, Landau, mixing, isentrope, depth | 15 |
-| `src/ThermoElastic.Core/Database/` | SLB2011 minerals (46), predefined rocks, solutions | 4 |
-| `src/ThermoElastic.Core/IO/` | JSON/CSV file I/O | 2 |
-| `src/ThermoElastic.Desktop/Views/` | Avalonia AXAML UI definitions | 8 |
-| `src/ThermoElastic.Desktop/ViewModels/` | MVVM logic (CommunityToolkit.Mvvm) | 8 |
-| `tests/ThermoElastic.Core.Tests/` | Unit + verification + literature tests | 29 |
+| Path | Purpose | Files | Latest |
+|------|---------|-------|--------|
+| `src/ThermoElastic.Core/Models/` | Data structures | 25 | ThermoMineralParams, ElasticTensor, MCMCChain |
+| `src/ThermoElastic.Core/Calculations/` | Calculator engines (phase 1-9) | 42 | All phases + specialized solvers |
+| `src/ThermoElastic.Core/Database/` | SLB2011 + rocks + solutions | 4 | 46 endmembers, predefined rocks |
+| `src/ThermoElastic.Core/IO/` | File I/O utilities | 2 | JSON/CSV serialization |
+| `src/ThermoElastic.Desktop/Views/` | Avalonia AXAML UI | 13 | All application pages |
+| `src/ThermoElastic.Desktop/ViewModels/` | MVVM business logic | 13 | 1:1 mapping to views |
+| `tests/ThermoElastic.Core.Tests/` | Unit + verification tests | 68 | 391 test methods |
+| `tests/ThermoElastic.Desktop.E2E/` | Integration + E2E tests | variable | 45 E2E scenarios |
 
-## Solution
+## Solution Structure
 
-- `ThermoElasticCalculator.sln` — Core + Desktop + Tests (3 projects)
+- `ThermoElasticCalculator.sln` — Unified solution with 4 projects:
+  - ThermoElastic.Core (library)
+  - ThermoElastic.Desktop (app)
+  - ThermoElastic.Core.Tests
+  - ThermoElastic.Desktop.E2E
+
+## Technology Stack
+
+| Layer | Framework | Version | Purpose |
+|-------|-----------|---------|---------|
+| Core | .NET | 9.0 | Scientific library |
+| Math | MathNet.Numerics | 5.0.0 | SVD, linear algebra |
+| UI | Avalonia | 11.2.3 | Cross-platform XAML |
+| MVVM | CommunityToolkit.Mvvm | 8.4.0 | Source-generated ObservableObject |
+| Test | xUnit | 2.9.0 | Test framework |

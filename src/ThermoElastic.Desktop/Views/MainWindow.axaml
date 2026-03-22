@@ -23,6 +23,12 @@
             <Separator Margin="0,8" />
             <Button Content="Database" Command="{Binding ShowDatabaseCommand}" HorizontalAlignment="Stretch" />
             <Button Content="Chart" Command="{Binding ShowChartCommand}" HorizontalAlignment="Stretch" />
+            <Separator Margin="0,8" />
+            <Button Content="Hugoniot" Command="{Binding ShowHugoniotCommand}" HorizontalAlignment="Stretch" />
+            <Button Content="Phase Diagram" Command="{Binding ShowPhaseDiagramCommand}" HorizontalAlignment="Stretch" />
+            <Button Content="Lookup Table" Command="{Binding ShowLookupTableCommand}" HorizontalAlignment="Stretch" />
+            <Button Content="Sensitivity Kernel" Command="{Binding ShowSensitivityKernelCommand}" HorizontalAlignment="Stretch" />
+            <Button Content="Planetary Interior" Command="{Binding ShowPlanetaryInteriorCommand}" HorizontalAlignment="Stretch" />
         </StackPanel>
 
         <!-- Content Area -->
@@ -48,6 +54,21 @@
                 </DataTemplate>
                 <DataTemplate DataType="vm:ChartViewModel">
                     <views:ChartView />
+                </DataTemplate>
+                <DataTemplate DataType="vm:HugoniotViewModel">
+                    <views:HugoniotView />
+                </DataTemplate>
+                <DataTemplate DataType="vm:PhaseDiagramExplorerViewModel">
+                    <views:PhaseDiagramExplorerView />
+                </DataTemplate>
+                <DataTemplate DataType="vm:LookupTableViewModel">
+                    <views:LookupTableView />
+                </DataTemplate>
+                <DataTemplate DataType="vm:SensitivityKernelViewModel">
+                    <views:SensitivityKernelView />
+                </DataTemplate>
+                <DataTemplate DataType="vm:PlanetaryInteriorViewModel">
+                    <views:PlanetaryInteriorView />
                 </DataTemplate>
             </ContentControl.DataTemplates>
         </ContentControl>
