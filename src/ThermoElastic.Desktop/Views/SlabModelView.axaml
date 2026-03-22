@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.SlabModelView"
+             x:DataType="vm:SlabModelViewModel">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="Slab Thermal Model" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock Text="Mineral:" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding MineralNames}" SelectedIndex="{Binding SelectedMineralIndex}" Width="200" />
+            <TextBlock Text="Age (Myr):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding PlateAgeMyr}" Minimum="1" Maximum="200" Width="80" />
+            <TextBlock Text="P (GPa):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding Pressure}" Minimum="0" Maximum="30" Width="80" />
+            <TextBlock Text="Slab T:" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding SlabT}" Minimum="300" Maximum="3000" Width="80" />
+            <TextBlock Text="Ambient T:" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding AmbientT}" Minimum="300" Maximum="3000" Width="80" />
+            <Button Content="Calculate" Command="{Binding CalculateCommand}" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+            <TextBlock Text="{Binding DVsPercent, StringFormat='dVs: {0:F2} %'}" />
+            <TextBlock Text="{Binding DRhoPercent, StringFormat='dRho: {0:F2} %'}" />
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Margin="0,8,0,0" />
+        <DataGrid ItemsSource="{Binding GeothermResults}" AutoGenerateColumns="True" />
+    </DockPanel>
+</UserControl>

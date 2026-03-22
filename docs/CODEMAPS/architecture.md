@@ -1,4 +1,4 @@
-<!-- Generated: 2026-03-23 | v1.0.0 | 42 calculators, 25 models, 13 views, 55 test classes, 391 test methods -->
+<!-- Generated: 2026-03-23 | v1.0.0-ui | 556 tests passing -->
 
 # Architecture
 
@@ -7,7 +7,7 @@
 ```
 ┌─────────────────────────────────────────────────┐
 │  ThermoElastic.Desktop (Avalonia 11 / MVVM)     │
-│  13 Views + 13 ViewModels                       │
+│  33 Views + 33 ViewModels                       │
 │  Windows / macOS / Linux                        │
 ├─────────────────────────────────────────────────┤
 │  ThermoElastic.Core (.NET 9 Library)            │
@@ -37,7 +37,7 @@
 ```
 User Input (P, T, Composition)
   ↓
-View (13 variants: Mineral, Database, Profile, etc.)
+View (33 variants: Core mineralogy, Shock, Phase equilibria, etc.)
   ↓
 ViewModel (data binding + validation)
   ↓
@@ -73,8 +73,8 @@ UI Results + Charts
 | `src/ThermoElastic.Core/Calculations/` | Calculator engines (phase 1-9) | 42 | All phases + specialized solvers |
 | `src/ThermoElastic.Core/Database/` | SLB2011 + rocks + solutions | 4 | 46 endmembers, predefined rocks |
 | `src/ThermoElastic.Core/IO/` | File I/O utilities | 2 | JSON/CSV serialization |
-| `src/ThermoElastic.Desktop/Views/` | Avalonia AXAML UI | 13 | All application pages |
-| `src/ThermoElastic.Desktop/ViewModels/` | MVVM business logic | 13 | 1:1 mapping to views |
+| `src/ThermoElastic.Desktop/Views/` | Avalonia AXAML UI | 33 | All application pages |
+| `src/ThermoElastic.Desktop/ViewModels/` | MVVM business logic | 33 | 1:1 mapping to views |
 | `tests/ThermoElastic.Core.Tests/` | Unit + verification tests | 68 | 391 test methods |
 | `tests/ThermoElastic.Desktop.E2E/` | Integration + E2E tests | variable | 45 E2E scenarios |
 

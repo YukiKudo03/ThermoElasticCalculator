@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.GeobarometryView"
+             x:DataType="vm:GeobarometryViewModel">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="Elastic Geobarometry (Isomeke)" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock Text="Host:" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding MineralNames}" SelectedIndex="{Binding SelectedHostIndex}" Width="200" />
+            <TextBlock Text="Inclusion:" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding MineralNames}" SelectedIndex="{Binding SelectedInclusionIndex}" Width="200" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock Text="Entrapment P (GPa):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding EntrapmentP}" Minimum="0" Maximum="30" Width="120" />
+            <TextBlock Text="Entrapment T (K):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding EntrapmentT}" Minimum="300" Maximum="3000" Width="120" />
+            <Button Content="Calculate" Command="{Binding CalculateCommand}" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+            <TextBlock Text="{Binding ResidualPressure, StringFormat='Residual Pressure: {0:F4} GPa'}" FontWeight="Bold" />
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Margin="0,8,0,0" />
+    </DockPanel>
+</UserControl>

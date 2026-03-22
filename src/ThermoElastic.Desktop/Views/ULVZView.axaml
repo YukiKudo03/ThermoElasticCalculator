@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.ULVZView"
+             x:DataType="vm:ULVZViewModel">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="ULVZ Melt Mixture" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock Text="Mineral:" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding MineralNames}" SelectedIndex="{Binding SelectedMineralIndex}" Width="200" />
+            <TextBlock Text="Melt fraction:" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding MeltFraction}" Minimum="0" Maximum="1" Increment="0.01" Width="80" />
+            <TextBlock Text="P (GPa):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding Pressure}" Minimum="0" Maximum="200" Width="100" />
+            <TextBlock Text="T (K):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding Temperature}" Minimum="1000" Maximum="6000" Width="100" />
+            <Button Content="Calculate" Command="{Binding CalculateCommand}" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Top" Spacing="4">
+            <TextBlock Text="{Binding Vp, StringFormat='Vp: {0:F1} m/s'}" />
+            <TextBlock Text="{Binding Vs, StringFormat='Vs: {0:F1} m/s'}" />
+            <TextBlock Text="{Binding Density, StringFormat='Density: {0:F3} g/cm3'}" />
+            <TextBlock Text="{Binding DVpPercent, StringFormat='dVp: {0:F2} %'}" />
+            <TextBlock Text="{Binding DVsPercent, StringFormat='dVs: {0:F2} %'}" />
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Margin="0,8,0,0" />
+    </DockPanel>
+</UserControl>

@@ -13,25 +13,84 @@ public class ViewModelE2ETests
     public void MainWindow_AllNavigation_NoExceptions()
     {
         var vm = new MainWindowViewModel();
-        // Navigate to each view
+
+        // Core Tools (7)
         vm.ShowMineralEditorCommand.Execute(null);
-        Assert.NotNull(vm.CurrentView);
+        Assert.IsType<MineralEditorViewModel>(vm.CurrentView);
         vm.ShowPTProfileCommand.Execute(null);
-        Assert.NotNull(vm.CurrentView);
+        Assert.IsType<PTProfileViewModel>(vm.CurrentView);
+        vm.ShowMixtureCommand.Execute(null);
+        Assert.IsType<MixtureViewModel>(vm.CurrentView);
         vm.ShowRockCalculatorCommand.Execute(null);
-        Assert.NotNull(vm.CurrentView);
-        // Navigate to new views
+        Assert.IsType<RockCalculatorViewModel>(vm.CurrentView);
+        vm.ShowResultsCommand.Execute(null);
+        Assert.IsType<ResultsViewModel>(vm.CurrentView);
+        vm.ShowDatabaseCommand.Execute(null);
+        Assert.IsType<MineralDatabaseViewModel>(vm.CurrentView);
+        vm.ShowChartCommand.Execute(null);
+        Assert.IsType<ChartViewModel>(vm.CurrentView);
+
+        // EOS & Shock (3)
         vm.ShowHugoniotCommand.Execute(null);
-        Assert.NotNull(vm.CurrentView);
         Assert.IsType<HugoniotViewModel>(vm.CurrentView);
+        vm.ShowEOSFitterCommand.Execute(null);
+        Assert.IsType<EOSFitterViewModel>(vm.CurrentView);
+        vm.ShowVerificationDashboardCommand.Execute(null);
+        Assert.IsType<VerificationDashboardViewModel>(vm.CurrentView);
+
+        // Phase Equilibria (4)
         vm.ShowPhaseDiagramCommand.Execute(null);
         Assert.IsType<PhaseDiagramExplorerViewModel>(vm.CurrentView);
-        vm.ShowLookupTableCommand.Execute(null);
-        Assert.IsType<LookupTableViewModel>(vm.CurrentView);
+        vm.ShowPostPerovskiteCommand.Execute(null);
+        Assert.IsType<PostPerovskiteViewModel>(vm.CurrentView);
+        vm.ShowClassicalGeobarometryCommand.Execute(null);
+        Assert.IsType<ClassicalGeobarometryViewModel>(vm.CurrentView);
+        vm.ShowGeobarometryCommand.Execute(null);
+        Assert.IsType<GeobarometryViewModel>(vm.CurrentView);
+
+        // Mantle & Deep Earth (6)
         vm.ShowSensitivityKernelCommand.Execute(null);
         Assert.IsType<SensitivityKernelViewModel>(vm.CurrentView);
+        vm.ShowAnelasticityCommand.Execute(null);
+        Assert.IsType<AnelasticityViewModel>(vm.CurrentView);
+        vm.ShowLLSVPCommand.Execute(null);
+        Assert.IsType<LLSVPViewModel>(vm.CurrentView);
+        vm.ShowULVZCommand.Execute(null);
+        Assert.IsType<ULVZViewModel>(vm.CurrentView);
+        vm.ShowSlabModelCommand.Execute(null);
+        Assert.IsType<SlabModelViewModel>(vm.CurrentView);
         vm.ShowPlanetaryInteriorCommand.Execute(null);
         Assert.IsType<PlanetaryInteriorViewModel>(vm.CurrentView);
+
+        // Material Properties (5)
+        vm.ShowSpinCrossoverCommand.Execute(null);
+        Assert.IsType<SpinCrossoverViewModel>(vm.CurrentView);
+        vm.ShowThermalConductivityCommand.Execute(null);
+        Assert.IsType<ThermalConductivityViewModel>(vm.CurrentView);
+        vm.ShowElectricalConductivityCommand.Execute(null);
+        Assert.IsType<ElectricalConductivityViewModel>(vm.CurrentView);
+        vm.ShowElasticTensorCommand.Execute(null);
+        Assert.IsType<ElasticTensorViewModel>(vm.CurrentView);
+        vm.ShowOxygenFugacityCommand.Execute(null);
+        Assert.IsType<OxygenFugacityViewModel>(vm.CurrentView);
+
+        // Composition & Fluids (4)
+        vm.ShowCompositionInverterCommand.Execute(null);
+        Assert.IsType<CompositionInverterViewModel>(vm.CurrentView);
+        vm.ShowIronPartitioningCommand.Execute(null);
+        Assert.IsType<IronPartitioningViewModel>(vm.CurrentView);
+        vm.ShowWaterContentCommand.Execute(null);
+        Assert.IsType<WaterContentViewModel>(vm.CurrentView);
+        vm.ShowMagmaOceanCommand.Execute(null);
+        Assert.IsType<MagmaOceanViewModel>(vm.CurrentView);
+
+        // Inversion & ML (3)
+        vm.ShowMLDataCommand.Execute(null);
+        Assert.IsType<MLDataViewModel>(vm.CurrentView);
+        vm.ShowBayesianInversionCommand.Execute(null);
+        Assert.IsType<BayesianInversionViewModel>(vm.CurrentView);
+        vm.ShowLookupTableCommand.Execute(null);
+        Assert.IsType<LookupTableViewModel>(vm.CurrentView);
     }
 
     [Fact]

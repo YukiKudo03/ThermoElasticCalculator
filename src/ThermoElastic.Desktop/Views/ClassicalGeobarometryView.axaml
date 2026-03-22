@@ -1,0 +1,30 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.ClassicalGeobarometryView"
+             x:DataType="vm:ClassicalGeobarometryViewModel">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="Classical Geobarometry" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock Text="Phase 1:" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding MineralNames}" SelectedIndex="{Binding SelectedPhase1Index}" Width="200" />
+            <TextBlock Text="Phase 2:" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding MineralNames}" SelectedIndex="{Binding SelectedPhase2Index}" Width="200" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock Text="T (K):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding Temperature}" Minimum="300" Maximum="5000" Width="120" />
+            <TextBlock Text="P min:" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding PMin}" Minimum="0" Maximum="140" Width="100" />
+            <TextBlock Text="P max:" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding PMax}" Minimum="0" Maximum="140" Width="100" />
+            <Button Content="Calculate" Command="{Binding CalculateCommand}" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+            <TextBlock Text="{Binding EstimatedPressure, StringFormat='Estimated P: {0:F2} GPa'}" FontWeight="Bold" />
+            <TextBlock Text="{Binding StablePhase, StringFormat='Stable Phase: {0}'}" />
+            <TextBlock Text="{Binding DeltaG, StringFormat='Delta G: {0:F2} kJ/mol'}" />
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Margin="0,8,0,0" />
+    </DockPanel>
+</UserControl>

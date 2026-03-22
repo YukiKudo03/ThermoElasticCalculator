@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.LLSVPView"
+             x:DataType="vm:LLSVPViewModel">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="LLSVP Temperature Anomaly" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock Text="Mineral:" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding MineralNames}" SelectedIndex="{Binding SelectedMineralIndex}" Width="200" />
+            <TextBlock Text="P (GPa):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding Pressure}" Minimum="0" Maximum="200" Width="100" />
+            <TextBlock Text="T ref (K):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding ReferenceTemperature}" Minimum="1000" Maximum="5000" Width="100" />
+            <TextBlock Text="Target dlnVs:" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding TargetDlnVs}" Minimum="-0.1" Maximum="0" Increment="0.005" Width="100" />
+            <Button Content="Calculate" Command="{Binding CalculateCommand}" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Top" Spacing="4">
+            <TextBlock Text="{Binding RequiredDeltaT, StringFormat='Required DeltaT: {0:F1} K'}" />
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Margin="0,8,0,0" />
+    </DockPanel>
+</UserControl>

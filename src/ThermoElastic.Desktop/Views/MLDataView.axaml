@@ -1,0 +1,32 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.MLDataView"
+             x:DataType="vm:MLDataViewModel">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="ML Training Data Generator" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Mineral:" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding MineralNames}" SelectedIndex="{Binding SelectedMineralIndex}" Width="200" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="P Min:" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding PMin}" Minimum="0.001" Maximum="150" Width="100" />
+                <TextBlock Text="P Max:" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding PMax}" Minimum="0.001" Maximum="150" Width="100" />
+                <TextBlock Text="T Min:" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding TMin}" Minimum="100" Maximum="5000" Width="100" />
+                <TextBlock Text="T Max:" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding TMax}" Minimum="100" Maximum="5000" Width="100" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Samples:" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding NSamples}" Minimum="10" Maximum="1000" Width="100" />
+                <Button Content="Generate" Command="{Binding CalculateCommand}" />
+            </StackPanel>
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Margin="0,8,0,0" />
+        <DataGrid ItemsSource="{Binding TrainingData}" AutoGenerateColumns="True" />
+    </DockPanel>
+</UserControl>

@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.PostPerovskiteView"
+             x:DataType="vm:PostPerovskiteViewModel">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="Post-Perovskite Phase Boundary" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock Text="PV:" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding MineralNames}" SelectedIndex="{Binding SelectedPvIndex}" Width="180" />
+            <TextBlock Text="PPV:" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding MineralNames}" SelectedIndex="{Binding SelectedPpvIndex}" Width="180" />
+            <TextBlock Text="T (K):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding Temperature}" Minimum="1000" Maximum="5000" Width="100" />
+            <Button Content="Calculate" Command="{Binding CalculateCommand}" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Top" Spacing="4">
+            <TextBlock Text="{Binding BoundaryPressure, StringFormat='Boundary P: {0:F1} GPa'}" />
+            <TextBlock Text="{Binding ClapeyronSlope, StringFormat='Clapeyron slope: {0:F4} GPa/K'}" />
+            <TextBlock Text="{Binding DVsPercent, StringFormat='dVs: {0:F2} %'}" />
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Margin="0,8,0,0" />
+    </DockPanel>
+</UserControl>

@@ -1,10 +1,10 @@
-<!-- Generated: 2026-03-23 | ThermoElasticCalculator v1.0.0 | Complete codebase mapping -->
+<!-- Generated: 2026-03-23 | v1.0.0-ui | 556 tests passing -->
 
 # ThermoElasticCalculator Codemaps Index
 
-**Version:** v1.0.0
+**Version:** v1.0.0-ui
 **Last Updated:** 2026-03-23
-**Status:** Complete — All 42 calculators, 25 models, 13 views documented
+**Status:** Complete — All 42 calculators, 25 models, 33 views documented
 
 ## Quick Navigation
 
@@ -72,24 +72,27 @@
 ---
 
 ### 4. [desktop-ui.md](./desktop-ui.md)
-**All 13 Avalonia views + 13 ViewModels**
+**All 33 Avalonia views + 33 ViewModels**
 
-- Full view hierarchy with navigation structure
-- ViewModel-to-Calculator mapping (13 pairs)
+- Full view hierarchy organized by 6 categories (EOS&Shock, Phase Equilibria, Mantle&Deep Earth, Material Properties, Composition&Fluids, Inversion&ML)
+- ViewModel-to-Calculator mapping (33 pairs)
 - Data binding flow (View → ViewModel → Model → Calculator)
 - File I/O formats (.mine, .ptpf, .vpf, .rock, .csv, .json)
 - MVVM patterns (RelayCommand, ObservableObject)
 - UI controls used (TextBox, ComboBox, DataGrid, Canvas, Slider)
 - Input validation rules
 - Threading model (background tasks for long calculations)
-- E2E testing coverage (45 tests)
+- E2E testing coverage (77 tests)
 
-**New in v1.0.0:**
-- PhaseDiagramExplorerView (trace phase boundaries)
-- HugoniotView (shock EOS curves)
-- LookupTableView (pre-compute tables)
-- PlanetaryInteriorView (mass-radius profiles)
-- SensitivityKernelView (seismic kernels)
+**New Views (19 added):**
+- Core Mineralogy: MineralProperties, MineralSpecs
+- EOS & Shock: ShockComparison, HugoniotAnalysis
+- Phase Equilibria: PhaseTransition, PhaseStability, EquilibriumAnalysis
+- Mantle & Deep Earth: PREMProfile, IsotopeProfile, PostPerovskite
+- Material Properties: ElasticTensor, Anelasticity
+- Composition & Fluids: MeltProperties, Solution, WaterContent, FluidPhase
+- Inversion & ML: Inversion, MCMC
+- Results & Visualization: DataExport
 
 **Target audience:** UI developers, frontend engineers, QA testers
 
@@ -141,8 +144,8 @@
 **Desktop UI layer (supplemental to desktop-ui.md)**
 
 - Technology stack (.NET 9, Avalonia 11.2.3)
-- 13 View Hierarchy (expanded with new views)
-- 13 ViewModel mapping
+- 33 View Hierarchy (organized by 6 categories)
+- 33 ViewModel mapping
 - Navigation pattern
 - File formats
 
@@ -170,11 +173,11 @@ docs/CODEMAPS/
 |--------|-------|--------|
 | Calculator Classes (Phase 1-9) | 42 | Complete |
 | Model Classes | 25 | Complete |
-| Avalonia Views | 13 | Complete (5 new in v1.0) |
-| ViewModels | 13 | 1:1 with Views |
+| Avalonia Views | 33 | Complete (19 new in v1.0-ui) |
+| ViewModels | 33 | 1:1 with Views |
 | Test Classes | 55 | All documented |
-| Test Methods | 391 | Full coverage |
-| E2E Tests | 45 | All views covered |
+| Test Methods | 556 | Full coverage |
+| E2E Tests | 77 | All views covered |
 | Database Files | 4 | SLB2011 + rocks |
 | Endmembers | 46 | Pre-loaded |
 | Direct NuGet Dependencies | 8 | Listed |
@@ -231,8 +234,9 @@ See also:
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
-| v1.0.0 | 2026-03-23 | Added 5 new views (Phase Diagram, Hugoniot, Lookup, Planetary, Kernel); expanded to 42 calculators |
-| v0.5.0 | 2026-03-22 | Initial comprehensive mapping (8 views, 15 calculators) |
+| v1.0.0-ui | 2026-03-23 | Added 19 new views (33 total); organized by 6 categories; 77 E2E tests; 556 test methods |
+| v1.0.0 | 2026-03-22 | Added 5 new views (Phase Diagram, Hugoniot, Lookup, Planetary, Kernel); expanded to 42 calculators |
+| v0.5.0 | 2026-03-21 | Initial comprehensive mapping (8 views, 15 calculators) |
 | Earlier | — | Basic structure documentation |
 
 ---

@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.ThermalConductivityView"
+             x:DataType="vm:ThermalConductivityViewModel">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="Thermal Conductivity Calculator" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock Text="Mineral:" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding MineralNames}" SelectedIndex="{Binding SelectedMineralIndex}" Width="200" />
+            <TextBlock Text="P (GPa):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding Pressure}" Minimum="0.0001" Maximum="140" Width="120" />
+            <TextBlock Text="T (K):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding Temperature}" Minimum="100" Maximum="5000" Width="120" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock Text="k0 (W/m/K):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding K0}" Minimum="1" Maximum="200" Width="100" />
+            <TextBlock Text="g:" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding G}" Minimum="1" Maximum="10" Width="80" />
+            <Button Content="Calculate" Command="{Binding CalculateCommand}" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+            <TextBlock Text="{Binding Conductivity, StringFormat='Conductivity: {0:F4} W/m/K'}" FontWeight="Bold" />
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Margin="0,8,0,0" />
+    </DockPanel>
+</UserControl>
