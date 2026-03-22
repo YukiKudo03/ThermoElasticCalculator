@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.CompositionInverterView"
+             x:DataType="vm:CompositionInverterViewModel">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="Composition Inverter" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Mg Endmember:" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding MineralNames}" SelectedIndex="{Binding SelectedMgEndmemberIndex}" Width="150" />
+                <TextBlock Text="Fe Endmember:" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding MineralNames}" SelectedIndex="{Binding SelectedFeEndmemberIndex}" Width="150" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="P (GPa):" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding Pressure}" Minimum="0" Maximum="150" Width="100" />
+                <TextBlock Text="T (K):" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding Temperature}" Minimum="300" Maximum="5000" Width="100" />
+                <TextBlock Text="Depth (km):" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding DepthKm}" Minimum="0" Maximum="6371" Width="100" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Mg Min:" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding MgMin}" Minimum="0" Maximum="1" Increment="0.05" Width="100" />
+                <TextBlock Text="Mg Max:" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding MgMax}" Minimum="0" Maximum="1" Increment="0.05" Width="100" />
+                <TextBlock Text="Steps:" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding NSteps}" Minimum="5" Maximum="200" Width="80" />
+                <Button Content="Calculate" Command="{Binding CalculateCommand}" />
+            </StackPanel>
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+            <TextBlock Text="{Binding BestMgNumber, StringFormat='Best Mg#: {0:F4}'}" />
+            <TextBlock Text="{Binding MinMisfit, StringFormat='Min Misfit: {0:E3}'}" />
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Margin="0,8,0,0" />
+        <DataGrid ItemsSource="{Binding MisfitProfile}" AutoGenerateColumns="True" />
+    </DockPanel>
+</UserControl>

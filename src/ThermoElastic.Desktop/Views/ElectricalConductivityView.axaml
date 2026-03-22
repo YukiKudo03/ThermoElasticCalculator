@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.ElectricalConductivityView"
+             x:DataType="vm:ElectricalConductivityViewModel">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="Electrical Conductivity Calculator" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock Text="T (K):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding Temperature}" Minimum="300" Maximum="5000" Width="120" />
+            <TextBlock Text="P (GPa):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding Pressure}" Minimum="0" Maximum="140" Width="120" />
+            <TextBlock Text="H2O (ppm):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding WaterContent_ppm}" Minimum="0" Maximum="100000" Width="120" />
+            <Button Content="Calculate" Command="{Binding CalculateCommand}" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+            <TextBlock Text="{Binding Conductivity, StringFormat='Conductivity: {0:E4} S/m'}" FontWeight="Bold" />
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Margin="0,8,0,0" />
+    </DockPanel>
+</UserControl>

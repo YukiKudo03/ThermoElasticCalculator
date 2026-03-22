@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.EOSFitterView"
+             x:DataType="vm:EOSFitterViewModel">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="EOS Fitter" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="V0 (cm³/mol):" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding V0}" Minimum="1" Maximum="100" Increment="0.001" Width="120" />
+                <Button Content="Fit" Command="{Binding CalculateCommand}" />
+            </StackPanel>
+            <TextBlock Text="P-V Data (P[GPa], V[cm³/mol], sigma_V):" />
+            <TextBox Text="{Binding PvDataText}" AcceptsReturn="True" Height="200" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+            <TextBlock Text="{Binding FittedK0, StringFormat='K0: {0:F1} GPa'}" />
+            <TextBlock Text="{Binding FittedK1Prime, StringFormat='Kprime: {0:F2}'}" />
+            <TextBlock Text="{Binding Converged, StringFormat='Converged: {0}'}" />
+            <TextBlock Text="{Binding ChiSquared, StringFormat='χ²: {0:F4}'}" />
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Margin="0,8,0,0" />
+    </DockPanel>
+</UserControl>
