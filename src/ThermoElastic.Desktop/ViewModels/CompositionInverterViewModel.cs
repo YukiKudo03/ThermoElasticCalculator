@@ -39,6 +39,7 @@ public partial class CompositionInverterViewModel : ObservableObject
     [RelayCommand]
     private void Calculate()
     {
+        if (NSteps <= 0) { StatusMessage = "Error: Number of steps must be > 0."; return; }
         try
         {
             var minerals = SLB2011Endmembers.GetAll();

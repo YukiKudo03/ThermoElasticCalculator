@@ -124,6 +124,22 @@ public class Phase3ViewModelE2ETests
         }
     }
 
+    // ── BayesianInversionViewModel ──
+
+    [Fact]
+    public void BayesianInversionViewModel_Calculate_RecoversMean()
+    {
+        var vm = new BayesianInversionViewModel();
+        vm.TrueMean = 3.0;
+        vm.TrueSigma = 1.0;
+        vm.NSamples = 5000;
+        vm.BurnIn = 500;
+        vm.CalculateCommand.Execute(null);
+        Assert.InRange(vm.RecoveredMean, 2.5, 3.5);
+        Assert.InRange(vm.AcceptanceRate, 0.1, 0.9);
+        Assert.NotEmpty(vm.StatusMessage);
+    }
+
     // ── VerificationDashboardViewModel ──
 
     [Fact]

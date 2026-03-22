@@ -24,6 +24,9 @@ public partial class BayesianInversionViewModel : ObservableObject
     [RelayCommand]
     private void Calculate()
     {
+        if (TrueSigma <= 0.0) { StatusMessage = "Error: Sigma must be > 0."; return; }
+        if (BurnIn >= NSamples) { StatusMessage = $"Error: Burn-in ({BurnIn}) must be less than sample count ({NSamples})."; return; }
+        if (NSamples <= 0) { StatusMessage = "Error: Sample count must be > 0."; return; }
         try
         {
             var sampler = new MCMCSampler(seed: 42);
