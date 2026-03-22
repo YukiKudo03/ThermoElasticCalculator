@@ -1,6 +1,8 @@
-<!-- Generated: 2026-03-23 | v1.0.0-ui | 556 tests passing -->
+<!-- Generated: 2026-03-23 | v1.0.0-ui-fixed | 583 tests passing -->
 
 # Desktop UI (Avalonia)
+
+**Visual UI fixes applied:** NumericUpDown FormatString refinements, 2-row layouts optimized, default mineral indices enhanced
 
 ## Technology Stack
 

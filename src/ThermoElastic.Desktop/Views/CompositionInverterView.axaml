@@ -26,7 +26,7 @@
                 <TextBlock Text="Mg Max:" VerticalAlignment="Center" />
                 <NumericUpDown Value="{Binding MgMax}" Minimum="0" Maximum="1" Increment="0.05" Width="100" />
                 <TextBlock Text="Steps:" VerticalAlignment="Center" />
-                <NumericUpDown Value="{Binding NSteps}" Minimum="5" Maximum="200" Width="80" />
+                <NumericUpDown Value="{Binding NSteps}" Minimum="5" Maximum="200" Width="100" FormatString="F0" />
                 <Button Content="Calculate" Command="{Binding CalculateCommand}" />
             </StackPanel>
         </StackPanel>

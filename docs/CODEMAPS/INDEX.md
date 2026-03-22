@@ -1,4 +1,4 @@
-<!-- Generated: 2026-03-23 | v1.0.0-ui | 556 tests passing -->
+<!-- Generated: 2026-03-23 | v1.0.0-ui-fixed | 583 tests passing -->
 
 # ThermoElasticCalculator Codemaps Index
 
@@ -176,7 +176,7 @@ docs/CODEMAPS/
 | Avalonia Views | 33 | Complete (19 new in v1.0-ui) |
 | ViewModels | 33 | 1:1 with Views |
 | Test Classes | 55 | All documented |
-| Test Methods | 556 | Full coverage |
+| Test Methods | 583 | Full coverage |
 | E2E Tests | 77 | All views covered |
 | Database Files | 4 | SLB2011 + rocks |
 | Endmembers | 46 | Pre-loaded |

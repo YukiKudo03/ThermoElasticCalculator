@@ -8,7 +8,7 @@ namespace ThermoElastic.Desktop.ViewModels;
 public partial class GeobarometryViewModel : ObservableObject
 {
     [ObservableProperty] private int _selectedHostIndex;
-    [ObservableProperty] private int _selectedInclusionIndex = 1;
+    [ObservableProperty] private int _selectedInclusionIndex = 12; // Quartz (qtz)
     [ObservableProperty] private double _entrapmentP = 1.0;
     [ObservableProperty] private double _entrapmentT = 1000.0;
     [ObservableProperty] private double _residualPressure;

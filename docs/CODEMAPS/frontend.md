@@ -1,4 +1,4 @@
-<!-- Generated: 2026-03-23 | v1.0.0-ui | 556 tests passing -->
+<!-- Generated: 2026-03-23 | v1.0.0-ui-fixed | 583 tests passing -->
 
 # Frontend (ThermoElastic.Desktop)
 

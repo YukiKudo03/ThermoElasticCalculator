@@ -9,7 +9,7 @@ namespace ThermoElastic.Desktop.ViewModels;
 public partial class PhaseDiagramExplorerViewModel : ObservableObject
 {
     [ObservableProperty] private int _selectedPhase1Index;
-    [ObservableProperty] private int _selectedPhase2Index = 1;
+    [ObservableProperty] private int _selectedPhase2Index = 2; // Mg-Wadsleyite (mw)
     [ObservableProperty] private double _temperature = 1600.0;
     [ObservableProperty] private double _pMin = 5.0;
     [ObservableProperty] private double _pMax = 25.0;

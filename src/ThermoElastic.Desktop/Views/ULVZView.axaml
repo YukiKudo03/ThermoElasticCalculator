@@ -9,7 +9,7 @@
             <TextBlock Text="Mineral:" VerticalAlignment="Center" />
             <ComboBox ItemsSource="{Binding MineralNames}" SelectedIndex="{Binding SelectedMineralIndex}" Width="200" />
             <TextBlock Text="Melt fraction:" VerticalAlignment="Center" />
-            <NumericUpDown Value="{Binding MeltFraction}" Minimum="0" Maximum="1" Increment="0.01" Width="80" />
+            <NumericUpDown Value="{Binding MeltFraction}" Minimum="0" Maximum="1" Increment="0.01" Width="100" FormatString="F2" />
             <TextBlock Text="P (GPa):" VerticalAlignment="Center" />
             <NumericUpDown Value="{Binding Pressure}" Minimum="0" Maximum="200" Width="100" />
             <TextBlock Text="T (K):" VerticalAlignment="Center" />

@@ -7,11 +7,11 @@
         <TextBlock DockPanel.Dock="Top" Text="Bayesian MCMC Inversion" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
             <TextBlock Text="True Mean:" VerticalAlignment="Center" />
-            <NumericUpDown Value="{Binding TrueMean}" Width="80" FormatString="F1" />
+            <NumericUpDown Value="{Binding TrueMean}" Width="100" FormatString="F1" />
             <TextBlock Text="Sigma:" VerticalAlignment="Center" />
-            <NumericUpDown Value="{Binding TrueSigma}" Width="80" FormatString="F1" />
+            <NumericUpDown Value="{Binding TrueSigma}" Width="100" FormatString="F1" />
             <TextBlock Text="Samples:" VerticalAlignment="Center" />
-            <NumericUpDown Value="{Binding NSamples}" Width="80" Minimum="100" Maximum="100000" />
+            <NumericUpDown Value="{Binding NSamples}" Width="100" Minimum="100" Maximum="100000" FormatString="F0" />
             <Button Content="Run MCMC" Command="{Binding CalculateCommand}" />
         </StackPanel>
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="16" Margin="0,0,0,8">
