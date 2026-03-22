@@ -1,52 +1,105 @@
-<!-- Generated: 2026-03-19 | Files scanned: 33 | Token estimate: ~950 -->
+<!-- Generated: 2026-03-23 | v1.0.0 | 42 calculator classes, 25 model classes, 4 database files -->
 # Backend (ThermoElastic.Core)
 
-## Calculation Pipeline
+## Calculation Pipeline (v1.0.0)
 
 ```
-MineralParams ──→ MieGruneisenEOSOptimizer ──→ ThermoMineralParams ──→ ResultSummary
-    (static)         (P,T solver)                (computed props)        (output)
-                     IsConverged/Iterations       AnalyticalEntropy       18-col CSV
+User Input → Phase 1-5: Core EOS → Phase 6-7: Mixtures → Phase 8-9: Advanced → ResultSummary
+             BM3 + Debye       HS bounds + Gibbs    Isentropes, Hugoniots   (18-col export)
+             + Landau          SolutionCalculator   PlanetaryInteriorSolver
 ```
 
-## Key Files
+## 42 Calculator Classes (Organized by Phase)
 
-### Models/
-| File | Lines | Purpose |
-|------|-------|---------|
-| ThermoMineralParams.cs | 259 | P,T-dependent: ρ, KS, KT, GS, Vp, Vs, α, F, G, S + convergence status |
-| MineralParams.cs | 205 | BM3 EOS params + BM3Finite/BM3KT/BM3GT methods |
-| PREMModel.cs | 117 | PREM reference Earth model (0-2891 km depth) |
-| ResultSummary.cs | 45 | Output DTO with 18-column CSV/JSON export (incl. F, G, S) |
-| RockComposition.cs | 51 | Multi-mineral assemblage + volume ratios |
-| SolidSolution.cs | 33 | Endmembers + sites + interaction params |
-| PhaseAssemblage.cs | 21 | Phase collection for Gibbs minimization |
+### Phase 1-5: Core Thermodynamics (5 classes)
+| Class | Purpose |
+|-------|---------|
+| **MieGruneisenEOSOptimizer** | Iterative P,T→f solver (500 iter, 1e-5 tol), convergence report |
+| **DebyeFunctionCalculator** | D₃(x) Simpson 500-pt, thermal contributions E_th, Cv, S_th |
+| **LandauCalculator** | Displacive transitions: Q(T), Tc(P), G_Landau |
+| **Optimizer** | ReglaFalsi + Secant root finders |
+| **EOSFitter** | Least-squares BM3/MGD parameter fitting |
 
-### Calculations/
-| File | Lines | Purpose |
-|------|-------|---------|
-| MieGruneisenEOSOptimizer.cs | 51 | Iterative P,T→f solver (500 iter, 1e-5 tol) + convergence report |
-| DebyeFunctionCalculator.cs | 161 | D₃(x) Simpson 500-pt, E_th, Cv, S_th, F_th per atom |
-| MixtureCalculator.cs | 141 | Voigt/Reuss/Hill + **N-component Hashin-Shtrikman lower bound** |
-| SolutionCalculator.cs | 237 | Ideal S_conf, van Laar G_ex, activity coeff, **rigorous per-endmember EOS** |
-| GibbsMinimizer.cs | 221 | Phase equilibrium by Gibbs minimization (SVD) |
-| IsentropeCalculator.cs | 122 | **Adiabatic T(P) profile** via bisection on S(P,T) = const |
-| EquilibriumAggregateCalculator.cs | 144 | Re-equilibrate + mix (Voigt/Reuss/Hill/**HS**) along P-T path |
-| PhaseDiagramCalculator.cs | 90 | Phase boundary detection/tracing |
-| VProfileCalculator.cs | 130 | 2-component composition profile with HS bounds |
-| DepthConverter.cs | 41 | **Depth↔Pressure conversion** via PREM bisection |
-| RockCalculator.cs | 87 | Multi-mineral orchestrator → MixtureCalculator |
-| LandauCalculator.cs | 63 | Displacive transition: Q(T), Tc(P), G_Landau |
-| PTProfileCalculator.cs | 32 | Loop over P-T points |
-| Optimizer.cs | 148 | ReglaFalsi + Secant root finders |
+### Phase 6-7: Mixtures, Solutions & Equilibria (5 classes)
+| Class | Purpose |
+|-------|---------|
+| **MixtureCalculator** | N-component mixing: Voigt/Reuss/Hill/Hashin-Shtrikman bounds |
+| **SolutionCalculator** | Ideal + van Laar solutions, activity coefficients, per-endmember EOS |
+| **GibbsMinimizer** | Phase equilibrium via SVD + stability analysis |
+| **EquilibriumAggregateCalculator** | Re-equilibrate + mix along P-T paths |
+| **VProfileCalculator** | Binary composition profiles + elastic bounds |
 
-### Database/
-| File | Lines | Purpose |
-|------|-------|---------|
-| SLB2011Endmembers.cs | 439 | 46 endmembers (BurnMan-verified params) |
-| SLB2011Solutions.cs | 75 | Pre-defined solid solutions (olivine, garnet, etc.) |
-| PredefinedRocks.cs | 98 | **Pyrolite, Harzburgite, MORB, Lower Mantle Peridotite** |
-| MineralDatabase.cs | 26 | Static accessor with search/lookup |
+### Phase 8: Specialized Thermodynamics (8 classes)
+| Class | Purpose |
+|-------|---------|
+| **IsentropeCalculator** | Adiabatic T(P) via bisection on S(P,T)=const |
+| **PhaseDiagramCalculator** | Phase boundary tracing + stability detection |
+| **HugoniotCalculator** | Shock equations of state (Hugoniot curves) |
+| **IsomekeCalculator** | Constant entropy curves |
+| **DepthConverter** | PREM-based depth↔pressure conversion |
+| **PTProfileCalculator** | Loop calculator for P-T point sequences |
+| **RockCalculator** | Multi-mineral orchestrator |
+| **LookupTableGenerator** | Pre-computed interpolation tables |
+
+### Phase 9: Advanced & Planetary (9 classes)
+| Class | Purpose |
+|-------|---------|
+| **PlanetaryInteriorSolver** | Self-consistent interior profiles (mass, radius) |
+| **MarsInteriorModel** | Mars 3-layer interior + core size estimation |
+| **MagmaOceanCalculator** | Early crystallization + fractionation sequences |
+| **PostPerovskiteCalculator** | D''-phase properties (P, T) |
+| **ULVZCalculator** | Ultra-low velocity zone modeling |
+| **LLSVPCalculator** | Large low shear velocity province anomalies |
+| **SlabThermalModel** | Subduction slab thermal structure |
+| **AnelasticityCalculator** | Seismic attenuation (Q⁻¹) |
+| **ElectricalConductivityCalculator** | Mantle electrical conductivity |
+
+### Inversion & Machine Learning (4 classes)
+| Class | Purpose |
+|-------|---------|
+| **LevenbergMarquardtOptimizer** | Non-linear least-squares fitting |
+| **MCMCSampler** | MCMC uncertainty quantification |
+| **MLSurrogateModel** | Neural net surrogate for fast evaluation |
+| **TrainingDataGenerator** | ML training set generation |
+
+### Inverse Geochemistry (5 classes)
+| Class | Purpose |
+|-------|---------|
+| **IronPartitioningSolver** | Fe²⁺/Fe³⁺ + Fe/Mg partitioning equilibria |
+| **SpinCrossoverCalculator** | Fe²⁺ spin state transitions |
+| **OxygenFugacityCalculator** | log fO₂ via redox buffers |
+| **CompositionInverter** | Back-calculate composition from density |
+| **ClassicalGeobarometer** | Multi-equilibrium pressure estimation |
+
+### Thermal & Transport Properties (3 classes)
+| Class | Purpose |
+|-------|---------|
+| **ThermalConductivityCalculator** | κ from density + correlations |
+| **ElasticTensorCalculator** | 4th-rank stiffness tensor computation |
+| **SensitivityKernelCalculator** | Travel time & waveform sensitivity kernels |
+
+### Verification & Utilities (3 classes)
+| Class | Purpose |
+|-------|---------|
+| **ThermodynamicVerifier** | G-H-S consistency + Gibbs-Duhem checks |
+| **JointLikelihood** | Joint probability likelihood function |
+| **WaterContentEstimator** | Invert Vp for volatile content |
+
+### Models (25 classes)
+Core: `MineralParams`, `ThermoMineralParams`, `RockComposition`, `PREMModel`
+Results: `ResultSummary`, `PhaseAssemblage`, `PTProfile`
+Specialized: `HugoniotPoint`, `ElasticTensor`, `RadialProfile`, `LookupTable`
+Thermodynamic: `SolidSolution`, `MeltParams`, `SensitivityKernel`
+Statistical: `MCMCChain`, `InversionResult`, `VerificationResult`
+(see core-models.md for complete 25-item listing)
+
+### Database (4 files)
+| File | Content |
+|------|---------|
+| **SLB2011Endmembers.cs** | 46 endmembers (BurnMan-verified) |
+| **SLB2011Solutions.cs** | Pre-defined solid solutions |
+| **PredefinedRocks.cs** | Pyrolite, Harzburgite, MORB, Lower Mantle Peridotite |
+| **MineralDatabase.cs** | Static accessor with search/lookup |
 
 ## Thermodynamic Equations
 
