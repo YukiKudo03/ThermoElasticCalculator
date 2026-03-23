@@ -30,11 +30,13 @@ public class ViewModelE2ETests
         vm.ShowChartCommand.Execute(null);
         Assert.IsType<ChartViewModel>(vm.CurrentView);
 
-        // EOS & Shock (3)
+        // EOS & Shock (4)
         vm.ShowHugoniotCommand.Execute(null);
         Assert.IsType<HugoniotViewModel>(vm.CurrentView);
         vm.ShowEOSFitterCommand.Execute(null);
         Assert.IsType<EOSFitterViewModel>(vm.CurrentView);
+        vm.ShowThermoElasticFitterCommand.Execute(null);
+        Assert.IsType<ThermoElasticFitterViewModel>(vm.CurrentView);
         vm.ShowVerificationDashboardCommand.Execute(null);
         Assert.IsType<VerificationDashboardViewModel>(vm.CurrentView);
 

@@ -473,6 +473,149 @@ public class FullStackE2ETests
     }
 
     // ================================================================
+    // App 27: Thermoelastic Parameter Fitter
+    // ================================================================
+
+    [Fact]
+    public void App27_ThermoElasticFitter_Forsterite_VpVs_RecoversK0G0()
+    {
+        // Generate synthetic Vp/Vs data from Forsterite SLB2011 literature values
+        var fo = Get("fo");
+        var conditions = new (double T, double P)[]
+        {
+            (300, 5), (300, 10), (300, 20), (300, 30), (300, 50),
+            (1000, 5), (1000, 10), (1000, 20), (1000, 30),
+            (1500, 10), (1500, 20), (1500, 30), (1500, 50),
+            (2000, 10), (2000, 20), (2000, 30), (2000, 50),
+        };
+
+        var rng = new Random(42);
+        var data = new List<FittingDataPoint>();
+        foreach (var (T, P) in conditions)
+        {
+            var th = new MieGruneisenEOSOptimizer(fo, P, T).ExecOptimize();
+            if (!th.IsConverged) continue;
+            data.Add(new FittingDataPoint
+            {
+                Temperature = T, Pressure = P,
+                Vp = th.Vp + th.Vp * 0.005 * (rng.NextDouble() * 2 - 1),
+                Vs = th.Vs + th.Vs * 0.005 * (rng.NextDouble() * 2 - 1),
+                SigmaVp = th.Vp * 0.005,
+                SigmaVs = th.Vs * 0.005,
+            });
+        }
+
+        // Fit K0 and G0 with 10% perturbed initial guess
+        var config = new FittingConfig { BaseMineralParams = fo.Clone() };
+        config.FitFlags[FittingConfig.IndexK0] = true;
+        config.FitFlags[FittingConfig.IndexG0] = true;
+        config.BaseMineralParams.KZero *= 1.10;
+        config.BaseMineralParams.GZero *= 0.90;
+
+        var result = new ThermoElasticFitter().Fit(config, data);
+
+        _output.WriteLine($"SLB2011: K0={fo.KZero:F2} GPa, G0={fo.GZero:F2} GPa");
+        _output.WriteLine($"Fitted:  K0={result.Parameters[0]:F2} ± {result.Uncertainties[0]:F2}, G0={result.Parameters[1]:F2} ± {result.Uncertainties[1]:F2}");
+        _output.WriteLine($"Converged={result.Converged}, χ²r={result.ReducedChiSquared:F4}");
+
+        Assert.True(result.Converged);
+        Assert.True(Math.Abs(result.Parameters[0] - fo.KZero) / fo.KZero < 0.02,
+            $"K0 recovery: fitted {result.Parameters[0]:F2} vs literature {fo.KZero:F2}");
+        Assert.True(Math.Abs(result.Parameters[1] - fo.GZero) / fo.GZero < 0.02,
+            $"G0 recovery: fitted {result.Parameters[1]:F2} vs literature {fo.GZero:F2}");
+    }
+
+    [Fact]
+    public void App27_ThermoElasticFitter_Periclase_Volume_RecoversEOSParams()
+    {
+        // Generate synthetic V(T,P) data from Periclase SLB2011 literature values
+        var pe = Get("pe");
+        var conditions = new (double T, double P)[]
+        {
+            (300, 1), (300, 5), (300, 10), (300, 20), (300, 30), (300, 50),
+            (1000, 5), (1000, 10), (1000, 20), (1000, 30),
+            (1500, 10), (1500, 20), (1500, 30), (1500, 50),
+            (2000, 10), (2000, 20), (2000, 30), (2000, 50),
+        };
+
+        var rng = new Random(314);
+        var data = new List<FittingDataPoint>();
+        foreach (var (T, P) in conditions)
+        {
+            var th = new MieGruneisenEOSOptimizer(pe, P, T).ExecOptimize();
+            if (!th.IsConverged) continue;
+            data.Add(new FittingDataPoint
+            {
+                Temperature = T, Pressure = P,
+                Volume = th.Volume + th.Volume * 0.001 * (rng.NextDouble() * 2 - 1),
+                SigmaVolume = th.Volume * 0.001,
+            });
+        }
+
+        var config = new FittingConfig { BaseMineralParams = pe.Clone() };
+        config.FitFlags[FittingConfig.IndexV0] = true;
+        config.FitFlags[FittingConfig.IndexK0] = true;
+        config.FitFlags[FittingConfig.IndexK1Prime] = true;
+        config.BaseMineralParams.MolarVolume *= 1.03;
+        config.BaseMineralParams.KZero *= 0.95;
+        config.BaseMineralParams.K1Prime *= 1.05;
+
+        var result = new ThermoElasticFitter().Fit(config, data);
+
+        _output.WriteLine($"SLB2011: V0={pe.MolarVolume:F3}, K0={pe.KZero:F2}, K'={pe.K1Prime:F4}");
+        _output.WriteLine($"Fitted:  V0={result.Parameters[0]:F3}, K0={result.Parameters[1]:F2}, K'={result.Parameters[2]:F4}");
+        _output.WriteLine($"Converged={result.Converged}, χ²r={result.ReducedChiSquared:F4}");
+
+        Assert.True(result.Converged);
+        Assert.True(Math.Abs(result.Parameters[0] - pe.MolarVolume) / pe.MolarVolume < 0.02);
+        Assert.True(Math.Abs(result.Parameters[1] - pe.KZero) / pe.KZero < 0.03);
+        Assert.True(Math.Abs(result.Parameters[2] - pe.K1Prime) / pe.K1Prime < 0.05);
+    }
+
+    [Fact]
+    public void App27_ThermoElasticFitter_ViewModel_EndToEnd()
+    {
+        // Test that ViewModel initializes correctly with default data
+        var vm = new ThermoElastic.Desktop.ViewModels.ThermoElasticFitterViewModel();
+
+        // Default data should be pre-populated (Forsterite Vp/Vs)
+        Assert.False(string.IsNullOrWhiteSpace(vm.DataText));
+        Assert.True(vm.DataText.Contains("Forsterite"), "Default data should contain Forsterite label");
+
+        // Default parameter values should match Forsterite
+        Assert.InRange(vm.V0, 43.0, 44.0);
+        Assert.InRange(vm.K0, 127.0, 129.0);
+        Assert.InRange(vm.G0, 81.0, 82.0);
+        Assert.Equal(7, vm.NumAtoms);
+
+        // Mineral list should be populated from SLB2011
+        Assert.True(vm.MineralNames.Count > 40, $"Expected >40 minerals, got {vm.MineralNames.Count}");
+
+        // FitK0 and FitG0 should be checked by default
+        Assert.True(vm.FitK0);
+        Assert.True(vm.FitG0);
+        Assert.False(vm.FitV0);
+
+        // Verify fitter works with Forsterite data directly
+        var fo = Get("fo");
+        var data = new List<FittingDataPoint>();
+        foreach (var (T, P) in new[] { (300.0, 5.0), (300.0, 10.0), (300.0, 20.0), (1000.0, 10.0), (1000.0, 20.0), (1500.0, 10.0), (1500.0, 20.0) })
+        {
+            var th = new MieGruneisenEOSOptimizer(fo, P, T).ExecOptimize();
+            if (th.IsConverged)
+                data.Add(new FittingDataPoint { Temperature = T, Pressure = P, Vp = th.Vp, Vs = th.Vs, SigmaVp = th.Vp * 0.005, SigmaVs = th.Vs * 0.005 });
+        }
+
+        var config = new FittingConfig { BaseMineralParams = fo.Clone() };
+        config.FitFlags[FittingConfig.IndexK0] = true;
+        config.FitFlags[FittingConfig.IndexG0] = true;
+
+        var result = new ThermoElasticFitter().Fit(config, data);
+        _output.WriteLine($"ViewModel E2E: K0={result.Parameters[0]:F2}, G0={result.Parameters[1]:F2}, Converged={result.Converged}");
+        Assert.True(result.Converged);
+    }
+
+    // ================================================================
     // Literature Cross-Validation (BurnMan reference values)
     // ================================================================
 

@@ -1,97 +1,253 @@
-<!-- Generated: 2026-03-23 | v1.0.0-ui-fixed | 583 tests passing -->
+<!-- Generated: 2026-03-23 | Files scanned: 233 C# files | Token estimate: ~800 -->
 
-# Architecture
+# Architecture Codemap
+
+**Version:** v1.0.0
+**Last Updated:** 2026-03-23
+**Platform:** .NET 9.0 | Windows/macOS/Linux
 
 ## System Overview
 
 ```
-┌─────────────────────────────────────────────────┐
-│  ThermoElastic.Desktop (Avalonia 11 / MVVM)     │
-│  33 Views + 33 ViewModels                       │
-│  Windows / macOS / Linux                        │
-├─────────────────────────────────────────────────┤
-│  ThermoElastic.Core (.NET 9 Library)            │
-│  Models (25) │ Calculations (42) │ DB (4)       │
-│  Phase 1-9: EOS → Debye → Landau → Gibbs min   │
-│  Mixtures (HS bounds) → Isentropes → PREM      │
-│  Phase diagrams → Hugoniots → Interior models  │
-│  Advanced: spin crossover, LLSVP, planetary    │
-├─────────────────────────────────────────────────┤
-│  MathNet.Numerics | CommunityToolkit.Mvvm      │
-└─────────────────────────────────────────────────┘
-     ↑ test
-┌─────────────────────────────────────────────────┐
-│  ThermoElastic.Core.Tests (xUnit 2.9)           │
-│  55 test classes │ 391 test methods             │
-│  BurnMan cross-validation + SLB2011 verification│
-└─────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────┐
-│  ThermoElastic.Desktop.E2E                      │
-│  45 E2E tests covering all views                │
-└─────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│  ThermoElastic.Desktop                                 │
+│  (.NET 9.0 Avalonia 11.2.3 | MVVM)                     │
+│  • 33 Views (AXAML) + 33 ViewModels                    │
+│  • Categories: Core, EOS&Shock, Phase, Mantle, Props   │
+│  • Threading: async/await for long calculations        │
+├────────────────────────────────────────────────────────┤
+│  ThermoElastic.Core                                    │
+│  (.NET 9.0 Class Library)                              │
+│  • 42 Calculation Engines (Phase 1-9 organized)        │
+│  • 27 Data Models (Input/Output/Intermediate)          │
+│  • 5 Database Modules (SLB2011 + rocks + solutions)    │
+│  • 2 I/O Helpers (JSON/CSV serialization)              │
+├────────────────────────────────────────────────────────┤
+│  External Dependencies                                 │
+│  • MathNet.Numerics 5.0.0 (SVD, linear algebra)        │
+│  • CommunityToolkit.Mvvm 8.4.0 (source-gen MVVM)       │
+└────────────────────────────────────────────────────────┘
+     ↓ test
+┌────────────────────────────────────────────────────────┐
+│  ThermoElastic.Core.Tests (xUnit 2.9.0)                │
+│  • 56 Test Classes (unit tests)                        │
+│  • ~479 Test Methods (Fact/Theory)                     │
+│  • Verification: BurnMan cross-validation + SLB2011    │
+│  • Coverage: ~95.6% on Core library                    │
+├────────────────────────────────────────────────────────┤
+│  ThermoElastic.Desktop.E2E (xUnit 2.9.0)               │
+│  • 7 E2E test files                                    │
+│  • ~77 Test Methods (ViewModel + Visual tests)         │
+│  • Full UI flow validation (Avalonia Headless)         │
+└────────────────────────────────────────────────────────┘
 ```
 
-## Data Flow: Input → Calculation Pipeline → Output
+## Data Flow: User Input → Calculation → Output
 
 ```
-User Input (P, T, Composition)
-  ↓
-View (33 variants: Core mineralogy, Shock, Phase equilibria, etc.)
-  ↓
-ViewModel (data binding + validation)
-  ↓
-Calculator (phase 1-9 specialized engines)
-  │
-  ├─ Phase 1-5: Core thermodynamics
-  │   MieGruneisenEOSOptimizer → BM3 finite strain
-  │   ThermoMineralParams → Debye + Landau + magnetic
-  │
-  ├─ Phase 6-7: Mixtures & solutions
-  │   MixtureCalculator (Voigt/Reuss/Hill/HS bounds)
-  │   SolutionCalculator (van Laar + activity coeff)
-  │   GibbsMinimizer (SVD phase equilibrium)
-  │
-  ├─ Phase 8-9: Planetary & specialized
-  │   PlanetaryInteriorSolver → mass-radius profiles
-  │   IsentropeCalculator → adiabatic geotherms
-  │   HugoniotCalculator → shock equations of state
-  │   SpinCrossoverCalculator → Fe²⁺ spin transitions
-  │
-  └─ Database lookup (SLB2011 endmembers, predefined rocks)
-  ↓
-ResultSummary (18-column CSV export, JSON, tables)
-  ↓
-UI Results + Charts
+┌─────────────────────────────────────────────────────────┐
+│  User Input Layer (View)                                │
+│  • TextBox: Pressure (GPa), Temperature (K), etc.       │
+│  • ComboBox: Mineral selection, mixing models           │
+│  • DataGrid: P-T profiles, composition tables           │
+│  • Slider: Volume fraction, parameters                  │
+└─────────────────────────────────────────────────────────┘
+               ↓ INotifyPropertyChanged (MVVM)
+┌─────────────────────────────────────────────────────────┐
+│  Business Logic Layer (ViewModel)                       │
+│  • RelayCommand: Calculate, Export, Load, Save          │
+│  • ObservableProperty: Results binding                  │
+│  • Validation: Range checks, unit conversion            │
+│  • Threading: Task.Run for non-blocking UI              │
+└─────────────────────────────────────────────────────────┘
+               ↓ Invoke Calculator
+┌─────────────────────────────────────────────────────────┐
+│  Calculation Engine (Core Library)                      │
+│  • Phase 1-5: EOS (BM3) + Thermodynamics               │
+│  • Phase 6-7: Mixtures (HS bounds) + Solutions         │
+│  • Phase 8-9: Specialized (Hugoniot, Isentrope, etc.)  │
+│  • Database: SLB2011 mineral parameters                │
+└─────────────────────────────────────────────────────────┘
+               ↓ ResultSummary (18 columns CSV)
+┌─────────────────────────────────────────────────────────┐
+│  Output Layer (Results Binding)                         │
+│  • CSV/JSON Export: save to disk                        │
+│  • DataGrid: display results table                      │
+│  • Canvas/OxyPlot: plot Vp, Vs, density curves         │
+│  • Status: "✓ Converged" or "✗ Did not converge"       │
+└─────────────────────────────────────────────────────────┘
 ```
 
-## Key Directories & File Counts
+## Core Calculation Pipeline Hierarchy
 
-| Path | Purpose | Files | Latest |
-|------|---------|-------|--------|
-| `src/ThermoElastic.Core/Models/` | Data structures | 25 | ThermoMineralParams, ElasticTensor, MCMCChain |
-| `src/ThermoElastic.Core/Calculations/` | Calculator engines (phase 1-9) | 42 | All phases + specialized solvers |
-| `src/ThermoElastic.Core/Database/` | SLB2011 + rocks + solutions | 4 | 46 endmembers, predefined rocks |
-| `src/ThermoElastic.Core/IO/` | File I/O utilities | 2 | JSON/CSV serialization |
-| `src/ThermoElastic.Desktop/Views/` | Avalonia AXAML UI | 33 | All application pages |
-| `src/ThermoElastic.Desktop/ViewModels/` | MVVM business logic | 33 | 1:1 mapping to views |
-| `tests/ThermoElastic.Core.Tests/` | Unit + verification tests | 68 | 391 test methods |
-| `tests/ThermoElastic.Desktop.E2E/` | Integration + E2E tests | variable | 45 E2E scenarios |
+```
+Input (P, T, Composition)
+  ↓
+MieGruneisenEOSOptimizer
+  ├─ BM3 Finite Strain EOS (iterative P solver)
+  ├─ K(P), G(P), elastic constants
+  └─→ ThermoMineralParams (intermediate)
+  ↓
+DebyeFunctionCalculator
+  ├─ Debye model thermal energy
+  ├─ Simpson integral (500 points)
+  └─→ Internal energy, heat capacity
+  ↓
+LandauCalculator (phase transitions)
+  ├─ α↔β transition order-disorder
+  ├─ Landau free energy
+  └─→ Excess G, S, V
+  ↓
+[Optional: Mixture Models]
+  ├─ MixtureCalculator (Voigt/Reuss/Hill/HS)
+  ├─ SolutionCalculator (van Laar activity)
+  └─→ Aggregate elastic moduli
+  ↓
+[Optional: Specialized]
+  ├─ HugoniotCalculator (shock EOS)
+  ├─ IsentropeCalculator (adiabatic T profile)
+  └─→ Specialized results
+  ↓
+Output (Vp, Vs, ρ, K, G, α, Cp, S, H, G, etc.)
+```
 
-## Solution Structure
+## Directory Structure & File Counts
 
-- `ThermoElasticCalculator.sln` — Unified solution with 4 projects:
-  - ThermoElastic.Core (library)
-  - ThermoElastic.Desktop (app)
-  - ThermoElastic.Core.Tests
-  - ThermoElastic.Desktop.E2E
+| Path | Purpose | Files | Key Content |
+|------|---------|-------|-------------|
+| `src/ThermoElastic.Core/Models/` | Data models (input/output) | 27 | MineralParams, ThermoMineralParams, PTProfile, RockComposition, PhaseAssemblage, ElasticTensor, etc. |
+| `src/ThermoElastic.Core/Calculations/` | Calculation engines | 43 | Phase 1-9 organized: BM3, Debye, Landau, Mixture, Gibbs, Hugoniot, planetary solvers, etc. |
+| `src/ThermoElastic.Core/Database/` | SLB2011 minerals + rocks | 5 | MineralDatabase, SLB2011Endmembers (46), SLB2011Solutions, PredefinedRocks, SingleCrystalElasticConstants |
+| `src/ThermoElastic.Core/IO/` | File I/O utilities | 2 | JSON/CSV serialization helpers |
+| `src/ThermoElastic.Desktop/Views/` | UI pages (AXAML) | 34 | MainWindow + 33 category views |
+| `src/ThermoElastic.Desktop/ViewModels/` | MVVM ViewModels | 34 | MainWindowViewModel + 33 paired with Views |
+| `tests/ThermoElastic.Core.Tests/` | Unit tests | 56 | Test classes covering all calculators, models, DB |
+| `tests/ThermoElastic.Desktop.E2E/` | E2E tests | 7 | ViewModelE2ETests, VisualScreenshotTests, FullStackE2ETests |
+
+## Solution Layout
+
+**File:** `ThermoElasticCalculator.sln` (unified solution, 4 projects)
+
+```
+ThermoElasticCalculator.sln
+├── ThermoElastic.Core (net9.0 library)
+│   └── Reference: MathNet.Numerics
+├── ThermoElastic.Desktop (net9.0 WinExe)
+│   ├── Reference: ThermoElastic.Core
+│   ├── Reference: Avalonia 11.2.3 + Fluent theme
+│   └── Reference: CommunityToolkit.Mvvm 8.4.0
+├── ThermoElastic.Core.Tests (net9.0 test)
+│   ├── Reference: ThermoElastic.Core
+│   └── Reference: xunit 2.9.0 + SDK 17.8.0
+└── ThermoElastic.Desktop.E2E (net9.0 test)
+    ├── Reference: ThermoElastic.Desktop
+    ├── Reference: ThermoElastic.Core
+    └── Reference: xunit 2.9.0
+```
 
 ## Technology Stack
 
-| Layer | Framework | Version | Purpose |
-|-------|-----------|---------|---------|
-| Core | .NET | 9.0 | Scientific library |
-| Math | MathNet.Numerics | 5.0.0 | SVD, linear algebra |
-| UI | Avalonia | 11.2.3 | Cross-platform XAML |
-| MVVM | CommunityToolkit.Mvvm | 8.4.0 | Source-generated ObservableObject |
-| Test | xUnit | 2.9.0 | Test framework |
+| Component | Technology | Version | Purpose |
+|-----------|-----------|---------|---------|
+| Runtime | .NET | 9.0 | Target framework |
+| **Core Library** | — | — | — |
+| Math/Linear Algebra | MathNet.Numerics | 5.0.0 | SVD, matrix operations, iterative solvers |
+| **Desktop UI** | — | — | — |
+| UI Framework | Avalonia | 11.2.3 | Cross-platform XAML (Windows/macOS/Linux) |
+| Themes | Avalonia.Themes.Fluent | 11.2.3 | Modern Fluent Design |
+| Data Grid | Avalonia.Controls.DataGrid | 11.2.3 | Results tables |
+| MVVM Framework | CommunityToolkit.Mvvm | 8.4.0 | Source-gen ObservableObject + RelayCommand |
+| **Testing** | — | — | — |
+| Test Framework | xunit | 2.9.0 | Fact/Theory test execution |
+| Test Runner | Microsoft.NET.Test.Sdk | 17.8.0 | Visual Studio integration |
+| Code Coverage | coverlet.collector | 6.0.2 | Line coverage metrics |
+
+## Key Architectural Patterns
+
+1. **MVVM (Model-View-ViewModel)**
+   - **View** (.axaml): UI markup, data bindings
+   - **ViewModel**: RelayCommand handlers, ObservableProperty, validation
+   - **Model**: Business logic in Calculator classes
+
+2. **Separation of Concerns**
+   - Core (no UI dependencies) → reusable library
+   - Desktop (Avalonia only) → replaceable UI layer
+   - Tests independent → can run headless
+
+3. **Calculator Factory Pattern**
+   - Each tool (MieGruneisenEOSOptimizer, RockCalculator, etc.) is a standalone class
+   - Stateless: instantiate with input data, call method, get result
+
+4. **Result Streaming**
+   - List<T> (P-T profiles) → batch calculations
+   - Single values → instant calculations
+   - CSV/JSON export → file serialization
+
+## Threading Model
+
+- **UI Thread**: View updates, user input
+- **Background Tasks**: `Task.Run(() => Calculator.Execute())` in ViewModel
+- **Async Await**: RelayCommand with cancellation support (where needed)
+- **Long Operations**: Progress callback (future enhancement)
+
+## File Formats
+
+| Extension | Purpose | Format | Example |
+|-----------|---------|--------|---------|
+| `.mine` | Mineral parameters | JSON | `{ "MineralName": "Fo90", "KZero": 128.5, ... }` |
+| `.ptpf` | P-T profile | JSON | `{ "Profile": [ {"P": 1.0, "T": 1600}, ... ] }` |
+| `.rock` | Rock composition | JSON | `{ "Minerals": [{ "Name": "Ol", "Fraction": 0.5 }, ...] }` |
+| `.csv` | Results table | CSV | Headers: P, T, Vp, Vs, Density, K, G, ... |
+| `.json` | General data | JSON | ResultSummary serialization |
+
+## Build & Deploy
+
+**Build:**
+```bash
+dotnet build ThermoElasticCalculator.sln
+```
+
+**Run (debug):**
+```bash
+dotnet run --project src/ThermoElastic.Desktop
+```
+
+**Publish (platform-specific):**
+```bash
+dotnet publish src/ThermoElastic.Desktop -r win-x64 -c Release
+dotnet publish src/ThermoElastic.Desktop -r osx-arm64 -c Release
+dotnet publish src/ThermoElastic.Desktop -r linux-x64 -c Release
+```
+
+**Test:**
+```bash
+dotnet test                    # All tests
+dotnet test --filter "Category=UnitTest"  # Unit only
+dotnet test --filter "Category=E2E"  # E2E only
+```
+
+## Key Statistics
+
+| Metric | Count |
+|--------|-------|
+| Total C# Source Files | 233 |
+| Core Model Classes | 27 |
+| Core Calculator Classes | 43 |
+| Core Database Files | 5 |
+| Core I/O Files | 2 |
+| Desktop Views | 34 |
+| Desktop ViewModels | 34 |
+| Unit Test Classes | 56 |
+| Unit Test Methods | ~479 |
+| E2E Test Classes | 7 |
+| E2E Test Methods | ~77 |
+| **Total Test Methods** | **~556** |
+| Test Code Coverage | 95.6% (Core) |
+| SLB2011 Endmembers | 46 |
+| Predefined Rocks | 4 (Pyrolite, Harzburgite, MORB, Piclogite) |
+| NuGet Direct Dependencies | 8 |
+| Supported Platforms | 3 (Win/Mac/Linux) |
+
+---
+
+**Next:** See [core-engine.md](./core-engine.md) for detailed calculator descriptions.
