@@ -1,9 +1,9 @@
-<!-- Generated: 2026-03-23 | Files scanned: 34 views + 34 ViewModels | Token estimate: ~1100 -->
+<!-- Generated: 2026-03-24 | Files scanned: 35 views + 35 ViewModels | Token estimate: ~1200 -->
 
 # UI Layer Codemap
 
 **Version:** v1.0.0
-**Last Updated:** 2026-03-23
+**Last Updated:** 2026-03-24
 **Scope:** ThermoElastic.Desktop MVVM Views and ViewModels
 
 ## MVVM Architecture
@@ -31,7 +31,7 @@ View (AXAML)                    ViewModel (C#)                   Model/Calculato
 MainWindow (App root)
   └─ MainWindowViewModel
       ├─ CurrentView: object? (bound in View)
-      └─ RelayCommands (34 total)
+      └─ RelayCommands (35 total)
           ├─ ShowMineralEditor()        → MineralEditorViewModel
           ├─ ShowPTProfile()            → PTProfileViewModel
           ├─ ShowMixture()              → MixtureViewModel
@@ -49,6 +49,7 @@ MainWindow (App root)
           ├─ ShowGeobarometry()         → GeobarometryViewModel
           ├─ ShowSensitivityKernel()    → SensitivityKernelViewModel
           ├─ ShowAnelasticity()         → AnelasticityViewModel
+          ├─ **ShowQProfile()**         → **QProfileViewModel** ← NEW
           ├─ ShowLLSVP()                → LLSVPViewModel
           ├─ ShowULVZ()                 → ULVZViewModel
           ├─ ShowSlabModel()            → SlabModelViewModel
@@ -423,17 +424,92 @@ var stability = calc.CalcPostPerovskite(Depth_km, Geotherm);
 - DataGrid: 6×6 tensor display
 - Button: Calculate, Export
 
-#### 6.4 Anelasticity
+#### 6.4 Anelasticity (Enhanced)
 **File:** `Views/AnelasticityView.axaml` | `ViewModels/AnelasticityViewModel.cs`
 
-**Purpose:** Seismic attenuation Q⁻¹(P, T, f)
+**Purpose:** Seismic attenuation Q⁻¹(P, T, f) with multi-tier models, grain size, water & melt effects
 
-**Controls:**
+**Controls (Enhanced):**
+- ComboBox: **Model selection** (Tier 1: Simple | Tier 2: Parametric | Tier 3a: Extended Burgers | Tier 3b: Andrade)
 - Slider: Temperature, Pressure, Frequency
+- **Slider: Grain size [μm]** (NEW)
+- **Slider: Water content [ppm H/Si]** (NEW)
+- **Slider: Melt fraction [%]** (NEW)
 - Button: Calculate Q⁻¹
 - Canvas: Plot Q⁻¹ vs. frequency
+- **Button: Show Q Profile** (NEW) → navigates to QProfileView
 
-#### 6.5 Oxygen Fugacity
+**ViewModel (Enhanced):**
+```csharp
+[ObservableProperty] private string _selectedModel = "Tier2_Parametric";
+[ObservableProperty] private double _grainSize_um = 10.0;
+[ObservableProperty] private double _waterContent_ppm = 0.0;
+[ObservableProperty] private double _meltFraction = 0.0;
+
+[RelayCommand] private async void Calculate()
+{
+    var prms = new AnelasticityParams
+    {
+        GrainSize_m = GrainSize_um * 1e-6,
+        WaterContent_ppm = WaterContent_ppm,
+        MeltFraction = MeltFraction
+    };
+
+    // Select calculator based on SelectedModel
+    IAnelasticityModel calc = SelectedModel switch
+    {
+        "Tier2_Parametric" => new ParametricQCalculator(),
+        "Tier3a_ExtendedBurgers" => new ExtendedBurgersCalculator(),
+        "Tier3b_Andrade" => new AndradeCalculator(),
+        _ => new AnelasticityCalculator()
+    };
+
+    Results = await Task.Run(() => calc.ApplyCorrection(
+        Vp_ref, Vs_ref, K_ref, G_ref, Temperature, Pressure, Frequency, prms));
+}
+```
+
+#### 6.5 Q Profile (NEW)
+**File:** `Views/QProfileView.axaml` | `ViewModels/QProfileViewModel.cs`
+
+**Purpose:** Build 1D depth-dependent Q profile along geothermal gradient with water/melt decorators
+
+**Controls (NEW):**
+- ComboBox: Geotherm profile (Adiabatic, Continental Shield, Mid-ocean ridge, Subduction zone)
+- ComboBox: Anelasticity model (same as Anelasticity view)
+- **Slider: Water content [ppm H/Si]** (applies to all depths)
+- **Slider: Melt fraction [%]** (applies to all depths, depth-dependent optional)
+- TextBox: Frequency [Hz]
+- TextBox: Grain size [μm]
+- Button: Build Profile, Export, Plot
+- DataGrid: QProfilePoint[] (Depth, T, Q_inv, Model, GrainSize, WaterContent, MeltFraction)
+- Canvas: Q⁻¹(depth) plot with shaded geotherm background
+
+**ViewModel (NEW):**
+```csharp
+[ObservableProperty] private string _selectedGeotherm = "Adiabatic";
+[ObservableProperty] private double _waterContent_ppm = 0.0;
+[ObservableProperty] private double _meltFraction = 0.0;
+[ObservableProperty] private double _frequency_Hz = 1.0;
+[ObservableProperty] private ObservableCollection<QProfilePoint> _profilePoints = new();
+
+[RelayCommand] private async void BuildProfile()
+{
+    var prms = new AnelasticityParams
+    {
+        WaterContent_ppm = WaterContent_ppm,
+        MeltFraction = MeltFraction
+    };
+
+    var geotherm = LoadGeotherm(SelectedGeotherm);
+    var builder = new QProfileBuilder();
+
+    ProfilePoints = new(await Task.Run(() =>
+        builder.BuildQProfile(geotherm, Frequency_Hz, prms)));
+}
+```
+
+#### 6.6 Oxygen Fugacity
 **File:** `Views/OxygenFugacityView.axaml` | `ViewModels/OxygenFugacityViewModel.cs`
 
 **Purpose:** log(fO₂) from redox equilibrium

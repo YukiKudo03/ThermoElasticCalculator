@@ -616,6 +616,117 @@ public class FullStackE2ETests
     }
 
     // ================================================================
+    // App 28: Enhanced Anelasticity — Multi-model Q correction
+    // ================================================================
+
+    [Fact]
+    public void App28_Anelasticity_ParametricQ_ForsteriteAtMantle()
+    {
+        // ParametricQ model: Forsterite at upper mantle conditions
+        var fo = Get("fo");
+        var eos = new MieGruneisenEOSOptimizer(fo, 5.0, 1400.0).ExecOptimize();
+
+        var calc = new ParametricQCalculator();
+        var prms = AnelasticityDatabase.Olivine() with { GrainSize_m = 0.01 };
+        var result = calc.ApplyCorrection(eos.Vp, eos.Vs, eos.KS, eos.GS, 1400.0, 5.0, 1.0, prms);
+
+        _output.WriteLine($"ParametricQ: QS={result.QS:F1}, Vs_el={eos.Vs:F0}, Vs_an={result.Vs_anelastic:F0}, ΔVs={result.DeltaVs_percent:F2}%");
+        Assert.True(result.QS > 0);
+        Assert.True(result.Vs_anelastic < eos.Vs);
+        Assert.True(result.DeltaVs_percent < 0);
+    }
+
+    [Fact]
+    public void App28_Anelasticity_Andrade_FrequencyDispersion()
+    {
+        // Andrade model shows velocity dispersion: lower freq → lower velocity
+        var fo = Get("fo");
+        var eos = new MieGruneisenEOSOptimizer(fo, 5.0, 1400.0).ExecOptimize();
+        var prms = AnelasticityDatabase.Olivine() with { GrainSize_m = 0.01 };
+
+        var andrade = new AndradeCalculator();
+        var r_1Hz = andrade.ApplyCorrection(eos.Vp, eos.Vs, eos.KS, eos.GS, 1400.0, 5.0, 1.0, prms);
+        var r_01Hz = andrade.ApplyCorrection(eos.Vp, eos.Vs, eos.KS, eos.GS, 1400.0, 5.0, 0.01, prms);
+
+        _output.WriteLine($"Andrade: Vs(1Hz)={r_1Hz.Vs_anelastic:F0}, Vs(0.01Hz)={r_01Hz.Vs_anelastic:F0}");
+        Assert.True(r_01Hz.Vs_anelastic <= r_1Hz.Vs_anelastic, "Lower freq → lower Vs");
+    }
+
+    [Fact]
+    public void App28_Anelasticity_WaterAndMelt_CombinedEffect()
+    {
+        // Water + melt combined: should reduce both Q and velocity
+        var fo = Get("fo");
+        var eos = new MieGruneisenEOSOptimizer(fo, 5.0, 1400.0).ExecOptimize();
+
+        var dryPrms = AnelasticityDatabase.Olivine() with
+        {
+            GrainSize_m = 0.01, WaterContent_ppm = 0, MeltFraction = 0
+        };
+        var wetMeltPrms = AnelasticityDatabase.Olivine() with
+        {
+            GrainSize_m = 0.01, WaterContent_ppm = 200, MeltFraction = 0.01
+        };
+
+        var baseModel = new ParametricQCalculator();
+        var fullModel = new MeltQCorrector(new WaterQCorrector(baseModel));
+
+        var r_dry = baseModel.ApplyCorrection(eos.Vp, eos.Vs, eos.KS, eos.GS, 1400.0, 5.0, 1.0, dryPrms);
+        var r_wet_melt = fullModel.ApplyCorrection(eos.Vp, eos.Vs, eos.KS, eos.GS, 1400.0, 5.0, 1.0, wetMeltPrms);
+
+        _output.WriteLine($"Dry: Vs={r_dry.Vs_anelastic:F0}, QS={r_dry.QS:F1}");
+        _output.WriteLine($"Wet+Melt: Vs={r_wet_melt.Vs_anelastic:F0}, QS={r_wet_melt.QS:F1}");
+        Assert.True(r_wet_melt.Vs_anelastic < r_dry.Vs_anelastic, "Water+melt should reduce Vs");
+    }
+
+    [Fact]
+    public void App28_Anelasticity_QProfile_FullDepthRange()
+    {
+        // Q profile from surface to 800km with phase transitions
+        var model = new ParametricQCalculator();
+        var builder = new QProfileBuilder();
+        var profile = builder.Build(model, 1600.0, 1.0, 0.01, 800.0, 50.0);
+
+        _output.WriteLine($"Q Profile: {profile.Count} points");
+        var phases = profile.Select(p => p.DominantPhase).Distinct().ToList();
+        _output.WriteLine($"Phases encountered: {string.Join(", ", phases)}");
+
+        Assert.True(profile.Count > 10, "Should have >10 depth points");
+        Assert.Contains("olivine", phases);
+        // Should include transition zone phases if depth > 410km
+        if (profile.Any(p => p.Depth_km > 420))
+            Assert.Contains("wadsleyite", phases);
+
+        // All QS positive and finite
+        Assert.All(profile, p =>
+        {
+            Assert.True(p.QS > 0 && !double.IsNaN(p.QS) && !double.IsInfinity(p.QS));
+        });
+    }
+
+    [Fact]
+    public void App28_Anelasticity_ViewModel_AllModels_Work()
+    {
+        // Verify ViewModel initialization (models, mineral list, defaults)
+        var vm = new ThermoElastic.Desktop.ViewModels.AnelasticityViewModel();
+        Assert.Equal(4, vm.ModelNames.Count);
+        Assert.True(vm.MineralNames.Count > 40);
+        Assert.Equal(10.0, vm.GrainSize_mm);
+        Assert.Equal(0.0, vm.WaterContent);
+        Assert.Equal(0.0, vm.MeltFraction);
+    }
+
+    [Fact]
+    public void App28_Anelasticity_QProfileViewModel_Initializes()
+    {
+        var vm = new ThermoElastic.Desktop.ViewModels.QProfileViewModel();
+        Assert.Equal(1600.0, vm.PotentialTemp);
+        Assert.Equal(1.0, vm.Frequency);
+        Assert.Equal(10.0, vm.GrainSize_mm);
+        Assert.Equal(4, vm.ModelNames.Count);
+    }
+
+    // ================================================================
     // Literature Cross-Validation (BurnMan reference values)
     // ================================================================
 

@@ -1,0 +1,41 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.QProfileView"
+             x:DataType="vm:QProfileViewModel">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="Q Profile (Depth-Dependent)" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
+
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock Text="Model:" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding ModelNames}" SelectedIndex="{Binding SelectedModelIndex}" Width="180" />
+            <TextBlock Text="Tp (K):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding PotentialTemp}" Minimum="1200" Maximum="2000" Increment="50" Width="100" />
+            <TextBlock Text="d (mm):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding GrainSize_mm}" Minimum="0.001" Maximum="100" Increment="1" Width="90" />
+            <TextBlock Text="f (Hz):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding Frequency}" Minimum="0.001" Maximum="100" Increment="0.1" Width="80" />
+            <TextBlock Text="Max depth (km):" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding MaxDepth}" Minimum="100" Maximum="2891" Increment="100" Width="90" />
+            <Button Content="Compute" Command="{Binding CalculateCommand}" />
+        </StackPanel>
+
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Margin="0,8,0,0" />
+
+        <DataGrid ItemsSource="{Binding ProfilePoints}" AutoGenerateColumns="False" IsReadOnly="True"
+                  FontSize="11" FontFamily="Consolas,Courier New,monospace">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Depth (km)" Binding="{Binding Depth_km, StringFormat=F0}" Width="80" />
+                <DataGridTextColumn Header="P (GPa)" Binding="{Binding Pressure_GPa, StringFormat=F1}" Width="70" />
+                <DataGridTextColumn Header="T (K)" Binding="{Binding Temperature_K, StringFormat=F0}" Width="70" />
+                <DataGridTextColumn Header="Phase" Binding="{Binding DominantPhase}" Width="90" />
+                <DataGridTextColumn Header="QS" Binding="{Binding QS, StringFormat=F1}" Width="80" />
+                <DataGridTextColumn Header="QS_PREM" Binding="{Binding QS_PREM, StringFormat=F0}" Width="75" />
+                <DataGridTextColumn Header="Vs_el (m/s)" Binding="{Binding Vs_elastic, StringFormat=F0}" Width="85" />
+                <DataGridTextColumn Header="Vs_an (m/s)" Binding="{Binding Vs_anelastic, StringFormat=F0}" Width="85" />
+                <DataGridTextColumn Header="ΔVs (%)" Binding="{Binding DeltaVs_percent, StringFormat=F3}" Width="75" />
+                <DataGridTextColumn Header="ΔVp (%)" Binding="{Binding DeltaVp_percent, StringFormat=F3}" Width="75" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

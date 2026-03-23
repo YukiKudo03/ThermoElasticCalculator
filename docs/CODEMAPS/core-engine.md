@@ -1,9 +1,9 @@
-<!-- Generated: 2026-03-23 | Files scanned: 43 calculators + 27 models | Token estimate: ~1200 -->
+<!-- Generated: 2026-03-24 | Files scanned: 54 calculators + 30 models | Token estimate: ~1400 -->
 
 # Core Engine Codemap
 
 **Version:** v1.0.0
-**Last Updated:** 2026-03-23
+**Last Updated:** 2026-03-24
 **Scope:** ThermoElastic.Core calculation engines and data models
 
 ## Calculation Engines Overview (43 Classes)
@@ -150,7 +150,56 @@ Thermal and electrical conductivity, elastic tensor components.
 - `src/ThermoElastic.Core/Calculations/ThermalConductivityCalculator.cs`
 - `src/ThermoElastic.Core/Calculations/ElectricalConductivityCalculator.cs`
 - `src/ThermoElastic.Core/Calculations/ElasticTensorCalculator.cs`
-- `src/ThermoElastic.Core/Calculations/AnelasticityCalculator.cs`
+- `src/ThermoElastic.Core/Calculations/AnelasticityCalculator.cs` (now implements IAnelasticityModel)
+
+### Enhanced Anelasticity (11 Classes) — NEW
+
+Advanced seismic quality factor modeling with multi-tier complexity, viscoelastic corrections, and material-specific effects.
+
+| Class | Purpose | Key Method | Input | Output | Tier |
+|-------|---------|-----------|-------|--------|------|
+| **IAnelasticityModel** (interface) | Strategy interface for Q models | `ComputeQS()`, `ApplyCorrection()` | T, P, f, AnelasticityParams | QS, AnelasticResult | — |
+| **ParametricQCalculator** | Grain-size & T,P,f dependent Q(d,T,P,f) | `ComputeQS()` | grain_size, T, P, f, prms | Q⁻¹ | Tier 2 |
+| **AndradeCalculator** | Analytical J*(ω) compliance via Andrade creep | `ComputeComplianceSpectrum()` | T, P, freq_array, prms | J* (complex) | Tier 3b |
+| **ExtendedBurgersCalculator** | Numerical J*(ω) via log-normal relaxation | `ComputeComplianceSpectrum()` | T, P, freq_array, prms | J* (complex) | Tier 3a |
+| **WaterQCorrector** | Decorator: water effect on Q (enhanced mobility) | `CorrectForWater()` | Q_dry, H2O_ppm, T, prms | Q_wet (reduced) | Decorator |
+| **MeltQCorrector** | Decorator: partial melt effect on Q (damping) | `CorrectForMelt()` | Q_solid, melt_frac, T, P, prms | Q_melt (reduced) | Decorator |
+| **QProfileBuilder** | Build depth-dependent Q profile along geotherm | `BuildQProfile()` | geotherm (T vs depth), freq, prms | QProfilePoint[] | Composite |
+| **AnelasticCorrectionHelper** | Shared: convert J*(ω) → velocity corrections | `ApplyCompliance()` | J*(ω), Vp_0, Vs_0 | ΔVp, ΔVs | Helper |
+| **AnelasticityDatabase** | Mineral-specific Q parameters (olivine, bridgmanite, etc.) | `GetParameters()` | mineral_name | AnelasticityParams | Database |
+
+**File locations:**
+- `src/ThermoElastic.Core/Calculations/IAnelasticityModel.cs`
+- `src/ThermoElastic.Core/Calculations/ParametricQCalculator.cs`
+- `src/ThermoElastic.Core/Calculations/AndradeCalculator.cs`
+- `src/ThermoElastic.Core/Calculations/ExtendedBurgersCalculator.cs`
+- `src/ThermoElastic.Core/Calculations/WaterQCorrector.cs`
+- `src/ThermoElastic.Core/Calculations/MeltQCorrector.cs`
+- `src/ThermoElastic.Core/Calculations/QProfileBuilder.cs`
+- `src/ThermoElastic.Core/Calculations/AnelasticCorrectionHelper.cs`
+- `src/ThermoElastic.Core/Database/AnelasticityDatabase.cs`
+
+**Architecture Pattern:**
+```
+IAnelasticityModel (Strategy)
+  ├─ AnelasticityCalculator (Tier 1: basic, frequency-independent)
+  ├─ ParametricQCalculator (Tier 2: grain-size, T, P, f dependent)
+  ├─ AndradeCalculator (Tier 3b: analytical J*(ω))
+  └─ ExtendedBurgersCalculator (Tier 3a: numerical J*(ω))
+
+Decorators (layered corrections):
+  ├─ WaterQCorrector ─→ reduces Q via H2O-enhanced diffusion
+  └─ MeltQCorrector ─→ reduces Q via viscous melt damping
+
+Composite:
+  └─ QProfileBuilder ─→ assembles 1D Q(depth) using geotherm + decorators
+```
+
+**Key Features:**
+- Grain-size dependent: Q ∝ d^m (m=3 for diffusion creep)
+- Frequency dependent: Q⁻¹ ∝ f^α (α≈0.27 for olivine)
+- Water effect: relaxation time τ ∝ (H2O)^r (r=1.0-2.0)
+- Melt effect: ΔQ_inv ∝ φ_melt (partial damping)
 
 ### Verification & Quality Assurance (4 Classes)
 
@@ -202,9 +251,17 @@ Cross-validation and uncertainty quantification.
 |-------|---------|-----------------|------|
 | **HugoniotPoint** | Single Hugoniot point | P, V, T, U (internal energy), particle_velocity, sound_speed | `Models/HugoniotPoint.cs` |
 | **ElasticTensor** | 6×6 stiffness tensor (Voigt notation) | C11...C66 (36 components → 21 independent), Symmetry class | `Models/ElasticTensor.cs` |
-| **AnelasticResult** | Q⁻¹ vs. frequency/temperature | Q_inv (List<double>), frequency_Hz (List<double>), T_K | `Models/AnelasticResult.cs` |
+| **AnelasticResult** | Q⁻¹ vs. frequency/temperature (NOW with J* compliance) | Q_inv, frequency_Hz, T_K, **ComplexCompliance_Jp**, **ComplexCompliance_Jpp** | `Models/AnelasticResult.cs` |
 | **SensitivityKernel** | dVp/dρ, dVs/dρ depth profile | Kernel_Vp (double[]), Kernel_Vs (double[]), Depth_km (double[]) | `Models/SensitivityKernel.cs` |
 | **MeltParams** | Melt/liquid properties | Density, Viscosity, Composition, T | `Models/MeltParams.cs` |
+
+### Enhanced Anelasticity Models (NEW)
+
+| Class | Purpose | Key Properties | File |
+|-------|---------|-----------------|------|
+| **AnelasticityParams** | Immutable record: Q model parameters (grain size, water, melt, etc.) | GrainSize_m, ActivationEnergy, FrequencyExponent, GrainSizeExponent, WaterContent_ppm, MeltFraction, AndradeBeta, RelaxationStrength, DistributionWidth, etc. | `Models/AnelasticityParams.cs` |
+| **ViscoelasticResult** | Extended result with complex compliance J*(ω) | Q_inv, frequency_Hz, **Jp_ReflectiveCompliance**, **Jpp_LossCompliance**, **Vp_corrected**, **Vs_corrected** | `Models/ViscoelasticResult.cs` |
+| **QProfilePoint** | Single point in depth-dependent Q profile | Depth_km, Temperature_K, Q_inv, Grain_size, WaterContent, MeltFraction, Model_used | `Models/QProfilePoint.cs` |
 
 ### Lookup & Training Data Models
 
@@ -223,7 +280,7 @@ Cross-validation and uncertainty quantification.
 | **RadialProfile** | Any radial profile (T, density, etc.) | Radius, Values (interpolatable) | `Models/RadialProfile.cs` |
 | **VerificationResult** | Cross-validation vs. literature | ComparisonData, PercentDifference, Status (PASS/FAIL) | `Models/VerificationResult.cs` |
 
-## Database Module (5 Files)
+## Database Module (6 Files)
 
 **Location:** `src/ThermoElastic.Core/Database/`
 
@@ -234,6 +291,7 @@ Cross-validation and uncertainty quantification.
 | `PredefinedRocks.cs` | 4 standard rock compositions (Pyrolite, Harzburgite, MORB, Piclogite) | ~500 lines |
 | `MineralDatabase.cs` | Wrapper/accessor for mineral lookups | ~200 lines |
 | `SingleCrystalElasticConstants.cs` | Elastic stiffness tensor components for major minerals | ~800 lines |
+| `AnelasticityDatabase.cs` | **NEW:** Mineral-specific Q parameters (olivine, bridgmanite, wadsleyite, etc.) with Tier defaults | ~600 lines |
 
 **Key Features:**
 - **SLB2011 Coverage:** 46 endmembers across olivine, pyroxene, garnet, spinel, perovskite, post-perovskite phases

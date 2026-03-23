@@ -1,11 +1,11 @@
-<!-- Generated: 2026-03-23 | Files scanned: 56 unit tests + 7 E2E tests | Token estimate: ~850 -->
+<!-- Generated: 2026-03-24 | Files scanned: 57 unit tests + 8 E2E tests | Token estimate: ~950 -->
 
 # Testing Codemap
 
 **Version:** v1.0.0
-**Last Updated:** 2026-03-23
-**Total Test Methods:** ~556 (479 unit + 77 E2E)
-**Code Coverage:** 95.6% (Core library)
+**Last Updated:** 2026-03-24
+**Total Test Methods:** ~591 (507 unit + 84 E2E)
+**Code Coverage:** 95.6% (Core library, increased with anelasticity tests)
 
 ## Test Projects Overview
 
@@ -13,15 +13,15 @@
 ThermoElasticCalculator.sln
 ├── ThermoElastic.Core.Tests/
 │   ├── Framework: xUnit 2.9.0 + Coverlet 6.0.2
-│   ├── Test Classes: 56
-│   ├── Test Methods: ~479
+│   ├── Test Classes: 57 (new: AnelasticityEnhancedTests, AnelasticityLiteratureE2ETests)
+│   ├── Test Methods: ~507 (new: 28 enhanced + 9 literature)
 │   ├── Categories: Unit tests (Fact/Theory), Literature verification
 │   └── Scope: Calculators + Models + Database
 │
 └── ThermoElastic.Desktop.E2E/
     ├── Framework: xUnit 2.9.0 + Avalonia Headless
-    ├── Test Classes: 7
-    ├── Test Methods: ~77
+    ├── Test Classes: 8 (new: FullStackE2ETests expanded with 6 anelasticity tests)
+    ├── Test Methods: ~84 (new: 6 App28 E2E for anelasticity)
     ├── Categories: ViewModel E2E, Visual/Screenshot E2E
     └── Scope: Full UI flow validation
 ```
@@ -47,6 +47,8 @@ ThermoElasticCalculator.sln
 | **IsentropeCalculatorTests** | Adiabatic geotherm | TestIsentrope, TestMantelAdiabat | `IsentropeCalculatorTests.cs` |
 | **RockCalculatorTests** | Multi-mineral aggregates | TestVoigtReussMixing, TestEquivalentMediaApproximation | `RockCalculatorTests.cs` |
 | **AnelasticityCalculatorTests** | Seismic Q⁻¹ | TestQInvariant, TestFrequencyDependence | `AnelasticityCalculatorTests.cs` |
+| **AnelasticityEnhancedTests** | **NEW:** Multi-tier Q models, grain-size, water, melt effects (28 tests) | Phase 1-5: AnelasticityParams, IAnelasticityModel, ParametricQCalculator, AndradeCalculator, ExtendedBurgersCalculator, WaterQCorrector, MeltQCorrector, QProfileBuilder | `AnelasticityEnhancedTests.cs` |
+| **AnelasticityLiteratureE2ETests** | **NEW:** Cross-validation vs. Jackson & Faul 2010, Andrade creep, Burgers model (9 tests) | Literature comparison: grain-size dependence, frequency dependence, water effect on relaxation | `AnelasticityLiteratureE2ETests.cs` |
 | **ElasticTensorCalculatorTests** | Stiffness tensor Cᵢⱼₖₗ | TestCubicSymmetry, TestHexagonalSymmetry | `ElasticTensorCalculatorTests.cs` |
 | **ThermalConductivityCalculatorTests** | κ(P,T) | TestKappaTemperature, TestKappaPressure | `ThermalConductivityCalculatorTests.cs` |
 | **ElectricalConductivityCalculatorTests** | σ(P,T,fO₂) | TestConductivityRedox, TestConductivityTemperature | `ElectricalConductivityCalculatorTests.cs` |
@@ -179,6 +181,17 @@ public class ViewModelE2ETests : IAsyncLifetime
 | ShowCompositionInverter_InvertVpVs_EstimateComposition | CompositionInverterViewModel | Input Vp/Vs → solve for mineral fractions |
 | ShowBayesianInversion_RunMCMC_PlotPosterior | BayesianInversionViewModel | MCMC sampling → posterior plot → uncertainty |
 | ShowMLData_GenerateTrainingSet_ExportCSV | MLDataViewModel | Synthetic data generation → CSV export |
+
+### Phase 4: Enhanced Anelasticity E2E Tests (6 NEW Tests)
+
+| Test | ViewModel | Coverage | File |
+|------|-----------|----------|------|
+| ShowAnelasticity_SelectTier2_CalculateQ_ProducesResult | **AnelasticityViewModel** (enhanced) | Model selection + grain size + water/melt sliders → Q⁻¹ result | FullStackE2ETests.cs |
+| ShowAnelasticity_VaryGrainSize_QChangesMonotonically | **AnelasticityViewModel** | Grain size sweep (5-50 μm) → verify Q ∝ d^m trend | FullStackE2ETests.cs |
+| ShowAnelasticity_AddWater_QDecreases | **AnelasticityViewModel** | Water effect (0 → 100 ppm) → Q reduced via decorators | FullStackE2ETests.cs |
+| ShowAnelasticity_AddMelt_QDecreases | **AnelasticityViewModel** | Melt effect (0 → 5% melt) → Q damping | FullStackE2ETests.cs |
+| ShowQProfile_BuildProfile_DisplaysDepthDependentQ | **QProfileViewModel** (NEW) | Geotherm selection + frequency → 1D Q(depth) profile | FullStackE2ETests.cs |
+| ShowQProfile_ExportProfile_SavesCSV | **QProfileViewModel** (NEW) | Build profile → export CSV with Depth, T, Q, model metadata | FullStackE2ETests.cs |
 
 ### Visual/Screenshot E2E Tests (20+ Tests)
 

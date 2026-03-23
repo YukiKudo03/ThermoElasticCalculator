@@ -1,9 +1,9 @@
-<!-- Generated: 2026-03-23 | Files scanned: 233 C# files | Token estimate: ~800 -->
+<!-- Generated: 2026-03-24 | Files scanned: 246 C# files | Token estimate: ~900 -->
 
 # Architecture Codemap
 
 **Version:** v1.0.0
-**Last Updated:** 2026-03-23
+**Last Updated:** 2026-03-24
 **Platform:** .NET 9.0 | Windows/macOS/Linux
 
 ## System Overview
@@ -12,15 +12,15 @@
 ┌────────────────────────────────────────────────────────┐
 │  ThermoElastic.Desktop                                 │
 │  (.NET 9.0 Avalonia 11.2.3 | MVVM)                     │
-│  • 33 Views (AXAML) + 33 ViewModels                    │
+│  • 35 Views (AXAML) + 35 ViewModels (new: QProfile)    │
 │  • Categories: Core, EOS&Shock, Phase, Mantle, Props   │
 │  • Threading: async/await for long calculations        │
 ├────────────────────────────────────────────────────────┤
 │  ThermoElastic.Core                                    │
 │  (.NET 9.0 Class Library)                              │
-│  • 42 Calculation Engines (Phase 1-9 organized)        │
-│  • 27 Data Models (Input/Output/Intermediate)          │
-│  • 5 Database Modules (SLB2011 + rocks + solutions)    │
+│  • 54 Calculation Engines (Phase 1-9 + Enhanced Q)     │
+│  • 30 Data Models (Input/Output/Intermediate + Q)      │
+│  • 6 Database Modules (SLB2011 + Q params)             │
 │  • 2 I/O Helpers (JSON/CSV serialization)              │
 ├────────────────────────────────────────────────────────┤
 │  External Dependencies                                 │
@@ -30,14 +30,14 @@
      ↓ test
 ┌────────────────────────────────────────────────────────┐
 │  ThermoElastic.Core.Tests (xUnit 2.9.0)                │
-│  • 56 Test Classes (unit tests)                        │
-│  • ~479 Test Methods (Fact/Theory)                     │
-│  • Verification: BurnMan cross-validation + SLB2011    │
+│  • 57 Test Classes (unit tests, new: Anelasticity)     │
+│  • ~507 Test Methods (Fact/Theory)                     │
+│  • Verification: BurnMan + Jackson & Faul 2010         │
 │  • Coverage: ~95.6% on Core library                    │
 ├────────────────────────────────────────────────────────┤
 │  ThermoElastic.Desktop.E2E (xUnit 2.9.0)               │
-│  • 7 E2E test files                                    │
-│  • ~77 Test Methods (ViewModel + Visual tests)         │
+│  • 8 E2E test files (new: expanded FullStackE2ETests)  │
+│  • ~84 Test Methods (ViewModel + Visual tests)         │
 │  • Full UI flow validation (Avalonia Headless)         │
 └────────────────────────────────────────────────────────┘
 ```
@@ -115,14 +115,14 @@ Output (Vp, Vs, ρ, K, G, α, Cp, S, H, G, etc.)
 
 | Path | Purpose | Files | Key Content |
 |------|---------|-------|-------------|
-| `src/ThermoElastic.Core/Models/` | Data models (input/output) | 27 | MineralParams, ThermoMineralParams, PTProfile, RockComposition, PhaseAssemblage, ElasticTensor, etc. |
-| `src/ThermoElastic.Core/Calculations/` | Calculation engines | 43 | Phase 1-9 organized: BM3, Debye, Landau, Mixture, Gibbs, Hugoniot, planetary solvers, etc. |
-| `src/ThermoElastic.Core/Database/` | SLB2011 minerals + rocks | 5 | MineralDatabase, SLB2011Endmembers (46), SLB2011Solutions, PredefinedRocks, SingleCrystalElasticConstants |
+| `src/ThermoElastic.Core/Models/` | Data models (input/output) | 30 | MineralParams, ThermoMineralParams, PTProfile, RockComposition, PhaseAssemblage, ElasticTensor, **AnelasticityParams**, **ViscoelasticResult**, **QProfilePoint**, etc. |
+| `src/ThermoElastic.Core/Calculations/` | Calculation engines | 54 | Phase 1-9 organized: BM3, Debye, Landau, Mixture, Gibbs, Hugoniot, planetary solvers, **Enhanced Anelasticity** (11 classes), etc. |
+| `src/ThermoElastic.Core/Database/` | SLB2011 minerals + rocks + Q params | 6 | MineralDatabase, SLB2011Endmembers (46), SLB2011Solutions, PredefinedRocks, SingleCrystalElasticConstants, **AnelasticityDatabase** |
 | `src/ThermoElastic.Core/IO/` | File I/O utilities | 2 | JSON/CSV serialization helpers |
-| `src/ThermoElastic.Desktop/Views/` | UI pages (AXAML) | 34 | MainWindow + 33 category views |
-| `src/ThermoElastic.Desktop/ViewModels/` | MVVM ViewModels | 34 | MainWindowViewModel + 33 paired with Views |
-| `tests/ThermoElastic.Core.Tests/` | Unit tests | 56 | Test classes covering all calculators, models, DB |
-| `tests/ThermoElastic.Desktop.E2E/` | E2E tests | 7 | ViewModelE2ETests, VisualScreenshotTests, FullStackE2ETests |
+| `src/ThermoElastic.Desktop/Views/` | UI pages (AXAML) | 35 | MainWindow + 34 category views (new: QProfileView) |
+| `src/ThermoElastic.Desktop/ViewModels/` | MVVM ViewModels | 35 | MainWindowViewModel + 34 paired with Views (new: QProfileViewModel) |
+| `tests/ThermoElastic.Core.Tests/` | Unit tests | 57 | Test classes covering all calculators, models, DB (new: Anelasticity tests) |
+| `tests/ThermoElastic.Desktop.E2E/` | E2E tests | 8 | ViewModelE2ETests, VisualScreenshotTests, FullStackE2ETests (expanded) |
 
 ## Solution Layout
 
@@ -230,21 +230,22 @@ dotnet test --filter "Category=E2E"  # E2E only
 
 | Metric | Count |
 |--------|-------|
-| Total C# Source Files | 233 |
-| Core Model Classes | 27 |
-| Core Calculator Classes | 43 |
-| Core Database Files | 5 |
+| Total C# Source Files | 246 |
+| Core Model Classes | 30 (+3 anelasticity) |
+| Core Calculator Classes | 54 (+11 anelasticity) |
+| Core Database Files | 6 (+1 anelasticity) |
 | Core I/O Files | 2 |
-| Desktop Views | 34 |
-| Desktop ViewModels | 34 |
-| Unit Test Classes | 56 |
-| Unit Test Methods | ~479 |
-| E2E Test Classes | 7 |
-| E2E Test Methods | ~77 |
-| **Total Test Methods** | **~556** |
+| Desktop Views | 35 (+1 Q profile) |
+| Desktop ViewModels | 35 (+1 Q profile) |
+| Unit Test Classes | 57 (+2 anelasticity) |
+| Unit Test Methods | ~507 (+37 anelasticity) |
+| E2E Test Classes | 8 (expanded) |
+| E2E Test Methods | ~84 (+6 anelasticity) |
+| **Total Test Methods** | **~591** |
 | Test Code Coverage | 95.6% (Core) |
 | SLB2011 Endmembers | 46 |
 | Predefined Rocks | 4 (Pyrolite, Harzburgite, MORB, Piclogite) |
+| Anelasticity Tiers | 4 (Simple, Parametric, Extended Burgers, Andrade) |
 | NuGet Direct Dependencies | 8 |
 | Supported Platforms | 3 (Win/Mac/Linux) |
 
