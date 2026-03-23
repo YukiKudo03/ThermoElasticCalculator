@@ -35,6 +35,7 @@ public partial class MainWindowViewModel : ObservableObject
     // === Mantle & Deep Earth ===
     private readonly SensitivityKernelViewModel _sensitivityKernelViewModel = new();
     private readonly AnelasticityViewModel _anelasticityViewModel = new();
+    private readonly QProfileViewModel _qProfileViewModel = new();
     private readonly LLSVPViewModel _llsvpViewModel = new();
     private readonly ULVZViewModel _ulvzViewModel = new();
     private readonly SlabModelViewModel _slabModelViewModel = new();
@@ -82,6 +83,7 @@ public partial class MainWindowViewModel : ObservableObject
     // === Mantle & Deep Earth Commands ===
     [RelayCommand] private void ShowSensitivityKernel() => CurrentView = _sensitivityKernelViewModel;
     [RelayCommand] private void ShowAnelasticity() => CurrentView = _anelasticityViewModel;
+    [RelayCommand] private void ShowQProfile() => CurrentView = _qProfileViewModel;
     [RelayCommand] private void ShowLLSVP() => CurrentView = _llsvpViewModel;
     [RelayCommand] private void ShowULVZ() => CurrentView = _ulvzViewModel;
     [RelayCommand] private void ShowSlabModel() => CurrentView = _slabModelViewModel;

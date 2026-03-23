@@ -55,6 +55,8 @@ public class ViewModelE2ETests
         Assert.IsType<SensitivityKernelViewModel>(vm.CurrentView);
         vm.ShowAnelasticityCommand.Execute(null);
         Assert.IsType<AnelasticityViewModel>(vm.CurrentView);
+        vm.ShowQProfileCommand.Execute(null);
+        Assert.IsType<QProfileViewModel>(vm.CurrentView);
         vm.ShowLLSVPCommand.Execute(null);
         Assert.IsType<LLSVPViewModel>(vm.CurrentView);
         vm.ShowULVZCommand.Execute(null);
