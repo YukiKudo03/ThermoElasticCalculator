@@ -23,6 +23,7 @@ public partial class MainWindowViewModel : ObservableObject
     // === EOS & Shock ===
     private readonly HugoniotViewModel _hugoniotViewModel = new();
     private readonly EOSFitterViewModel _eosFitterViewModel = new();
+    private readonly ThermoElasticFitterViewModel _thermoElasticFitterViewModel = new();
     private readonly VerificationDashboardViewModel _verificationDashboardViewModel = new();
 
     // === Phase Equilibria ===
@@ -69,6 +70,7 @@ public partial class MainWindowViewModel : ObservableObject
     // === EOS & Shock Commands ===
     [RelayCommand] private void ShowHugoniot() => CurrentView = _hugoniotViewModel;
     [RelayCommand] private void ShowEOSFitter() => CurrentView = _eosFitterViewModel;
+    [RelayCommand] private void ShowThermoElasticFitter() => CurrentView = _thermoElasticFitterViewModel;
     [RelayCommand] private void ShowVerificationDashboard() => CurrentView = _verificationDashboardViewModel;
 
     // === Phase Equilibria Commands ===
