@@ -1,0 +1,117 @@
+{
+  "summary": "Seismic attenuation (Q^{-1}) and velocity dispersion in olivine aggregates show strong grain-size dependence, with smaller grains producing higher attenuation and greater velocity reduction at a given temperature and frequency. Experimental studies by Jackson, Faul, and colleagues on synthetic olivine aggregates with grain sizes of 1-50 micrometers have established a power-law grain-size scaling (Q^{-1} proportional to d^{-m*alpha}) that, when extrapolated to mantle grain sizes of mm-cm scale, predicts significantly lower attenuation and smaller velocity corrections than measured at laboratory grain sizes. This grain-size sensitivity is a critical factor in applying laboratory-derived anelasticity models to the interpretation of seismic observations in the Earth's mantle.",
+
+  "key_papers": [
+    {
+      "author": "Jackson, I. and Faul, U.H.",
+      "year": 2010,
+      "journal": "Physics of the Earth and Planetary Interiors",
+      "title": "Grainsize-sensitive viscoelastic relaxation in olivine: Towards a robust laboratory-based model for seismological application",
+      "doi": "10.1016/j.pepi.2009.09.004"
+    },
+    {
+      "author": "Faul, U.H. and Jackson, I.",
+      "year": 2015,
+      "journal": "Journal of Geophysical Research: Solid Earth",
+      "title": "Transient creep and strain energy dissipation: An experimental perspective",
+      "doi": "10.1002/2014JB011821"
+    },
+    {
+      "author": "Jackson, I., Fitz Gerald, J.D., Faul, U.H., and Tan, B.H.",
+      "year": 2002,
+      "journal": "Journal of Geophysical Research: Solid Earth",
+      "title": "Grain-size-sensitive seismic wave attenuation in polycrystalline olivine",
+      "doi": "10.1029/2001JB001225"
+    },
+    {
+      "author": "Faul, U.H. and Jackson, I.",
+      "year": 2005,
+      "journal": "Earth and Planetary Science Letters",
+      "title": "The seismological signature of temperature and grain size variations in the upper mantle",
+      "doi": "10.1016/j.epsl.2005.04.027"
+    },
+    {
+      "author": "Takei, Y., Karasawa, F., and Yamauchi, H.",
+      "year": 2014,
+      "journal": "Journal of Geophysical Research: Solid Earth",
+      "title": "Temperature, grain size, and chemical controls on polycrystal anelasticity over a broad frequency range extending into the seismic range",
+      "doi": "10.1002/2014JB011146"
+    },
+    {
+      "author": "Yamauchi, H. and Takei, Y.",
+      "year": 2016,
+      "journal": "Journal of Geophysical Research: Solid Earth",
+      "title": "Polycrystal anelasticity at near-solidus temperatures",
+      "doi": "10.1002/2016JB013316"
+    }
+  ],
+
+  "physical_mechanism": "The grain-size sensitivity of seismic attenuation arises primarily from grain-boundary sliding (GBS) accommodated by diffusion. At seismic frequencies and mantle temperatures, elastically accommodated grain-boundary sliding transitions to diffusion-accommodated sliding, producing a broad absorption band. Smaller grain sizes increase the total grain-boundary area per unit volume and reduce diffusion distances, thereby shifting the relaxation spectrum to shorter timescales (higher frequencies). This means that for a given temperature and frequency, finer-grained material exhibits higher attenuation. The mechanism is essentially a viscoelastic relaxation process where strain at grain boundaries is accommodated by diffusional transport of matter along and across grain boundaries. At the highest homologous temperatures approaching the solidus, an additional viscous (diffusion creep) contribution becomes significant, further amplified in fine-grained samples.",
+
+  "mathematical_formulation": "The extended Burgers model and Andrade-type formulations both incorporate grain-size dependence. In the Jackson and Faul (2010) model, the dissipation Q^{-1} in the absorption band follows: Q^{-1}(T, P, f, d) = A * d^{-m*alpha} * f^{-alpha} * exp(-alpha * (E* + P*V*) / (R*T)), where d is grain size, f is frequency, T is temperature, P is pressure, alpha is the frequency exponent (~0.26-0.33), m is the grain-size exponent (~3 for diffusion-controlled processes, often found ~2.9-3.1 experimentally), E* is the activation energy, V* is the activation volume, and R is the gas constant. The velocity correction due to dispersion is related to Q^{-1} via the Kramers-Kronig relation: Delta_V/V = -(1/(2*tan(alpha*pi/2))) * Q^{-1}(f) for the absorption band regime. In the Yamauchi and Takei (2016) parameterization, grain-size dependence enters through the Maxwell frequency: f_M = (1/(2*pi)) * (G_U / eta_diff), where eta_diff is the diffusion creep viscosity proportional to d^m, so that f_M scales as d^{-m}. The master variable is the normalized frequency f_n = f / f_M, and all anelastic behavior is expressed as a function of f_n and T/T_s (homologous temperature).",
+
+  "experimental_conditions": "Experiments are conducted on sol-gel derived synthetic olivine (Fo90) aggregates hot-pressed to produce controlled grain sizes ranging from approximately 3 to 50 micrometers. Measurements use forced-oscillation techniques (torsional and flexural) at sub-resonance frequencies of 0.001-1 Hz, temperatures of 900-1300 degrees C, and confining pressures of 0.2-0.3 GPa (typically 200 MPa argon gas medium). Some studies extend to higher pressures using multi-anvil apparatus. Grain sizes are characterized post-experiment by SEM/EBSD analysis. The Jackson and Faul experiments systematically varied grain size by using different sintering temperatures and durations, producing a suite of specimens with mean grain sizes of ~3, 6, 12, 23, and 50 micrometers. Attenuation and shear modulus are measured simultaneously as functions of oscillation period and temperature.",
+
+  "key_parameters": [
+    {
+      "name": "Grain-size exponent (m)",
+      "value": "~3 (typically 2.9-3.1 for diffusion-accommodated GBS)",
+      "units": "dimensionless"
+    },
+    {
+      "name": "Frequency exponent (alpha)",
+      "value": "0.26-0.33 (commonly ~0.27 in absorption band)",
+      "units": "dimensionless"
+    },
+    {
+      "name": "Product m*alpha (effective grain-size exponent on Q^{-1})",
+      "value": "~0.8-1.0",
+      "units": "dimensionless"
+    },
+    {
+      "name": "Activation energy for absorption band (E*)",
+      "value": "424-505 kJ/mol (Jackson & Faul 2010: ~424 kJ/mol for background; ~505 kJ/mol for dissipation peak)",
+      "units": "kJ/mol"
+    },
+    {
+      "name": "Activation volume (V*)",
+      "value": "~6-12 cm^3/mol [uncertain]",
+      "units": "cm^3/mol"
+    },
+    {
+      "name": "Laboratory grain size range",
+      "value": "3-50",
+      "units": "micrometers"
+    },
+    {
+      "name": "Estimated upper mantle grain size",
+      "value": "1-10",
+      "units": "mm"
+    },
+    {
+      "name": "Pre-exponential factor (A) for Q^{-1}",
+      "value": "Model-dependent; typically fit from experimental data suite [uncertain]",
+      "units": "varies with parameterization"
+    },
+    {
+      "name": "Dissipation peak center (tau_P)",
+      "value": "Related to grain-boundary pinning; scales with d^m * exp(E_P*/(R*T))",
+      "units": "seconds"
+    }
+  ],
+
+  "velocity_correction_magnitude": "At laboratory grain sizes (3-50 micrometers), anelastic velocity reductions are large: Vs reductions of 5-15% at 1200-1300 degrees C and 0.01 Hz. When extrapolated to mantle grain sizes (1-10 mm), the corrections become substantially smaller due to the d^{-m*alpha} scaling. For typical upper mantle conditions (1300-1400 degrees C, 1 Hz seismic frequency, 1-10 mm grain size), predicted Vs reductions are approximately 1-3% for Vs and 0.5-1.5% for Vp. Near the solidus or in regions with anomalously small grain size (e.g., shear zones with d ~ 10-100 micrometers), corrections can reach 3-5% for Vs. The grain-size extrapolation is the largest single source of uncertainty in translating laboratory attenuation data to mantle conditions, potentially introducing a factor of 3-10 difference in Q^{-1} depending on assumed mantle grain size.",
+
+  "implications_for_composition": "Grain-size sensitivity has profound implications for compositional interpretation of seismic velocities. If mantle grain size is not properly accounted for, the anelastic correction can be systematically over- or under-estimated, leading to biased temperature and composition estimates. Overestimating the anelastic correction (e.g., by using too-small grain sizes) would lead to underestimating the true temperature or overestimating the amount of depleted (high-velocity) composition needed to match seismic observations. Conversely, neglecting anelasticity or underestimating it would lead to systematic overestimates of mantle temperature or erroneously inferring enriched/hydrated compositions. Since grain size likely varies laterally and with depth in the mantle (smaller in actively deforming regions, larger in cratonic lithosphere), a single anelastic correction is insufficient. Grain-size variations themselves may contribute to observed seismic velocity heterogeneity independent of temperature and composition, complicating tomographic interpretations.",
+
+  "limitations": "The primary limitation is the large extrapolation in grain size from laboratory samples (3-50 micrometers) to the mantle (1-10 mm or larger), spanning roughly two orders of magnitude. The grain-size exponent m is constrained by experiments but small uncertainties in m propagate into large uncertainties when extrapolated over this range. Mantle grain size is poorly constrained and likely spatially variable. Experiments are conducted on melt-free, single-phase olivine aggregates, whereas the mantle is polymineralic and may contain small melt fractions or fluids that alter grain-boundary behavior. The effect of secondary phases (pyroxene, garnet) on grain-boundary sliding in polyphase rocks is not well characterized. Pressure effects on anelasticity (activation volume V*) remain uncertain, with limited high-pressure data available. Furthermore, the relationship between grain-size-sensitive and dislocation-assisted mechanisms under simultaneous operation in the mantle is not fully resolved. Grain growth and dynamic recrystallization during deformation may couple grain size to stress and strain rate, adding complexity beyond a simple static grain-size parameter.",
+
+  "implementation_notes": "To implement grain-size-sensitive anelastic corrections in ThermoElasticCalculator: (1) Inputs needed: temperature T, pressure P, seismic frequency f, and grain size d (user-specified or from a grain-size model). (2) Use the Jackson & Faul (2010) or Yamauchi & Takei (2016) parameterization to compute Q^{-1}(T, P, f, d) and the associated velocity dispersion correction. (3) The correction is applied as: V_anelastic = V_anharmonic * (1 - Delta_V/V), where Delta_V/V = (1/(2*tan(alpha*pi/2))) * Q^{-1}. (4) Provide default grain size values (e.g., 1 mm for upper mantle, 5 mm for lower lithosphere) but allow user override. (5) The grain-size parameter should be treated as a major uncertainty; consider providing results for a range of grain sizes (e.g., 0.1, 1, 10 mm) to bracket the correction. (6) For Vp corrections, scale from Vs attenuation using Q_P^{-1} approximately equal to (4/9)*(Vs/Vp)^2 * Q_S^{-1} if only shear attenuation data are available. (7) An acceptable approximation is to precompute lookup tables of Delta_Vs/Vs and Delta_Vp/Vp as functions of (T, P, d) at fixed seismic frequency (1 Hz) for computational efficiency.",
+
+  "relevance_score": 5,
+
+  "uncertain": [
+    "velocity_correction_magnitude",
+    "key_parameters"
+  ]
+}

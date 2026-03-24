@@ -1,0 +1,318 @@
+{
+  "chapter_summary": "Phase diagrams are the central product of computational mineral physics, mapping the stability fields of competing mineral phases as functions of pressure and temperature. Building on the Gibbs free energy framework of Ch12, this chapter focuses on the systematic computation of phase boundaries -- the curves in P-T space where two (or more) phases coexist because their Gibbs energies are equal. The PhaseDiagramCalculator class provides the complete toolkit: CalculateDiagram evaluates Gibbs minimization on a full P-T grid to identify stable assemblages at each point, FindPhaseBoundary uses bisection to locate the precise pressure where G1 = G2 at a given temperature, and TracePhaseBoundary sweeps across a temperature range to produce a continuous boundary curve. For multi-phase reactions involving stoichiometric coefficients (e.g., ringwoodite decomposing into bridgmanite plus ferropericlase), FindMultiPhaseBoundary generalizes the bisection approach to find where sum(G_products) = sum(G_reactants).\n\nThe binary phase diagram between forsterite (fo) and Mg-wadsleyite (mw) at approximately 13-14 GPa and 1600 K corresponds to the 410 km seismic discontinuity, the most prominent boundary in the upper mantle transition zone. The PhaseDiagramExplorerView provides an interactive interface where the user selects two minerals from the SLB2011 database, sets temperature and pressure search bounds, and the calculator returns the boundary pressure. More complex is the 660 km discontinuity, where the post-spinel reaction (ringwoodite -> bridgmanite + ferropericlase) involves multiple product phases. FindMultiPhaseBoundary handles this by computing a weighted sum of Gibbs energies on each side of the reaction and bisecting to find the equilibrium pressure. The PostPerovskiteCalculator further extends these methods to the bridgmanite-to-post-perovskite transition near the core-mantle boundary (~125 GPa), including property contrasts (dVs, dVp, dRho) across the transition.\n\nThe Clapeyron slope dP/dT = Delta_S / Delta_V is the single most important quantitative descriptor of a phase boundary, encoding both thermodynamic information and geodynamic consequences. PhaseDiagramCalculator.ComputeClapeyronSlope evaluates both phases at the boundary point via the MieGruneisenEOSOptimizer, extracts their entropy and volume, and computes the ratio with appropriate unit conversion (0.001 factor converting J/(cm^3) to GPa). A positive Clapeyron slope (as for the 410 km olivine-wadsleyite transition) means the boundary deepens in hot regions and shallows in cold regions, promoting flow across the boundary. A negative Clapeyron slope (as for the 660 km post-spinel transition, approximately -2 to -3 MPa/K) has the opposite effect: cold downwellings encounter the boundary at shallower depth, creating a buoyancy barrier that can cause slab stagnation. This negative Clapeyron slope at 660 km is one of the key factors controlling whether mantle convection operates as a single layer or two separate layers.\n\nThe computational workflow proceeds hierarchically: at the lowest level, MieGruneisenEOSOptimizer solves for volume at each (P,T) point; ThermoMineralParams then computes F and G; the GibbsMinimizer compares G across candidate phases; and PhaseDiagramCalculator orchestrates the bisection search or grid sweep. Each boundary point requires roughly 30-40 EOS evaluations (two phases times 15-20 bisection steps), making a traced boundary of 50 points require approximately 1500-2000 EOS solves. The code handles failure gracefully: if no sign change in G1-G2 is detected across the search interval, FindPhaseBoundary returns NaN, signaling that no boundary exists in the specified range.\n\nPhase diagrams computed from the SLB2011 database can be directly compared with experimental phase equilibrium data from multi-anvil and diamond-anvil cell experiments, as well as with seismological observations of discontinuity depths and sharpness. Discrepancies point to either inadequacies in the thermodynamic database (F0 values, equation of state parameters) or to kinetic effects that prevent equilibrium from being achieved in rapidly subducting material. The framework also supports solid solutions through the GibbsMinimizer's handling of mixing contributions to chemical potentials, enabling calculation of not just phase boundaries but also compositional partitioning between coexisting phases in the (Mg,Fe)2SiO4 system.",
+
+  "prerequisite_knowledge": [
+    "Gibbs free energy computation from Helmholtz free energy via G = F + PV (Ch12)",
+    "Mie-Gruneisen equation of state solver for finding equilibrium volume at target P,T (Ch06)",
+    "Stixrude-Lithgow-Bertelloni framework for F(V,T) including all energy contributions (Ch05)",
+    "SLB2011 mineral database with F0 reference energies for inter-phase comparisons (Ch07)",
+    "Entropy computation via numerical differentiation of F (Ch12)",
+    "Elastic mixing models for computing properties of multi-phase assemblages (Ch10)",
+    "Bisection root-finding algorithm for locating sign changes in continuous functions",
+    "Solid solution thermodynamics: ideal entropy of mixing and excess Gibbs energy (Ch10)",
+    "Landau theory for displacive transitions that modify the Gibbs energy landscape (Ch08)"
+  ],
+
+  "key_equations": [
+    {
+      "equation": "G_1(P^*, T) = G_2(P^*, T)",
+      "name": "Two-Phase Equilibrium Condition (Phase Boundary)",
+      "variables": {
+        "G_1": "Gibbs free energy of phase 1 [kJ/mol]",
+        "G_2": "Gibbs free energy of phase 2 [kJ/mol]",
+        "P^*": "Equilibrium (boundary) pressure [GPa]",
+        "T": "Temperature [K]"
+      },
+      "interpretation": "The phase boundary is the locus of (P,T) points where two phases have equal Gibbs energies. PhaseDiagramCalculator.FindPhaseBoundary locates P* by bisection: it evaluates Delta_G = G1 - G2 at pMin and pMax, checks for a sign change, and iteratively halves the interval up to 50 times until |Delta_G| < 0.01 kJ/mol. The private method ComputeGDiff calls GibbsMinimizer.ComputePhaseGibbs for each phase."
+    },
+    {
+      "equation": "\\sum_i \\nu_i^{\\text{prod}} G_i^{\\text{prod}}(P^*, T) = \\sum_j \\nu_j^{\\text{react}} G_j^{\\text{react}}(P^*, T)",
+      "name": "Multi-Phase Reaction Equilibrium",
+      "variables": {
+        "\\nu_i": "Stoichiometric coefficient of phase i",
+        "G_i^{\\text{prod}}": "Gibbs energy of product phase i [kJ/mol]",
+        "G_j^{\\text{react}}": "Gibbs energy of reactant phase j [kJ/mol]",
+        "P^*": "Equilibrium pressure [GPa]"
+      },
+      "interpretation": "For reactions like ringwoodite -> bridgmanite + ferropericlase, the boundary occurs where the total Gibbs energy of products equals that of reactants, weighted by stoichiometric coefficients. FindMultiPhaseBoundary implements this by computing Delta_G = sum(nu_prod * G_prod) - sum(nu_react * G_react) via ComputeMultiPhaseGDiff and bisecting to find where Delta_G = 0."
+    },
+    {
+      "equation": "\\frac{dP}{dT} = \\frac{\\Delta S}{\\Delta V}",
+      "name": "Clapeyron Equation (dP/dT form)",
+      "variables": {
+        "dP/dT": "Slope of phase boundary in P-T space [GPa/K]",
+        "\\Delta S": "Entropy change across the transition S_2 - S_1 [J/mol/K]",
+        "\\Delta V": "Volume change across the transition V_2 - V_1 [cm^3/mol]"
+      },
+      "interpretation": "Implemented in PhaseDiagramCalculator.ComputeClapeyronSlope, which runs MieGruneisenEOSOptimizer for both phases at (P,T), extracts their Entropy and Volume, and returns (deltaS / deltaV) * 0.001 to convert from J/(cm^3) to GPa. Returns NaN if |Delta_V| < 1e-10. The sign of the Clapeyron slope determines geodynamic behavior: positive for 410 km, negative for 660 km."
+    },
+    {
+      "equation": "\\frac{dT}{dP} = \\frac{\\Delta V}{\\Delta S}",
+      "name": "Clapeyron Equation (dT/dP form, inverse)",
+      "variables": {
+        "dT/dP": "Inverse Clapeyron slope [K/GPa]",
+        "\\Delta V": "Volume change V_2 - V_1 [cm^3/mol]",
+        "\\Delta S": "Entropy change S_2 - S_1 [J/mol/K]"
+      },
+      "interpretation": "The inverse form is implemented in GibbsMinimizer.ClapeyronSlope as a static method, returning deltaV / deltaS * 1000.0 in units of K/GPa. This form is more natural for computing how a boundary temperature shifts with pressure. Returns 0 if |Delta_S| < 1e-10."
+    },
+    {
+      "equation": "\\Delta G_{\\text{reaction}}(P,T) = \\sum_i \\nu_i^{\\text{prod}} G_i(P,T) - \\sum_j \\nu_j^{\\text{react}} G_j(P,T)",
+      "name": "Gibbs Energy of Reaction",
+      "variables": {
+        "\\Delta G_{\\text{reaction}}": "Gibbs energy change for the reaction [kJ/mol]",
+        "\\nu_i": "Stoichiometric coefficients",
+        "G_i": "Gibbs energy of individual phases [kJ/mol]"
+      },
+      "interpretation": "When Delta_G_reaction < 0, the reaction proceeds spontaneously in the forward direction (products are stable). When Delta_G_reaction > 0, the reactants are stable. The boundary is where Delta_G_reaction = 0. ComputeMultiPhaseGDiff computes this by iterating over the reactants and products lists, multiplying each phase's Gibbs energy by its stoichiometric coefficient."
+    }
+  ],
+
+  "physical_concepts": [
+    {
+      "name": "Phase Boundary as Gibbs Energy Crossover",
+      "definition": "A phase boundary in P-T space is the locus of points where two competing phases have equal Gibbs free energies, so that neither is thermodynamically favored over the other.",
+      "physical_intuition": "Imagine plotting G vs P for two polymorphs at fixed T. Both curves decrease with pressure (since dG/dP = V > 0), but the denser phase decreases faster per unit pressure because its volume is smaller. At low pressure, the less dense phase has lower G and is stable. At some crossover pressure, the curves intersect and the denser phase becomes stable. This crossover is the phase boundary. The bisection algorithm in FindPhaseBoundary detects this crossing by looking for a sign change in G1 - G2.",
+      "common_misconceptions": [
+        "Assuming the phase boundary is a sharp line in nature. In reality, kinetic barriers can produce metastable persistence of phases beyond their equilibrium stability field, especially in cold subducting slabs.",
+        "Confusing the phase boundary for pure endmembers with that for solid solutions. In Fe-bearing systems like (Mg,Fe)2SiO4, the boundary becomes a two-phase loop rather than a univariant line, and compositional partitioning must be considered.",
+        "Thinking that a phase boundary must be linear in P-T space. While the Clapeyron equation constrains the local slope, both Delta_S and Delta_V vary with P and T, so the boundary is generally curved."
+      ]
+    },
+    {
+      "name": "Multi-Phase Reactions and the 660 km Discontinuity",
+      "definition": "A multi-phase reaction involves more than two phases, such as the post-spinel reaction: ringwoodite (Mg2SiO4) -> bridgmanite (MgSiO3) + ferropericlase (MgO), where one reactant produces multiple product phases.",
+      "physical_intuition": "Unlike a simple polymorphic transition where one mineral transforms into another, the 660 km discontinuity involves a disproportionation reaction. Ringwoodite (spinel structure) breaks down into two simpler phases. The equilibrium condition requires the total Gibbs energy of the product assemblage (stoichiometrically weighted) to equal the reactant's Gibbs energy. FindMultiPhaseBoundary handles this by computing sum(nu * G) for each side. The negative Clapeyron slope (~-2 to -3 MPa/K) means the boundary pressure decreases with increasing temperature.",
+      "common_misconceptions": [
+        "Treating the multi-phase reaction as a simple two-phase boundary. The stoichiometric coefficients must be accounted for in the Gibbs energy balance; otherwise the boundary pressure will be incorrect.",
+        "Assuming the negative Clapeyron slope at 660 km completely prevents flow across the boundary. The buoyancy impedance is finite, and sufficiently strong slabs can penetrate into the lower mantle.",
+        "Ignoring that the actual mantle contains iron, which partitions unevenly between bridgmanite and ferropericlase, broadening the discontinuity and shifting its depth."
+      ]
+    },
+    {
+      "name": "Clapeyron Slope and Geodynamic Implications",
+      "definition": "The Clapeyron slope dP/dT describes how the equilibrium pressure of a phase boundary changes with temperature, and its sign determines whether the boundary promotes or impedes convective flow.",
+      "physical_intuition": "A positive Clapeyron slope (e.g., +3.6 MPa/K at 410 km) means that cold, downwelling material encounters the transition at a shallower depth (lower P because lower T shifts the boundary to lower P). The denser high-pressure phase forms earlier in the cold slab, adding negative buoyancy that pulls the slab downward -- a positive feedback that promotes flow through the boundary. Conversely, a negative Clapeyron slope (e.g., -2 to -3 MPa/K at 660 km) means the transition is delayed in cold material, creating a buoyancy barrier. The magnitude matters quantitatively: geodynamic modeling shows that Clapeyron slopes more negative than about -4 MPa/K could produce layered convection.",
+      "common_misconceptions": [
+        "Confusing the sign convention: in the Clapeyron equation dP/dT = Delta_S/Delta_V, the 'Delta' is defined as high-pressure-phase minus low-pressure-phase. For the 660 km transition, Delta_V < 0 (products are denser) and Delta_S > 0 (products have higher entropy due to the disorder in two-phase mixture), giving dP/dT < 0.",
+        "Assuming a single Clapeyron slope value applies universally. The slope varies along the boundary as Delta_S and Delta_V change with P and T, and is also composition-dependent in multicomponent systems."
+      ]
+    },
+    {
+      "name": "Phase Diagram Grid Computation",
+      "definition": "A phase diagram over a P-T grid is computed by evaluating the stable assemblage at each grid point through Gibbs energy minimization, producing a map of stability fields.",
+      "physical_intuition": "PhaseDiagramCalculator.CalculateDiagram sweeps a 2D grid of pressures and temperatures, calling GibbsMinimizer.Minimize at each point. The minimizer computes G for all candidate phases and selects the one (or combination) with the lowest total Gibbs energy. The resulting 2D array of PhaseAssemblage objects can be contoured to reveal stability field boundaries. This brute-force approach is straightforward but computationally expensive: an nP x nT grid requires nP * nT * nPhases EOS evaluations.",
+      "common_misconceptions": [
+        "Assuming grid resolution does not matter. Coarse grids can miss narrow stability fields or produce jagged boundaries. TracePhaseBoundary provides higher-resolution boundary tracing for specific two-phase equilibria.",
+        "Forgetting that the initial PhaseAssemblage given to the minimizer includes all candidate phases with equal amounts. The minimizer must drive unstable phases to zero -- if convergence is incomplete, ghost phases with tiny amounts may persist."
+      ]
+    },
+    {
+      "name": "Post-Perovskite Transition at the Core-Mantle Boundary",
+      "definition": "The transformation of bridgmanite (MgSiO3 perovskite) to post-perovskite (CaIrO3-type structure) occurs near 125 GPa and 2500 K, potentially explaining the D'' seismic discontinuity at the base of the mantle.",
+      "physical_intuition": "PostPerovskiteCalculator wraps PhaseDiagramCalculator to specifically model the pv-ppv transition. FindBoundary searches P = 100-140 GPa at a given temperature. CompareAcrossTransition returns the property contrasts (dVs%, dVp%, dRho%) that would produce the seismologically observed reflections at the D'' layer. The large shear velocity contrast and the positive Clapeyron slope (~8-10 MPa/K) mean the transition is strongly temperature-dependent, potentially creating double-crossing of the boundary in regions with strong lateral temperature variations near the CMB.",
+      "common_misconceptions": [
+        "Assuming post-perovskite exists everywhere at the base of the mantle. The positive Clapeyron slope and lateral temperature variations mean it may only be stable in cooler regions (e.g., beneath subducting slabs) while hotter regions (e.g., beneath large low-shear-velocity provinces) may remain in the bridgmanite field.",
+        "Ignoring iron and aluminum effects that significantly shift the transition pressure and broaden the boundary in natural mantle compositions."
+      ]
+    }
+  ],
+
+  "key_references": [
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2011,
+      "title": "Thermodynamics of mantle minerals - II. Phase equilibria",
+      "journal": "Geophysical Journal International, 184(3), 1180-1213",
+      "why_essential": "Defines the complete framework for computing phase diagrams from Gibbs free energy minimization, including the F0 reference energies needed for all endmember comparisons. The PhaseDiagramCalculator and GibbsMinimizer implementations are based directly on this paper's methodology."
+    },
+    {
+      "author": "Ito, E. and Takahashi, E.",
+      "year": 1989,
+      "title": "Postspinel transformations in the system Mg2SiO4-Fe2SiO4 and some geophysical implications",
+      "journal": "Journal of Geophysical Research, 94(B8), 10637-10646",
+      "why_essential": "Provides definitive experimental constraints on the post-spinel (660 km) reaction boundary and its negative Clapeyron slope. The measured slope of approximately -2.8 MPa/K is the benchmark against which computational predictions from FindMultiPhaseBoundary are compared."
+    },
+    {
+      "author": "Katsura, T. et al.",
+      "year": 2004,
+      "title": "Olivine-wadsleyite transition in the system (Mg,Fe)2SiO4",
+      "journal": "Journal of Geophysical Research, 109(B2), B02209",
+      "why_essential": "High-precision experimental determination of the 410 km discontinuity boundary and Clapeyron slope (~3.6 MPa/K) in the (Mg,Fe)2SiO4 system. Provides the primary validation target for FindPhaseBoundary applied to the fo-mw transition."
+    },
+    {
+      "author": "Murakami, M., Hirose, K., Kawamura, K., Sata, N., and Ohishi, Y.",
+      "year": 2004,
+      "title": "Post-perovskite phase transition in MgSiO3",
+      "journal": "Science, 304(5672), 855-858",
+      "why_essential": "Discovery of the post-perovskite phase transition, which the PostPerovskiteCalculator is designed to model. Established the transition pressure (~125 GPa) and positive Clapeyron slope that explain the D'' discontinuity."
+    },
+    {
+      "author": "Bina, C. R. and Helffrich, G.",
+      "year": 1994,
+      "title": "Phase transition Clapeyron slopes and transition zone seismic discontinuity topography",
+      "journal": "Journal of Geophysical Research, 99(B8), 15853-15860",
+      "why_essential": "Demonstrates quantitatively how Clapeyron slopes translate into seismic discontinuity topography observable by seismology. Provides the framework for interpreting ComputeClapeyronSlope results in terms of lateral variations in discontinuity depth."
+    },
+    {
+      "author": "Christensen, U. R. and Yuen, D. A.",
+      "year": 1985,
+      "title": "Layered convection induced by phase transitions",
+      "journal": "Journal of Geophysical Research, 90(B12), 10291-10300",
+      "why_essential": "Seminal paper demonstrating that a negative Clapeyron slope at 660 km can induce layered mantle convection in numerical models. Establishes the direct link between the thermodynamic quantity computed by ComputeClapeyronSlope and large-scale mantle dynamics."
+    }
+  ],
+
+  "worked_examples": [
+    {
+      "problem_statement": "Find the olivine-wadsleyite (fo-mw) phase boundary pressure at T = 1600 K using PhaseDiagramCalculator.FindPhaseBoundary, then compute the Clapeyron slope at the boundary.",
+      "solution_approach": "Create PhaseEntry objects for forsterite and Mg-wadsleyite from the SLB2011 database. Call FindPhaseBoundary with T = 1600 K, searching P = 5-25 GPa. The method evaluates G_fo - G_mw at 5 GPa (expected positive, fo is stable) and at 25 GPa (expected negative, mw is stable), detects the sign change, and bisects up to 50 times until |Delta_G| < 0.01 kJ/mol. At the converged boundary pressure, call ComputeClapeyronSlope to evaluate dP/dT = Delta_S/Delta_V * 0.001.",
+      "numerical_values": {
+        "phase1": "Forsterite (fo): V0 = 43.6 cm^3/mol, K0 = 128.0 GPa, F0 = -2055.403 kJ/mol",
+        "phase2": "Mg-wadsleyite (mw): V0 = 40.52 cm^3/mol, K0 = 169.0 GPa [uncertain]",
+        "T": "1600 K",
+        "search_range": "P = 5-25 GPa",
+        "expected_boundary": "~13-14 GPa (corresponding to ~410 km depth)",
+        "bisection_steps": "~15-20 to converge within 0.01 kJ/mol tolerance",
+        "clapeyron_slope": "~0.003-0.004 GPa/K = 3-4 MPa/K (positive)",
+        "interpretation_of_slope": "Positive slope means boundary pressure increases with T; consistent with experimental value of ~3.6 MPa/K from Katsura et al. (2004)"
+      },
+      "interpretation": "The computed boundary at ~13-14 GPa matches the seismologically observed 410 km discontinuity. The positive Clapeyron slope indicates that in cold subducting slabs (T ~200 K below average), the transition occurs ~0.6-0.8 GPa shallower, corresponding to ~20 km elevation of the discontinuity, consistent with seismic observations of an elevated 410 beneath subduction zones."
+    },
+    {
+      "problem_statement": "Compute the post-spinel reaction boundary (ringwoodite -> bridgmanite + ferropericlase) at T = 1900 K using FindMultiPhaseBoundary, and determine the Clapeyron slope.",
+      "solution_approach": "Set up the reaction with ringwoodite (Mg2SiO4) as the single reactant (stoichiometry = 1) and bridgmanite (MgSiO3, stoichiometry = 1) plus periclase (MgO, stoichiometry = 1) as products. Call FindMultiPhaseBoundary with T = 1900 K, P = 18-28 GPa. ComputeMultiPhaseGDiff evaluates [1*G_bm + 1*G_pe] - [1*G_ri] at each bisection step. The Clapeyron slope requires computing Delta_S and Delta_V for the full reaction, not just a two-phase comparison.",
+      "numerical_values": {
+        "reactant": "Ringwoodite (ri): Mg2SiO4 spinel structure, stoichiometry = 1",
+        "product1": "Bridgmanite (bm): MgSiO3 perovskite structure, stoichiometry = 1",
+        "product2": "Periclase (pe): MgO, stoichiometry = 1",
+        "T": "1900 K",
+        "search_range": "P = 18-28 GPa",
+        "expected_boundary": "~23-24 GPa (corresponding to ~660 km depth)",
+        "clapeyron_slope": "approximately -0.002 to -0.003 GPa/K = -2 to -3 MPa/K (negative) [uncertain]",
+        "experimental_reference": "Ito and Takahashi (1989): ~-2.8 MPa/K"
+      },
+      "interpretation": "The negative Clapeyron slope at the 660 km discontinuity is geodynamically significant. Cold subducting slabs encounter the boundary at higher pressure (greater depth), meaning the buoyancy-providing phase transformation is delayed. This creates resistance to slab penetration into the lower mantle, contributing to slab stagnation observed in seismic tomography beneath many subduction zones."
+    },
+    {
+      "problem_statement": "Use PostPerovskiteCalculator to find the bridgmanite-to-post-perovskite boundary and compare elastic properties across the transition at conditions relevant to the D'' layer.",
+      "solution_approach": "Use PostPerovskiteCalculator.FindBoundary with bridgmanite and post-perovskite MineralParams from SLB2011, at T = 2500 K, searching P = 100-140 GPa. Then call CompareAcrossTransition at the boundary (P,T) to obtain the velocity and density contrasts (dVs%, dVp%, dRho%). The method runs MieGruneisenEOSOptimizer for both phases and computes percentage differences.",
+      "numerical_values": {
+        "phase1": "Bridgmanite (pv): MgSiO3 perovskite",
+        "phase2": "Post-perovskite (ppv): MgSiO3 CaIrO3-type",
+        "T": "2500 K",
+        "search_range": "P = 100-140 GPa",
+        "expected_boundary": "~120-130 GPa [uncertain]",
+        "expected_dVs": "1-3% increase (ppv has higher shear velocity)",
+        "expected_dVp": "~0.5-1% increase [uncertain]",
+        "expected_dRho": "~1-2% increase [uncertain]",
+        "clapeyron_slope": "~8-10 MPa/K (positive, steep) [uncertain]"
+      },
+      "interpretation": "The large shear velocity contrast across the pv-ppv transition is consistent with the seismically observed D'' discontinuity at ~2700 km depth. The steep positive Clapeyron slope means the transition is strongly temperature-dependent: in the ~1000 K lateral temperature range near the CMB, the boundary pressure can shift by 8-10 GPa, potentially allowing the boundary to be crossed twice (double-crossing) in regions with strong thermal gradients."
+    }
+  ],
+
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch12: Gibbs Free Energy and Phase Stability",
+      "nature_of_connection": "prerequisite",
+      "explanation": "Ch12 establishes how to compute G = F + PV for individual phases and introduces the principle that the phase with lowest G is stable. Ch13 builds on this to systematically trace phase boundaries where G1 = G2 across P-T space and compute Clapeyron slopes from entropy and volume differences."
+    },
+    {
+      "related_chapter": "Ch06: Mie-Gruneisen Equation of State Solver",
+      "nature_of_connection": "prerequisite",
+      "explanation": "Every Gibbs energy evaluation in FindPhaseBoundary requires running MieGruneisenEOSOptimizer to find the equilibrium volume. The EOS solver is called thousands of times when computing a full phase diagram grid or tracing boundaries."
+    },
+    {
+      "related_chapter": "Ch07: SLB2011 Mineral Database",
+      "nature_of_connection": "prerequisite",
+      "explanation": "The mineral database provides F0 reference energies and all thermoelastic parameters needed for inter-phase G comparisons. PhaseDiagramExplorerViewModel loads minerals directly from SLB2011Endmembers.GetAll(). Without accurate F0 values, phase boundary positions are meaningless."
+    },
+    {
+      "related_chapter": "Ch10: Elastic Mixing Models",
+      "nature_of_connection": "extension",
+      "explanation": "Once the stable assemblage at each (P,T) is determined from the phase diagram, elastic mixing models compute the bulk properties (velocity, density) of the multi-phase aggregate. This connects phase equilibria to seismological observables."
+    },
+    {
+      "related_chapter": "Ch11: Rock Compositions and Assemblages",
+      "nature_of_connection": "application",
+      "explanation": "Phase diagrams determine which minerals are stable in a rock of given bulk composition at given depth. Ch11's rock assemblages are the input compositions, and the phase diagram framework determines how those assemblages change with depth along a geotherm."
+    },
+    {
+      "related_chapter": "Ch04: Elastic Moduli and Seismic Velocities",
+      "nature_of_connection": "extension",
+      "explanation": "Phase boundaries produce discontinuities in seismic velocities. The velocity contrasts computed by PostPerovskiteCalculator.CompareAcrossTransition connect phase diagram predictions directly to seismological observations of reflections and impedance contrasts."
+    },
+    {
+      "related_chapter": "Ch08: Landau Phase Transitions",
+      "nature_of_connection": "prerequisite",
+      "explanation": "Landau free energy contributions modify the Gibbs energy of phases undergoing displacive transitions (e.g., stishovite to CaCl2-SiO2). These contributions shift phase boundary positions and must be included in the G comparison for accurate phase diagrams."
+    }
+  ],
+
+  "computational_methods": "The PhaseDiagramCalculator implements three levels of phase diagram computation, all built on the GibbsMinimizer's ability to evaluate Gibbs free energy for individual phases.\n\n**Bisection-Based Phase Boundary Finding**: FindPhaseBoundary and FindMultiPhaseBoundary both use the bisection method to locate the pressure where Delta_G crosses zero at a fixed temperature. The algorithm first evaluates Delta_G at the endpoints (pMin, pMax). If both have the same sign, no boundary exists in the range and NaN is returned. Otherwise, the interval is halved repeatedly (up to 50 iterations), maintaining the invariant that Delta_G has opposite signs at the two endpoints. Convergence is declared when |Delta_G| < tolerance (default 0.01 kJ/mol). For the multi-phase variant, Delta_G is the stoichiometrically weighted sum: sum(nu_prod * G_prod) - sum(nu_react * G_react). FindBoundaryTemperature provides the analogous search along the temperature axis at fixed pressure, with a default tolerance of 0.5 K.\n\n**Boundary Tracing**: TracePhaseBoundary produces a list of (P,T) points along a boundary by calling FindPhaseBoundary at evenly spaced temperatures from tMin to tMax. This is a simple sweep approach (not a predictor-corrector or ODE-based tracing method), so accuracy depends on the boundary not having extreme curvature relative to the step size. The method requires nPoints >= 2 and distributes them uniformly: dT = (tMax - tMin) / (nPoints - 1).\n\n**Grid-Based Phase Diagram**: CalculateDiagram evaluates the full GibbsMinimizer.Minimize at each point of a P-T grid. At each grid point, all candidate phases start with equal amounts (Amount = 1.0), and the minimizer drives unstable phases to zero while concentrating material in the stable phase(s). For two pure endmembers, MinimizeTwoPhase simply compares G values. For multi-phase or solid solution systems, MinimizeGeneral uses iterative projected gradient descent: chemical potentials mu_i = G_i (plus excess Gibbs and configurational entropy for solid solutions) are computed, the mean-subtracted direction vector is formed, and phase amounts are updated with a line search (step size = min(0.1, 0.9 * max feasible step)). Phases with amounts below epsilon = 1e-10 are eliminated. Convergence requires |sum(direction * mu)| < 1e-8, with a maximum of 200 iterations.\n\n**Clapeyron Slope Computation**: ComputeClapeyronSlope runs MieGruneisenEOSOptimizer independently for both phases at the boundary (P,T), extracts Entropy [J/mol/K] and Volume [cm^3/mol], and computes dP/dT = (S2 - S1) / (V2 - V1) * 0.001 [GPa/K]. The 0.001 factor converts J/(cm^3) to GPa. The inverse form in GibbsMinimizer.ClapeyronSlope returns dT/dP = (V2 - V1) / (S2 - S1) * 1000 [K/GPa].\n\n**PostPerovskiteCalculator**: A specialized wrapper that creates PhaseEntry objects from bare MineralParams, delegates to PhaseDiagramCalculator methods, and additionally computes property contrasts (dVs%, dVp%, dRho%) across the transition by running the full EOS for both phases and taking percentage differences.\n\n**Performance Considerations**: Each G evaluation requires one MieGruneisenEOSOptimizer run (~10-30 Newton iterations). A single FindPhaseBoundary call requires ~30 G evaluations (2 phases * ~15 bisection steps). A TracePhaseBoundary with 50 points needs ~1500 G evaluations. A full CalculateDiagram on a 50x50 grid with 5 candidate phases needs 12,500 G evaluations. Error handling is via try/catch in ComputePhaseGibbs, which returns double.MaxValue for phases that cannot be computed at extreme conditions.",
+
+  "open_questions": [
+    "How should compositional partitioning of Fe between coexisting phases (e.g., Fe distribution between bridgmanite and ferropericlase) be coupled with the phase boundary calculation, and what is the effect on boundary position and sharpness?",
+    "Can the bisection approach in FindPhaseBoundary be improved with a Newton-Raphson method using the Clapeyron slope as the local derivative, potentially reducing the number of EOS evaluations per boundary point?",
+    "What is the quantitative effect of water (hydrogen) on the 410 km and 660 km phase boundaries, and can this be incorporated into the SLB framework through modified F0 values?",
+    "How well do the computed Clapeyron slopes match modern experimental determinations from in-situ synchrotron X-ray diffraction experiments, particularly for the post-spinel transition where reported values range from -0.5 to -3 MPa/K?",
+    "Can the grid-based CalculateDiagram be made adaptive, refining resolution near phase boundaries while using coarse grids in stability field interiors, to improve efficiency for complex multi-component systems?",
+    "How should the effect of grain-size-dependent kinetics on metastable persistence of phases in cold subducting slabs be incorporated alongside the equilibrium phase diagram predictions?"
+  ],
+
+  "exercise_suggestions": [
+    "Use FindPhaseBoundary to locate the forsterite-wadsleyite boundary at T = 1000, 1400, 1600, 1800, and 2200 K. Plot the five (P,T) points and compute the Clapeyron slope from a linear fit. Compare with the result from ComputeClapeyronSlope at the midpoint temperature.",
+    "Implement a multi-phase boundary calculation for the post-spinel reaction: set up reactants (ringwoodite, stoichiometry 1) and products (bridgmanite + periclase, stoichiometry 1 each) and use FindMultiPhaseBoundary to find the boundary at T = 1600, 1800, 2000 K. Determine the Clapeyron slope and compare with the experimental value of -2.8 MPa/K.",
+    "Use TracePhaseBoundary to trace the fo-mw boundary from 1000 to 2500 K with 30 points. Plot the boundary in P-T space. Is the boundary linear, or does the Clapeyron slope change significantly with temperature?",
+    "Use CalculateDiagram with forsterite and wadsleyite as candidate phases over P = 5-25 GPa and T = 1000-2500 K on a 40x40 grid. Visualize the resulting stability fields and identify the phase boundary from the grid. Compare boundary precision with TracePhaseBoundary.",
+    "Use PostPerovskiteCalculator.CompareAcrossTransition to compute dVs, dVp, and dRho at three different temperatures (2000, 2500, 3000 K) near the CMB. How do the property contrasts change with temperature? What implications does this have for the visibility of the D'' discontinuity?",
+    "Investigate the sensitivity of the 410 km boundary position to the F0 reference energy: perturb F0 of wadsleyite by +/- 5 kJ/mol and recompute the boundary at T = 1600 K. How many GPa (or km) does the boundary shift? Compare this with the experimental uncertainty in F0.",
+    "Compute the Clapeyron slope for the bridgmanite-to-post-perovskite transition at P = 125 GPa, T = 2500 K using both PhaseDiagramCalculator.ComputeClapeyronSlope (dP/dT) and GibbsMinimizer.ClapeyronSlope (dT/dP). Verify they are consistent (one is the reciprocal of the other). Convert to MPa/K and compare with the experimentally reported range of 8-10 MPa/K.",
+    "Write a simple script that combines FindPhaseBoundary results for the 410 km and 660 km transitions along a mantle geotherm T(z) = 1600 + 0.3*z (K, with z in km). At what depths do the transitions occur? How do these depths change if the geotherm is 200 K hotter or cooler?"
+  ],
+
+  "figure_suggestions": [
+    {
+      "description": "Binary phase diagram for forsterite vs Mg-wadsleyite showing the 410 km phase boundary traced by TracePhaseBoundary",
+      "axes": "x: Temperature [K] (1000-2500), y: Pressure [GPa] (8-20)",
+      "key_features": "A boundary curve with positive Clapeyron slope separating the forsterite (low-P) and wadsleyite (high-P) stability fields. Annotate the Clapeyron slope in MPa/K. Overlay a typical mantle geotherm to show the intersection at ~13-14 GPa (~410 km). Mark the region corresponding to the seismically observed discontinuity depth range."
+    },
+    {
+      "description": "Multi-phase reaction boundary for the post-spinel transition (ringwoodite -> bridgmanite + ferropericlase) at 660 km",
+      "axes": "x: Temperature [K] (1500-2500), y: Pressure [GPa] (20-28)",
+      "key_features": "A boundary curve with negative Clapeyron slope. Label reactant side (ringwoodite, upper mantle assemblage) and product side (bridgmanite + ferropericlase, lower mantle assemblage). Show the negative slope and annotate its value. Contrast with the positive slope at 410 km by including both boundaries on a larger-scale inset."
+    },
+    {
+      "description": "Gibbs energy difference Delta_G vs pressure for the fo-mw transition at three temperatures, illustrating the bisection search",
+      "axes": "x: Pressure [GPa] (5-25), y: Delta_G = G_fo - G_mw [kJ/mol]",
+      "key_features": "Three curves (T = 1200, 1600, 2000 K) each crossing zero at different pressures. Mark the zero-crossing point for each as the phase boundary. Show the bisection interval shrinking toward the root. Delta_G > 0 means wadsleyite is stable; Delta_G < 0 means forsterite is stable."
+    },
+    {
+      "description": "Full P-T phase diagram computed by CalculateDiagram showing multiple stability fields in the MgO-SiO2 system",
+      "axes": "x: Temperature [K] (1000-3000), y: Pressure [GPa] (0-140)",
+      "key_features": "Colored stability fields for olivine, wadsleyite, ringwoodite, bridgmanite+ferropericlase, and post-perovskite+ferropericlase. Phase boundaries at approximately 410 km, 520 km, and 660 km depths, plus the D'' boundary. Overlay a mantle geotherm from surface to CMB. Label each stability field and boundary."
+    },
+    {
+      "description": "Clapeyron slope values for major mantle phase transitions, comparing computed vs experimental values",
+      "axes": "x: Transition name (410, 520, 660, D''), y: Clapeyron slope dP/dT [MPa/K]",
+      "key_features": "Bar chart or point-and-error plot comparing ComputeClapeyronSlope results with experimental data. Show positive values for 410 km and D'', negative for 660 km. Include error bars on experimental values. Highlight the geodynamic significance threshold (~-4 MPa/K) for layered convection."
+    },
+    {
+      "description": "Property contrasts across the post-perovskite transition from PostPerovskiteCalculator.CompareAcrossTransition",
+      "axes": "x: Temperature [K] (2000-3500), y: Property contrast [%] (dVs, dVp, dRho)",
+      "key_features": "Three curves showing how dVs%, dVp%, and dRho% vary with temperature at the transition pressure. dVs should be the largest contrast (~2-3%), making the D'' discontinuity primarily visible in shear waves. Compare with seismological observations of D'' reflection amplitudes."
+    }
+  ],
+
+  "historical_context": "The systematic computation of phase diagrams from thermodynamic first principles has a long history in metallurgy and petrology. The CALPHAD (CALculation of PHAse Diagrams) method, developed in the 1970s by Kaufman and Bernstein, established the paradigm of computing phase equilibria from Gibbs energy models fitted to experimental data. In mineral physics, the pioneering high-pressure experiments of Ted Ringwood in the 1960s-1970s first established the basic phase relations of mantle minerals, identifying the olivine-spinel (now olivine-wadsleyite) and spinel-to-perovskite+oxide transitions that correspond to the 410 km and 660 km seismic discontinuities.\n\nThe Clapeyron slope concept gained particular geodynamic importance through the work of Christensen and Yuen (1985), who demonstrated through numerical convection modeling that a sufficiently negative Clapeyron slope at 660 km could induce layered mantle convection. This work transformed the Clapeyron slope from a purely thermodynamic quantity into a key parameter controlling planetary-scale dynamics. The debate over whole-mantle versus layered convection, partly governed by the magnitude of the 660 km Clapeyron slope, continued through the 1990s and 2000s, with seismic tomography eventually supporting predominantly whole-mantle flow with intermittent stagnation.\n\nThe discovery of the post-perovskite phase transition by Murakami et al. (2004) was a landmark event, providing a mineral physics explanation for the long-mysterious D'' seismic discontinuity at the base of the mantle. The steep positive Clapeyron slope (~8-10 MPa/K) and the large shear velocity contrast made it immediately relevant to interpreting deep mantle seismic observations.\n\nComputationally, the self-consistent approach of computing phase diagrams from a single thermodynamic formulation (rather than fitting boundaries independently) was advanced by Ita and Stixrude (1992) and brought to full maturity in the SLB2011 paper. The ThermoElasticCalculator's PhaseDiagramCalculator implements this approach with the practical bisection-based boundary finding and grid-based stability mapping that make phase diagram computation accessible for teaching and research applications.",
+
+  "uncertain": [
+    "worked_examples[0].numerical_values.phase2",
+    "worked_examples[1].numerical_values.clapeyron_slope",
+    "worked_examples[2].numerical_values.expected_boundary",
+    "worked_examples[2].numerical_values.expected_dVp",
+    "worked_examples[2].numerical_values.expected_dRho",
+    "worked_examples[2].numerical_values.clapeyron_slope"
+  ]
+}

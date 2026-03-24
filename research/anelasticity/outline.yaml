@@ -1,0 +1,55 @@
+topic: "Anelasticity and frequency-dependent seismic velocity corrections for mineral physics constraints on mantle composition"
+
+items:
+  - name: "Extended Burgers Model"
+    category: "Rheological Models"
+    description: "Extended Burgers model for high-temperature background dissipation in olivine and its derivatives. Covers the Jackson & Faul (2010) parameterization of Q(T,P,f,d) and its application to upper mantle seismic attenuation."
+
+  - name: "Andrade Model"
+    category: "Rheological Models"
+    description: "Andrade creep model for transient viscoelastic behavior of mantle minerals. Covers Sundberg-Cooper model, power-law frequency dependence of Q, and comparison with Burgers model for polycrystalline olivine."
+
+  - name: "Grain-size sensitivity"
+    category: "Experimental Constraints"
+    description: "Grain-size dependence of seismic attenuation Q and velocity dispersion. Covers experimental measurements by Jackson, Faul, and colleagues on olivine aggregates with varying grain sizes (1-50 μm), and extrapolation to mantle grain sizes (mm-cm)."
+
+  - name: "Melt effects on attenuation"
+    category: "Experimental Constraints"
+    description: "Effect of partial melt on seismic attenuation and velocity. Covers experimental studies on melt-bearing olivine, melt squirt mechanisms, and enhanced dissipation at low melt fractions relevant to LVZ and ULVZ interpretation."
+
+  - name: "Water effects on attenuation"
+    category: "Experimental Constraints"
+    description: "Effect of water (hydrogen) content on seismic attenuation in nominally anhydrous minerals. Covers experimental measurements on hydrous olivine and wadsleyite, proton diffusion mechanism, and implications for upper mantle low-velocity zones."
+
+  - name: "High-pressure attenuation measurements"
+    category: "Experimental Constraints"
+    description: "Recent advances in measuring seismic attenuation at simultaneous high P-T conditions. Covers multi-anvil forced-oscillation techniques, diamond anvil cell experiments, and synchrotron-based methods for measuring Q at lower mantle conditions."
+
+  - name: "Anelastic velocity correction methods"
+    category: "Correction Methods"
+    description: "Methods for correcting anharmonic mineral physics velocities to seismic frequencies. Covers the Karato (1993) formulation, Cammarano et al. (2003) approach, and modern implementations using Q(T,P,f) models to compute ΔV/V corrections."
+
+  - name: "Frequency-dependent velocity dispersion"
+    category: "Correction Methods"
+    description: "Physical basis and quantification of velocity dispersion between ultrasonic (MHz), seismic (Hz), and forced-oscillation (mHz) frequencies. Covers Kramers-Kronig relations, absorption band models, and implications for comparing lab and seismic data."
+
+  - name: "Upper mantle anelasticity profiles"
+    category: "Applications"
+    description: "Construction of radial Q profiles and anelastic velocity corrections for upper mantle composition estimation. Covers Cammarano et al. (2003, 2009), Stixrude & Lithgow-Bertelloni (2005) approach, and comparison with PREM Q model."
+
+  - name: "Transition zone and lower mantle Q"
+    category: "Applications"
+    description: "Attenuation and anelastic effects in the transition zone and lower mantle. Covers Q measurements for wadsleyite, ringwoodite, bridgmanite, and ferropericlase. Discusses whether anelastic corrections are significant below 660 km."
+
+  - name: "Spin crossover and anelasticity"
+    category: "Emerging Topics"
+    description: "Interaction between iron spin crossover in ferropericlase and seismic attenuation in the lower mantle. Covers theoretical predictions of enhanced dissipation near the spin transition pressure and implications for mid-mantle seismic anomalies."
+
+  - name: "Ab initio anelasticity"
+    category: "Emerging Topics"
+    description: "First-principles and molecular dynamics approaches to computing anelastic properties. Covers DFT-based calculations of defect-mediated relaxation, grain-boundary sliding simulations, and comparison with experimental Q values."
+
+execution:
+  output_dir: ./results
+  batch_size: 4
+  items_per_agent: 1

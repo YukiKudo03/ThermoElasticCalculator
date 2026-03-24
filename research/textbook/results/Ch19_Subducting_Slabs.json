@@ -1,0 +1,315 @@
+{
+  "chapter_summary": "Subducting slabs represent the most prominent thermal and seismic anomalies in the Earth's mantle. When oceanic lithosphere, cooled over tens of millions of years at the surface, plunges into the mantle at convergent plate boundaries, it carries a cold thermal anomaly that can persist to depths of 660 km or beyond. The thermal structure of the slab prior to subduction is well described by the half-space cooling model: T(z) = T_surface + (T_mantle - T_surface) * erf(z / (2*sqrt(kappa*t))), where kappa is the thermal diffusivity (~1.0e-6 m^2/s) and t is the plate age. For a 100 Myr-old plate, the thermal boundary layer extends to ~100 km depth, and the slab interior (core) temperature at mid-plate is several hundred kelvins cooler than the ambient mantle potential temperature (~1600 K). This cold core is kinematically advected downward during subduction, maintaining the thermal contrast to great depth because conductive heating of the slab interior is slow relative to the subduction velocity.\n\nThe cold thermal anomaly produces measurable seismic signatures. Because elastic moduli generally increase and density increases with decreasing temperature at constant pressure, slab interiors exhibit positive velocity anomalies (both dVp and dVs) and positive density anomalies relative to the surrounding mantle. The shear-wave anomaly dVs is particularly diagnostic because dVs/dT is typically larger than dVp/dT for mantle minerals, and because attenuation effects further amplify the apparent Vs contrast. Typical slab-related dVs anomalies of +2 to +5 percent are observed in seismic tomography models, corresponding to thermal contrasts of 400-800 K. The SlabThermalModel class in this codebase computes these anomalies by evaluating the Mie-Gruneisen equation of state at slab and ambient temperatures for a given mineral at the appropriate pressure, then computing the percent difference in Vp, Vs, and density.\n\nPhase transitions within slabs add complexity beyond pure thermal effects. The most important is the persistence of metastable olivine within the cold slab interior. In the ambient mantle, olivine transforms to wadsleyite at ~410 km depth (the 410-km discontinuity), but in the cold slab core the kinetics of this transformation may be too sluggish, allowing olivine to persist metastably to depths of 500-600 km. Metastable olivine is less dense and has lower seismic velocities than the equilibrium wadsleyite phase at the same P-T conditions, producing a low-velocity anomaly within what would otherwise be a fast slab. This metastable olivine wedge has been invoked to explain deep-focus earthquakes through transformational faulting. The eventual transformation of metastable olivine to ringwoodite or bridgmanite releases latent heat and produces a density increase (implosion), potentially triggering seismicity. Phase equilibrium calculations (Gibbs free energy minimization, Ch12-13) are needed to predict which phases are stable or metastable at each point in the slab.\n\nInterpreting slab-related seismic anomalies thus requires integrating thermal modeling, equation-of-state calculations, and phase equilibrium considerations. The slab geotherm defines the P-T path; the mineral physics database (SLB2011) provides the elastic properties at each P-T point; mixing models (Ch10) combine multiple mineral contributions for a realistic rock composition; and anelastic corrections (Ch16) account for the reduced attenuation in the cold slab (higher Q_S) relative to the warm ambient mantle. The combination of all these elements makes subducting slabs a capstone application that draws on nearly every topic in mineral physics and thermoelasticity covered in this textbook.",
+
+  "prerequisite_knowledge": [
+    "Half-space cooling model and thermal diffusion in the lithosphere (thermal diffusivity, error function solutions)",
+    "Equation of state calculations: Mie-Gruneisen EOS and the Stixrude-Lithgow-Bertelloni formulation (Ch05-06)",
+    "Elastic moduli and seismic velocities: Vp, Vs from bulk and shear moduli (Ch04)",
+    "Phase transitions and Gibbs free energy minimization: stable vs. metastable phases (Ch08, Ch12-13)",
+    "Seismic tomography basics: body-wave travel times, velocity anomalies, and resolution",
+    "PREM and radial Earth reference models: background density and velocity profiles (Ch15)",
+    "Anelasticity and Q: velocity corrections for attenuation differences between slab and ambient mantle (Ch16)",
+    "Elastic mixing models: Voigt-Reuss-Hill averaging for polyphase rocks (Ch10)",
+    "Plate tectonics fundamentals: ocean floor spreading, subduction geometry, slab dip and convergence rates"
+  ],
+
+  "key_equations": [
+    {
+      "equation": "T(z) = T_{\\text{surface}} + (T_{\\text{mantle}} - T_{\\text{surface}}) \\cdot \\text{erf}\\left(\\frac{z}{2\\sqrt{\\kappa t}}\\right)",
+      "name": "Half-Space Cooling Model",
+      "variables": {
+        "T(z)": "Temperature at depth z [K]",
+        "T_{\\text{surface}}": "Surface temperature (273 K)",
+        "T_{\\text{mantle}}": "Mantle potential temperature (1600 K)",
+        "z": "Depth within the plate [m]",
+        "\\kappa": "Thermal diffusivity (1.0e-6 m^2/s)",
+        "t": "Age of the oceanic plate [s]"
+      },
+      "interpretation": "This gives the thermal profile of the oceanic lithosphere before subduction. The error function solution arises from 1-D diffusion of heat from a half-space initially at T_mantle into a surface held at T_surface. The thermal boundary layer thickness scales as 2*sqrt(kappa*t), so a 100 Myr plate has a thermal thickness of ~100 km. This is the initial condition for the slab thermal structure. Implemented in SlabThermalModel.HalfSpaceCoolingTemperature()."
+    },
+    {
+      "equation": "h \\approx 2.32 \\sqrt{\\kappa \\, t}",
+      "name": "Plate Thickness from Half-Space Cooling",
+      "variables": {
+        "h": "Plate thickness [m], defined as depth where T reaches ~90% of mantle temperature",
+        "\\kappa": "Thermal diffusivity [m^2/s]",
+        "t": "Plate age [s]"
+      },
+      "interpretation": "The factor 2.32 corresponds to erf(1.16) approximately 0.90, meaning the plate thickness is defined where the temperature reaches 90% of the mantle value. For a 100 Myr plate, h is approximately 105 km. The slab core temperature is evaluated at h/2, the plate half-thickness. Implemented in SlabThermalModel.ComputeSlabGeotherm() as the thermalLengthScale variable."
+    },
+    {
+      "equation": "\\delta V_s = \\frac{V_s^{\\text{slab}} - V_s^{\\text{ambient}}}{V_s^{\\text{ambient}}} \\times 100\\%",
+      "name": "Shear-Wave Velocity Anomaly",
+      "variables": {
+        "\\delta V_s": "Percent shear-wave velocity anomaly [%]",
+        "V_s^{\\text{slab}}": "Shear-wave velocity at slab P-T conditions [m/s]",
+        "V_s^{\\text{ambient}}": "Shear-wave velocity at ambient mantle P-T [m/s]"
+      },
+      "interpretation": "The velocity anomaly is the observable quantity in seismic tomography. Because the slab is colder than ambient mantle, its elastic moduli are higher and dVs is positive. Typical slab anomalies range from +2% to +5%. The anomaly is computed by running the Mie-Gruneisen EOS at both slab and ambient temperatures at the same pressure. Implemented in SlabThermalModel.ComputeSlabAnomaly()."
+    },
+    {
+      "equation": "\\frac{\\partial \\ln V_s}{\\partial T}\\bigg|_P \\approx -\\frac{1}{2}\\left(\\frac{1}{K_S}\\frac{\\partial K_S}{\\partial T}\\bigg|_P + \\frac{1}{G}\\frac{\\partial G}{\\partial T}\\bigg|_P - \\frac{\\alpha}{1 - \\alpha T \\gamma_{\\text{th}}}\\right)",
+      "name": "Temperature Derivative of Shear Velocity at Constant Pressure",
+      "variables": {
+        "V_s": "Shear-wave velocity [m/s]",
+        "K_S": "Adiabatic bulk modulus [GPa]",
+        "G": "Shear modulus [GPa]",
+        "\\alpha": "Thermal expansivity [K^{-1}]",
+        "\\gamma_{\\text{th}}": "Thermodynamic Gruneisen parameter"
+      },
+      "interpretation": "This linearized expression shows that the temperature sensitivity of Vs depends on how fast the elastic moduli soften with temperature and how quickly the mineral thermally expands. For olivine at upper-mantle conditions, d(ln Vs)/dT is approximately -8e-5 to -1e-4 per K, meaning a 500 K thermal anomaly produces roughly +4-5% Vs increase in the slab."
+    },
+    {
+      "equation": "\\Delta \\rho = \\rho_{\\text{slab}} - \\rho_{\\text{ambient}} = -\\rho_0 \\alpha \\Delta T + \\Delta \\rho_{\\text{phase}}",
+      "name": "Slab Density Anomaly with Phase Contribution",
+      "variables": {
+        "\\Delta \\rho": "Total density anomaly [kg/m^3]",
+        "\\rho_0": "Reference density [kg/m^3]",
+        "\\alpha": "Thermal expansivity [K^{-1}]",
+        "\\Delta T": "Temperature anomaly T_slab - T_ambient (negative for cold slab) [K]",
+        "\\Delta \\rho_{\\text{phase}}": "Density change from phase transitions (positive if denser phase is stable in slab) [kg/m^3]"
+      },
+      "interpretation": "The slab density anomaly has two contributions: a positive thermal contribution (cold material is denser) and a phase contribution that can be positive or negative. In the transition zone, metastable olivine reduces slab density (negative phase contribution) because olivine is less dense than the equilibrium wadsleyite. The net slab buoyancy determines whether the slab stagnates at 660 km or penetrates into the lower mantle."
+    }
+  ],
+
+  "physical_concepts": [
+    {
+      "concept": "Cold Slab Thermal Anomaly",
+      "definition": "The negative temperature perturbation (several hundred K below ambient mantle) carried by subducting oceanic lithosphere into the mantle interior.",
+      "physical_intuition": "An oceanic plate that has cooled at the surface for 50-150 Myr develops a cold thermal boundary layer extending to ~70-120 km depth. When this plate subducts, the cold interior is carried downward faster than heat can diffuse in from the surrounding hot mantle, so the thermal anomaly persists to depths of 400-700 km. Think of it like pushing a cold ice cube into warm water: the center stays cold long after the edges have warmed.",
+      "common_misconceptions": [
+        "The slab is not uniformly cold: the edges warm by conductive heating while the core remains cold. The thermal structure is 2-D, not 1-D.",
+        "The slab does not simply maintain its surface temperature profile unchanged: some warming does occur, but the timescale for thermal equilibration (tens of Myr) is comparable to or longer than the subduction timescale."
+      ]
+    },
+    {
+      "concept": "Positive dVs Anomaly in Slabs",
+      "definition": "Subducting slabs appear as regions of anomalously high shear-wave velocity in seismic tomography, typically +2 to +5% relative to the surrounding mantle.",
+      "physical_intuition": "Elastic moduli increase as temperature decreases (minerals become stiffer when colder), and density also increases slightly. Since Vs = sqrt(G/rho) and G increases faster than rho with cooling, the net effect is a higher Vs inside the slab. Additionally, Q is higher in the cold slab (less attenuation), so the anelastic velocity reduction is smaller than in the warm ambient mantle, further enhancing the apparent velocity contrast.",
+      "common_misconceptions": [
+        "Not all fast anomalies in tomography are slabs: compositional variations (e.g., depleted harzburgite vs. fertile peridotite) can also produce velocity differences.",
+        "The magnitude of dVs cannot be directly converted to dT without knowing the mineral assemblage, because different minerals have different temperature derivatives."
+      ]
+    },
+    {
+      "concept": "Metastable Olivine Wedge",
+      "definition": "A region within the cold slab interior where olivine persists below the 410-km discontinuity instead of transforming to wadsleyite, because the transformation kinetics are too slow at the low slab-core temperatures.",
+      "physical_intuition": "Phase transitions require atomic diffusion to rearrange the crystal structure. In the warm ambient mantle at 410 km, this happens instantly on geological timescales. But in the slab core at 800-1000 K (vs. 1700 K ambient), diffusion rates are many orders of magnitude slower. The olivine 'doesn't know' it should have transformed, so it persists metastably to much greater depths. This is analogous to diamond persisting metastably at the Earth's surface instead of converting to the stable graphite phase.",
+      "common_misconceptions": [
+        "Metastable olivine does not mean the olivine is somehow different from normal olivine: it is the same phase, just existing outside its equilibrium stability field.",
+        "The metastable wedge is not uniform throughout the slab: only the coldest core retains metastable olivine, while the warmer slab edges transform normally."
+      ]
+    },
+    {
+      "concept": "Slab Buoyancy and Stagnation",
+      "definition": "The net gravitational force on a slab depends on the integrated density difference between the slab and ambient mantle, which determines whether the slab sinks continuously or stagnates at the 660-km discontinuity.",
+      "physical_intuition": "The cold slab is denser than ambient mantle due to thermal contraction (positive buoyancy force pulling it down). However, the 660-km phase transition (ringwoodite to bridgmanite + ferropericlase) has a negative Clapeyron slope, meaning it occurs at greater depth in the cold slab than in the ambient mantle. This creates a zone where the slab has not yet undergone the density-increasing transformation that the surrounding mantle already has, producing a buoyancy resistance. Whether the slab penetrates or stagnates depends on the balance between thermal negative buoyancy and this phase-transition buoyancy resistance.",
+      "common_misconceptions": [
+        "Slab stagnation at 660 km does not mean the slab is positively buoyant in an absolute sense: it means the resistance from the phase transition temporarily exceeds the negative thermal buoyancy, and the slab may eventually sink through after sufficient accumulation.",
+        "The 410-km discontinuity has a positive Clapeyron slope, which actually aids subduction by deepening the transformation in the cold slab, making the slab denser relative to ambient at that depth."
+      ]
+    },
+    {
+      "concept": "Transformational Faulting and Deep Earthquakes",
+      "definition": "A proposed mechanism for deep-focus earthquakes (300-700 km depth) in which the sudden transformation of metastable olivine to a denser spinel-structured phase (wadsleyite or ringwoodite) produces a volume reduction that nucleates shear instabilities.",
+      "physical_intuition": "Normal brittle fracture cannot occur at transition-zone pressures because friction on faults is too high. Instead, when metastable olivine finally begins to transform, the ~5-8% volume reduction produces local stress concentrations. If the transformation runs away along a thin band (analogous to a crack), the associated strain release radiates seismic waves indistinguishable from an earthquake. The spatial distribution of deep-focus earthquakes, which occur only in subduction zones and cluster at depths of 550-650 km, supports this mechanism.",
+      "common_misconceptions": [
+        "Deep earthquakes are not caused by the same brittle fracture mechanism as shallow earthquakes: the confining pressure at 600 km is far too high for frictional sliding.",
+        "Not all deep earthquakes necessarily require metastable olivine: thermal shear instabilities have been proposed as an alternative mechanism."
+      ]
+    }
+  ],
+
+  "key_references": [
+    {
+      "author": "McKenzie, D.P.",
+      "year": 1969,
+      "title": "Speculations on the consequences and causes of plate motions",
+      "journal": "Geophysical Journal of the Royal Astronomical Society, 18, 1-32",
+      "why_essential": "Foundational work establishing the thermal structure of oceanic lithosphere using the half-space cooling model, which forms the initial condition for slab thermal models."
+    },
+    {
+      "author": "Kirby, S.H., Stein, S., Okal, E.A., Rubie, D.C.",
+      "year": 1996,
+      "title": "Metastable mantle phase transformations and deep earthquakes in subducting oceanic lithosphere",
+      "journal": "Reviews of Geophysics, 34, 261-306",
+      "why_essential": "Comprehensive review of metastable olivine persistence in slabs and its connection to deep-focus earthquakes through transformational faulting."
+    },
+    {
+      "author": "Bina, C.R., Helffrich, G.",
+      "year": 1994,
+      "title": "Phase transition Clapeyron slopes and transition zone seismic discontinuity topography",
+      "journal": "Journal of Geophysical Research, 99, 15853-15860",
+      "why_essential": "Quantifies how Clapeyron slopes of the 410 and 660 km transitions affect discontinuity depths in cold slabs, directly linking thermal structure to seismic observables."
+    },
+    {
+      "author": "Stixrude, L., Lithgow-Bertelloni, C.",
+      "year": 2012,
+      "title": "Geophysics of chemical heterogeneity in the mantle",
+      "journal": "Annual Review of Earth and Planetary Sciences, 40, 569-595",
+      "why_essential": "Demonstrates how to compute self-consistent velocity and density profiles for different mantle compositions, essential for separating thermal from compositional contributions to slab anomalies."
+    },
+    {
+      "author": "van der Hilst, R.D., Widiyantoro, S., Engdahl, E.R.",
+      "year": 1997,
+      "title": "Evidence for deep mantle circulation from global tomography",
+      "journal": "Nature, 386, 578-584",
+      "why_essential": "Key tomographic imaging study showing subducted slabs penetrating into the lower mantle in some regions while stagnating at 660 km in others, providing the observational constraints that slab thermal models must explain."
+    },
+    {
+      "author": "Syracuse, E.M., van Keken, P.E., Abers, G.A.",
+      "year": 2010,
+      "title": "The global range of subduction zone thermal models",
+      "journal": "Physics of the Earth and Planetary Interiors, 183, 73-90",
+      "why_essential": "Systematic numerical modeling of thermal structure for all major subduction zones worldwide, providing benchmark P-T paths for slab surfaces and interiors as functions of convergence rate, slab age, and dip angle."
+    }
+  ],
+
+  "worked_examples": [
+    {
+      "problem_statement": "Calculate the core temperature of a 80 Myr-old oceanic slab as it subducts to 400 km depth. Use thermal diffusivity kappa = 1.0e-6 m^2/s, T_surface = 273 K, T_mantle = 1600 K.",
+      "solution_approach": "Step 1: Convert plate age to seconds: t = 80e6 * 365.25 * 24 * 3600 = 2.524e15 s. Step 2: Compute thermal length scale: L = 2*sqrt(kappa*t) = 2*sqrt(1e-6 * 2.524e15) = 2*50.24e3 = 100.5 km. Step 3: Plate thickness h = 2.32*sqrt(kappa*t) = 2.32*50240 = 116.6 km. Step 4: Plate half-thickness = 58.3 km = 58300 m. Step 5: erf argument = 58300/100500 = 0.580. Step 6: erf(0.580) = 0.5810. Step 7: Slab core temperature T_core = 273 + (1600 - 273)*0.581 = 273 + 771 = 1044 K. Step 8: At 400 km depth, the ambient mantle temperature is approximately 1600 + 0.3*400 = 1720 K (adiabatic gradient ~0.3 K/km). Step 9: Thermal anomaly dT = 1044 - 1720 = -676 K.",
+      "numerical_values": {
+        "plate_age": "80 Myr",
+        "plate_thickness": "116.6 km",
+        "slab_core_temperature": "1044 K",
+        "ambient_temperature_at_400km": "~1720 K",
+        "thermal_anomaly": "-676 K"
+      },
+      "interpretation": "The slab core is ~676 K colder than the ambient mantle at 400 km depth. This large thermal anomaly drives the positive velocity anomaly observed in tomography. The half-space cooling model used here (and implemented in SlabThermalModel.ComputeSlabGeotherm) gives a reasonable first approximation, though full 2-D numerical models that include shear heating and temperature-dependent viscosity would refine the result."
+    },
+    {
+      "problem_statement": "Estimate the shear-wave velocity anomaly (dVs%) of olivine in a slab at 300 km depth, given slab temperature 1100 K and ambient temperature 1650 K. Use d(ln Vs)/dT = -8.5e-5 K^{-1} for olivine at these conditions.",
+      "solution_approach": "Step 1: Temperature contrast dT = 1100 - 1650 = -550 K (slab is 550 K colder). Step 2: Linearized velocity anomaly: d(ln Vs) = d(ln Vs)/dT * dT = -8.5e-5 * (-550) = +0.04675. Step 3: Convert to percent: dVs = +4.7%. This is the purely elastic (anharmonic) contribution. Step 4: Anelastic enhancement: at ambient T, Q_S might be ~150, giving an anelastic velocity reduction of ~1.0%. In the cold slab, Q_S might be ~500+, so the anelastic reduction is only ~0.3%. The differential anelastic effect adds another ~0.7% to the apparent dVs. Step 5: Total apparent dVs approximately +5.4%.",
+      "numerical_values": {
+        "temperature_contrast": "-550 K",
+        "elastic_dVs": "+4.7%",
+        "anelastic_enhancement": "+0.7%",
+        "total_apparent_dVs": "+5.4%"
+      },
+      "interpretation": "The computed anomaly of ~5% is at the high end of tomographically observed slab anomalies. This is consistent with using a single mineral (olivine) rather than a full peridotitic assemblage where pyroxene and garnet dilute the anomaly. The anelastic enhancement is non-negligible (~15% of the total signal), underscoring the importance of the Ch16 anelastic corrections. SlabThermalModel.ComputeSlabAnomaly() performs the full EOS calculation rather than relying on linearized derivatives."
+    },
+    {
+      "problem_statement": "Estimate the density anomaly at 500 km depth from metastable olivine vs. equilibrium wadsleyite in a cold slab core. Olivine density at 17 GPa, 900 K: 3610 kg/m^3 [uncertain]. Wadsleyite density at 17 GPa, 1700 K: 3700 kg/m^3 [uncertain].",
+      "solution_approach": "Step 1: The ambient mantle at 500 km contains wadsleyite (having transformed at ~410 km). Its density at 17 GPa and 1700 K is approximately 3700 kg/m^3. Step 2: The cold slab core may retain metastable olivine. Olivine at 17 GPa and 900 K has density approximately 3610 kg/m^3. Step 3: The thermal effect alone would make cold olivine denser than hot olivine, but olivine is intrinsically less dense than wadsleyite at the same pressure. Step 4: Phase density anomaly: (3610 - 3700)/3700 * 100 = -2.4%. Step 5: Without metastable olivine (if the slab transforms normally), the thermal effect alone gives a positive density anomaly of approximately +1% (cold wadsleyite denser than hot wadsleyite). Step 6: Net effect: the metastable olivine wedge creates a low-density anomaly of roughly -2.4% relative to ambient wadsleyite, partially offset by the thermal densification effect in the surrounding slab material.",
+      "numerical_values": {
+        "olivine_density_17GPa_900K": "3610 kg/m^3 [uncertain]",
+        "wadsleyite_density_17GPa_1700K": "3700 kg/m^3 [uncertain]",
+        "phase_density_anomaly": "-2.4%",
+        "net_buoyancy_effect": "Positive (buoyant) in metastable wedge"
+      },
+      "interpretation": "The metastable olivine wedge creates a significant buoyancy anomaly that opposes subduction. This buoyancy, combined with the 660-km phase transition resistance, may contribute to slab stagnation. The density contrast also explains why seismic images sometimes show low-velocity zones within otherwise fast slabs in the transition zone. Precise values require full EOS calculations for both phases at the relevant P-T conditions using the SLB2011 database (Ch07)."
+    }
+  ],
+
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch01 - Thermodynamics of Solids at High Pressure",
+      "connection_type": "prerequisite",
+      "explanation": "The thermal expansion, heat capacity, and Gruneisen parameter govern how slab density and elastic moduli differ from ambient mantle at the same pressure but different temperature."
+    },
+    {
+      "related_chapter": "Ch04 - Elastic Moduli and Seismic Velocities",
+      "connection_type": "prerequisite",
+      "explanation": "Computing dVp and dVs anomalies requires understanding how bulk and shear moduli translate into seismic velocities and how their temperature derivatives control velocity-temperature sensitivity."
+    },
+    {
+      "related_chapter": "Ch05/06 - Stixrude-Lithgow-Bertelloni Formulation and Mie-Gruneisen EOS",
+      "connection_type": "prerequisite",
+      "explanation": "SlabThermalModel.ComputeSlabAnomaly() directly invokes MieGruneisenEOSOptimizer to compute properties at slab vs. ambient temperatures. The EOS provides the quantitative bridge between thermal anomaly and seismic observable."
+    },
+    {
+      "related_chapter": "Ch07 - SLB2011 Mineral Database",
+      "connection_type": "prerequisite",
+      "explanation": "The mineral parameters (Debye temperature, Gruneisen parameter, elastic moduli) for olivine, wadsleyite, ringwoodite, bridgmanite, and other slab minerals come from the SLB2011 database."
+    },
+    {
+      "related_chapter": "Ch08 - Landau Phase Transitions",
+      "connection_type": "extension",
+      "explanation": "The olivine-wadsleyite and post-spinel transitions within slabs involve thermodynamic descriptions of phase equilibria that may use Landau-type formulations for the order parameter near the transition."
+    },
+    {
+      "related_chapter": "Ch10 - Elastic Mixing Models",
+      "connection_type": "prerequisite",
+      "explanation": "A realistic slab is not a single mineral but a polyphase aggregate (olivine + pyroxene + garnet). Voigt-Reuss-Hill or Hashin-Shtrikman averaging is needed to compute bulk slab velocities from mineral-level properties."
+    },
+    {
+      "related_chapter": "Ch12/13 - Gibbs Free Energy and Phase Diagrams",
+      "connection_type": "extension",
+      "explanation": "Predicting which phases are stable at each point in the slab (and whether metastable phases persist) requires Gibbs free energy minimization along the slab P-T path."
+    },
+    {
+      "related_chapter": "Ch15 - PREM and Radial Earth Models",
+      "connection_type": "prerequisite",
+      "explanation": "SlabThermalModel.ComputeSlabGeotherm() calls PREMModel.GetPropertiesAtDepth() to obtain the pressure at each depth. PREM also provides the reference velocity profile against which slab anomalies are measured."
+    },
+    {
+      "related_chapter": "Ch16 - Anelasticity and Q",
+      "connection_type": "extension",
+      "explanation": "The cold slab has higher Q (less attenuation) than ambient mantle, so the anelastic velocity correction is smaller in the slab. This differential anelastic effect amplifies the apparent velocity contrast by 10-20%."
+    }
+  ],
+
+  "computational_methods": "The SlabThermalModel class implements a simplified kinematic slab thermal model. The ComputeSlabGeotherm() method first computes the pre-subduction thermal profile using the half-space cooling solution with erf() from MathNet.Numerics.SpecialFunctions. The plate thickness is determined as 2.32*sqrt(kappa*age), and the slab core temperature is evaluated at the plate half-thickness. For depths beyond the plate half-thickness, the slab core temperature is held constant (kinematic advection approximation), representing the cold interior that is carried to depth without significant conductive warming. Pressure at each depth is obtained from PREMModel.GetPropertiesAtDepth(). The ComputeSlabAnomaly() method evaluates seismic properties at slab and ambient P-T conditions by instantiating two MieGruneisenEOSOptimizer objects (one for each temperature) and computing percent differences in Vp, Vs, and density. This approach is efficient (two EOS evaluations per depth point) but neglects 2-D thermal diffusion, shear heating, and corner flow in the mantle wedge. For more accurate thermal structures, a finite-difference or finite-element solution of the 2-D heat equation in a kinematically prescribed slab geometry would be needed, with typical grid spacing of 1-2 km and time steps governed by the CFL condition for thermal diffusion. The current implementation uses 50 depth points by default over 0-700 km, which provides adequate resolution for first-order slab structure. No iterative convergence is required because the thermal solution is analytical and the EOS optimization at each point is independent.",
+
+  "open_questions": [
+    "Does metastable olivine actually persist in slabs to 600+ km depth, or do grain-size-dependent kinetics allow transformation to occur faster than laboratory extrapolations suggest?",
+    "What causes the observed variability in slab morphology at 660 km: some slabs penetrate directly while others stagnate and flatten. Is this primarily controlled by slab age, convergence rate, trench retreat, or mantle viscosity structure?",
+    "How important is the post-spinel transition (ringwoodite to bridgmanite + ferropericlase) Clapeyron slope in controlling slab penetration into the lower mantle, and what is the correct value (-1 to -3 MPa/K)?",
+    "Can seismic tomography reliably distinguish thermal from compositional contributions to slab velocity anomalies, particularly for ancient slabs that may have reached thermal equilibrium but retain compositional differences?",
+    "What role does water (dehydration of serpentinite and sediments) play in modifying slab thermal structure through latent heat effects and rheological weakening?",
+    "How do grain-size evolution and recrystallization during phase transformations affect the seismic properties and rheology of slabs in the transition zone?",
+    "Are deep-focus earthquakes exclusively caused by transformational faulting in metastable olivine, or can thermal shear instabilities in ductile materials also produce them?"
+  ],
+
+  "exercise_suggestions": [
+    "Use SlabThermalModel.ComputeSlabGeotherm() to compute slab geotherms for plate ages of 20, 50, 100, and 150 Myr. Plot the core temperature as a function of depth and discuss how plate age affects the thermal anomaly magnitude.",
+    "For olivine at 10 GPa and 15 GPa, compute the dVs and dRho anomalies for slab-ambient temperature contrasts of -200, -400, -600, and -800 K using ComputeSlabAnomaly(). How does pressure affect the sensitivity of Vs to temperature?",
+    "Compare the slab core temperature at 400 km depth from the half-space cooling model (as implemented) with values from the Syracuse et al. (2010) numerical models for specific subduction zones (e.g., Tonga, Japan, Cascadia). What factors might explain the differences?",
+    "Calculate the Clapeyron slope effect on the 410-km discontinuity depth in a slab 500 K colder than ambient. If the Clapeyron slope is +3.0 MPa/K, by how many km is the transition elevated? What does this imply for slab density relative to ambient at 380-410 km depth?",
+    "Estimate the thickness of a potential metastable olivine wedge in an 80 Myr slab subducting at 8 cm/yr with a dip of 60 degrees. Assume the olivine-wadsleyite transformation requires temperatures above 1000 K to proceed on a 10 Myr timescale.",
+    "Extend the slab thermal model to include a simple 1-D conductive heating correction: at each depth, add a warming term proportional to exp(-depth/L_thermal) where L_thermal depends on subduction velocity and thermal diffusivity. Compare results with the unmodified kinematic model.",
+    "Combine the slab thermal model with the anelastic correction from Ch16 to compute the apparent dVs anomaly including both elastic and anelastic contributions. How does the anelastic enhancement vary with depth (hint: it depends on the ambient Q profile)?",
+    "For a harzburgite slab composition (70% olivine, 25% orthopyroxene, 5% garnet), use elastic mixing (Ch10) to compute the bulk dVs anomaly and compare with the single-mineral olivine result. How important is the multi-phase correction?"
+  ],
+
+  "figure_suggestions": [
+    {
+      "description": "Slab geotherm comparison plot",
+      "axes": "X-axis: Temperature (K), Y-axis: Depth (km, inverted). Multiple curves for plate ages 20, 50, 100, 150 Myr, plus the ambient mantle adiabat.",
+      "key_features": "Show how the slab core temperature plateau develops at greater depths for older plates. Highlight the depth range where olivine metastability is expected (below 410 km). Mark the 410 and 660 km discontinuities."
+    },
+    {
+      "description": "Velocity anomaly cross-section of a subducting slab",
+      "axes": "X-axis: Horizontal distance from trench (km), Y-axis: Depth (km, inverted). Color scale: dVs (%), ranging from -2 to +6%.",
+      "key_features": "Show the high-velocity slab as a dipping zone of positive dVs (+3 to +5%). Highlight the low-velocity signature of the metastable olivine wedge in the slab core below 410 km. Show the mantle wedge low-velocity zone above the slab. Mark the 410 and 660 km discontinuities."
+    },
+    {
+      "description": "Slab density anomaly with and without metastable olivine",
+      "axes": "X-axis: Density anomaly (%), Y-axis: Depth (km, inverted). Two curves: (1) slab with all phases in equilibrium, (2) slab with metastable olivine persisting below 410 km.",
+      "key_features": "Curve 1 (equilibrium) shows uniformly positive density anomaly (~0.5-1.5%) at all depths. Curve 2 (metastable olivine) shows a dramatic reduction or reversal of the density anomaly between 410 and ~600 km where metastable olivine persists. Highlight the buoyancy implications."
+    },
+    {
+      "description": "Phase diagram along slab vs. ambient P-T paths",
+      "axes": "X-axis: Temperature (K), Y-axis: Pressure (GPa). Phase boundaries for olivine-wadsleyite, wadsleyite-ringwoodite, and post-spinel transitions.",
+      "key_features": "Plot the ambient mantle geotherm and a cold slab geotherm (e.g., 80 Myr plate). Show how the slab P-T path crosses phase boundaries at different pressures than the ambient path. Shade the metastable olivine region where the slab crosses into the wadsleyite stability field but kinetics are too slow. Annotate Clapeyron slopes for each transition."
+    },
+    {
+      "description": "Anelastic enhancement of slab velocity anomaly with depth",
+      "axes": "X-axis: dVs anomaly (%), Y-axis: Depth (km, inverted). Two curves: elastic-only dVs and total (elastic + anelastic) dVs.",
+      "key_features": "The elastic-only curve shows the purely thermal/EOS contribution. The total curve is shifted to larger positive values, with the enhancement being greatest in the upper mantle where ambient Q is lowest (~80-150) and diminishing in the lower mantle where ambient Q is high (~300+)."
+    }
+  ],
+
+  "historical_context": "The thermal modeling of subducting slabs has its roots in the plate tectonics revolution of the 1960s. McKenzie (1969) and Turcotte and Schubert (1971) first applied the half-space cooling model to describe oceanic lithosphere thermal structure, providing the initial conditions for slab models. Early thermal models by Toksoz et al. (1971) and Griggs (1972) used simple conduction calculations to estimate slab interior temperatures, predicting that cold anomalies could persist to transition-zone depths. The discovery by Wadati (1935) and Benioff (1949) of deep-focus earthquake zones to ~700 km depth had already demonstrated that slabs maintain mechanical coherence to great depth, but the thermal explanation was not appreciated until the plate tectonics framework was established. The metastable olivine hypothesis was proposed by Sung and Burns (1976) and developed by Rubie (1984) and Kirby et al. (1996), connecting slab thermal structure to the deep earthquake problem. A major advance came with the development of global seismic tomography in the 1980s-1990s (Dziewonski 1984; van der Hilst et al. 1997), which directly imaged subducting slabs as high-velocity anomalies extending through the transition zone and, in some cases, into the lower mantle. This raised the fundamental question of whether all slabs penetrate into the lower mantle or some stagnate at 660 km, stimulating extensive numerical modeling of mantle convection with phase transitions (Christensen and Yuen 1985). The mineral physics community contributed by measuring temperature and pressure derivatives of elastic moduli for mantle minerals (Li et al. 1998; Sinogeikin et al. 2003), enabling quantitative conversion of thermal anomalies to velocity anomalies. The Stixrude and Lithgow-Bertelloni (2011) self-consistent thermodynamic database, implemented in this codebase, represents the current state of the art for computing slab seismic properties from thermal structure. Modern numerical thermal models (Syracuse et al. 2010; van Keken et al. 2011) solve the full 2-D advection-diffusion equation with realistic rheology, but the simplified kinematic approach in SlabThermalModel remains valuable for rapid parameter exploration.",
+
+  "uncertain": [
+    "physical_concepts[4].common_misconceptions",
+    "worked_examples[1].numerical_values.anelastic_enhancement",
+    "worked_examples[2].numerical_values.olivine_density_17GPa_900K",
+    "worked_examples[2].numerical_values.wadsleyite_density_17GPa_1700K",
+    "key_equations[3].variables",
+    "key_references[0].journal"
+  ]
+}

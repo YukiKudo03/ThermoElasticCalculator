@@ -31,6 +31,18 @@ Stixrude & Lithgow-Bertelloni (2011) "Thermodynamics of mantle minerals - II. Ph
 | Thermoelastic Param. Fitter | 実験データ（Vp/Vs, V(T,P)）からSLB2011熱弾性パラメータのフィッティング |
 | PREM Reference | 深さ-圧力変換、参照地球モデルとの比較 |
 
+## 教科書 (Textbook)
+
+本プロジェクトの全機能を体系化した大学院レベルの計算鉱物物理学教科書です。
+
+**構成:**
+- **章数:** 31章
+- **部数:** 8部構成
+- **規模:** 約20,300行、約1.5MB
+- **場所:** `textbook/` ディレクトリ
+
+詳細な目次と各章の説明は [textbook/README.md](textbook/README.md) をご覧ください。
+
 ## v1.0.0 新機能
 
 ### 新しい計算アプリケーション（+31新規追加）
@@ -179,11 +191,17 @@ ThermoElasticCalculator/
 │       ├── Views/                     # 画面定義（AXAML、35ビュー）
 │       ├── ViewModels/               # ViewModel（35個）
 │       └── ThermoElastic.Desktop.csproj
-└── tests/
-    ├── ThermoElastic.Core.Tests/     # ユニットテスト（479テスト）
-    │   └── ThermoElastic.Core.Tests.csproj
-    └── ThermoElastic.Desktop.E2E/    # E2Eテスト（77テスト）
-        └── ThermoElastic.Desktop.E2E.csproj
+├── tests/
+│   ├── ThermoElastic.Core.Tests/     # ユニットテスト（479テスト）
+│   │   └── ThermoElastic.Core.Tests.csproj
+│   └── ThermoElastic.Desktop.E2E/    # E2Eテスト（77テスト）
+│       └── ThermoElastic.Desktop.E2E.csproj
+├── textbook/                          # 大学院レベル教科書（31章・8部構成）
+│   ├── README.md                      # 教科書の目次と概要
+│   └── chapters/                      # 各章のMarkdownファイル
+└── research/                          # 研究プロジェクトと応用例
+    ├── anelasticity/                  # 非弾性の圧力温度依存性研究
+    └── textbook/                      # 教科書作成補助（計算結果・図表）
 ```
 
 ## ビルド方法

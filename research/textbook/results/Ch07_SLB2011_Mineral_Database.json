@@ -1,0 +1,277 @@
+{
+  "chapter_summary": "The SLB2011 mineral database (Stixrude and Lithgow-Bertelloni, 2011, Table A1) is the empirical backbone of the thermodynamic framework developed in Chapters 1-6. It contains 46 endmember minerals spanning the entire pressure-temperature range of Earth's mantle, from crustal feldspars stable at ambient conditions to post-perovskite phases stable only above 120 GPa in the D'' layer. Each endmember is characterized by a set of thermoelastic parameters referenced to ambient conditions (T0 = 300 K, P = 0): molar volume V0, isothermal bulk modulus K0 and its pressure derivative K0', shear modulus G0 and its pressure derivative G0', Debye temperature theta0, Gruneisen parameter gamma0, its logarithmic volume derivative q0, the shear strain derivative of the Gruneisen parameter eta_S0, the number of atoms per formula unit n, molar weight, and the reference Helmholtz free energy F0. Some phases additionally require Landau parameters (Tc0, VD, SD) for displacive phase transitions or magnetic parameters (spin quantum number S, magnetic atoms per formula unit r) for iron-bearing endmembers.\n\nThe 46 endmembers are organized into mineral families that correspond to the dominant phases in mantle assemblages: olivine (forsterite, fayalite), wadsleyite (Mg, Fe), ringwoodite (Mg, Fe), garnet (pyrope, almandine, grossular, majorite, Na-majorite), clinopyroxene (diopside, hedenbergite, CaTs, jadeite), orthopyroxene (enstatite, ferrosilite, Mg-Tschermak), high-pressure clinopyroxene (HP-clinoenstatite, HP-clinoferrosilite), akimotoite/ilmenite (Mg-akimotoite, Fe-akimotoite, corundum, Mg-ilmenite), bridgmanite (Mg-, Fe-, Al-perovskite), post-perovskite (Mg-, Fe-, Al-), ferropericlase (periclase, wuestite), SiO2 polymorphs (quartz, coesite, stishovite, seifertite), Ca-perovskite, plagioclase (anorthite, albite), nepheline, spinel (spinel, hercynite), CaFerrite-type (Mg-, Fe-, Na-CaFerrite), and kyanite. This comprehensive coverage allows computation of self-consistent phase equilibria, seismic velocities, and density profiles for any bulk composition relevant to Earth's mantle.\n\nThe parameter values in the database were determined by a global inversion that simultaneously fits a wide range of experimental data: static compression (P-V-T), calorimetry (heat capacity), sound velocity measurements (Brillouin scattering, ultrasonic interferometry), and phase equilibrium boundaries. The global optimization ensures thermodynamic self-consistency: the same set of parameters that reproduces elastic properties also predicts correct phase boundaries and thermal properties. Some endmembers have well-constrained parameters based on extensive experimental data (e.g., forsterite, periclase, MgSiO3 bridgmanite), while others rely on systematic trends, analogy with related phases, or limited measurements (e.g., Na-majorite, CaFerrite-type phases, seifertite). Iron-bearing endmembers include magnetic contributions through the spin quantum number S and the count of magnetic atoms r per formula unit, which enter through the high-temperature magnetic entropy R*ln(2Sr+1) per magnetic atom.\n\nIn the ThermoElasticCalculator implementation, the database is encoded in the SLB2011Endmembers class, which returns a list of MineralParams objects. Each MineralParams object carries all the parameters needed by the thermodynamic engine: the equation of state methods (BM3 pressure, BM3KT, BM3GT), volume-strain conversions, and derived quantities such as the finite-strain coefficients Aii, Aiikk, and As that enter the Mie-Gruneisen-Debye formalism. The SLB2011Solutions class builds on these endmembers to define solid solution models (e.g., olivine as a binary fo-fa solution), enabling realistic mantle mineralogy calculations.",
+  "prerequisite_knowledge": [
+    "Birch-Murnaghan equation of state and finite strain theory (Ch01)",
+    "Debye model for thermal properties: heat capacity, thermal energy, Debye temperature (Ch02)",
+    "Gruneisen parameter and its volume dependence: gamma0, q0, eta_S0 (Ch03)",
+    "Elastic moduli and seismic velocities: K0, K0', G0, G0' (Ch04)",
+    "Crystal chemistry of mantle minerals: olivine, garnet, pyroxene, perovskite structures",
+    "Solid solution thermodynamics: ideal and excess mixing, endmember concept",
+    "Landau theory for displacive phase transitions (quartz alpha-beta, stishovite post-stishovite)",
+    "Magnetic contributions to thermodynamic properties of iron-bearing minerals"
+  ],
+  "key_equations": [
+    {
+      "equation": "F(V,T) = F_0 + F_{\\text{cold}}(V) + F_{\\text{Debye}}(V,T) + F_{\\text{Landau}}(V,T) + F_{\\text{mag}}(T)",
+      "name": "Total Helmholtz Free Energy of an Endmember",
+      "variables": {
+        "F_0": "Reference Helmholtz free energy at (V0, T0) [kJ/mol]",
+        "F_{\\text{cold}}(V)": "Cold compression energy from BM3 equation of state",
+        "F_{\\text{Debye}}(V,T)": "Thermal vibrational energy from the Debye model",
+        "F_{\\text{Landau}}(V,T)": "Landau displacive transition contribution (if applicable)",
+        "F_{\\text{mag}}(T)": "Magnetic contribution from unpaired electrons (if applicable)"
+      },
+      "interpretation": "The total free energy of each endmember is the sum of a reference value, the cold compression strain energy, the thermal Debye vibrational energy, and optional Landau and magnetic terms. This decomposition is fundamental to the SLB2011 framework: each term is controlled by a subset of the database parameters."
+    },
+    {
+      "equation": "F_{\\text{cold}} = \\frac{9 K_0 V_0}{2} f^2 \\left(1 + a_1 f\\right), \\quad a_1 = \\frac{3(K_0' - 4)}{2}",
+      "name": "Cold Compression Energy (3rd-order Birch-Murnaghan)",
+      "variables": {
+        "K_0": "Isothermal bulk modulus at reference conditions [GPa]",
+        "V_0": "Molar volume at reference conditions [cm^3/mol]",
+        "f": "Eulerian finite strain = [(V_0/V)^{2/3} - 1]/2",
+        "K_0'": "Pressure derivative of bulk modulus (dimensionless)"
+      },
+      "interpretation": "The cold compression energy depends on only two elastic parameters from the database: K0 and K0'. These are among the best-constrained parameters because they are directly measured by static compression experiments."
+    },
+    {
+      "equation": "\\theta(V) = \\theta_0 \\exp\\left(\\frac{\\gamma_0 - \\gamma}{q_0}\\right), \\quad \\gamma = \\gamma_0 \\left(\\frac{V}{V_0}\\right)^{q_0}",
+      "name": "Volume-Dependent Debye Temperature and Gruneisen Parameter",
+      "variables": {
+        "\\theta_0": "Debye temperature at reference conditions [K]",
+        "\\gamma_0": "Gruneisen parameter at reference conditions",
+        "q_0": "Logarithmic volume derivative of gamma: q = d(ln gamma)/d(ln V)",
+        "V_0": "Reference molar volume [cm^3/mol]",
+        "V": "Molar volume at pressure [cm^3/mol]"
+      },
+      "interpretation": "Three database parameters (theta0, gamma0, q0) control the thermal contribution to free energy. The Debye temperature increases under compression (gamma > 0), stiffening the lattice and increasing the characteristic vibrational frequency. The parameter q0 controls how rapidly gamma changes with volume."
+    },
+    {
+      "equation": "G(f,T) = G_{\\text{cold}}(f) - \\frac{\\eta_{S0}}{V} \\Delta E_{\\text{th}}",
+      "name": "Shear Modulus with Thermal Correction",
+      "variables": {
+        "G_{\\text{cold}}(f)": "Shear modulus from finite strain (BM3GT), depends on G0, G0', K0, K0'",
+        "\\eta_{S0}": "Shear strain Gruneisen parameter at reference conditions",
+        "V": "Molar volume [cm^3/mol]",
+        "\\Delta E_{\\text{th}}": "Thermal energy change from reference [kJ/mol]"
+      },
+      "interpretation": "The shear modulus requires two additional database parameters beyond the EOS: G0 (or G0') and eta_S0. These are constrained by sound velocity measurements (Brillouin scattering, ultrasonic) which are often more difficult to obtain at high P-T than compression data."
+    },
+    {
+      "equation": "S_{\\text{mag}} = n_r R \\ln(2S + 1)",
+      "name": "High-Temperature Magnetic Entropy",
+      "variables": {
+        "S": "Spin quantum number of the magnetic ion (e.g., S=2 for high-spin Fe^{2+})",
+        "n_r": "Number of magnetic atoms per formula unit",
+        "R": "Gas constant [8.314 J/mol/K]"
+      },
+      "interpretation": "Iron-bearing endmembers carry additional entropy from unpaired d-electrons. At mantle temperatures (well above Neel/Curie temperatures), the full paramagnetic entropy R*ln(2S+1) per magnetic atom is realized. For high-spin Fe2+ (S=2), this gives R*ln(5) = 13.38 J/mol/K per Fe atom, a significant contribution to phase stability."
+    },
+    {
+      "equation": "F_{\\text{Landau}} = \\frac{S_D}{2} T_c \\left(1 - \\frac{T}{T_c}\\right)^2 \\quad (T < T_c)",
+      "name": "Landau Contribution to Free Energy",
+      "variables": {
+        "S_D": "Maximum excess entropy of the transition [J/mol/K]",
+        "T_c": "Critical (transition) temperature at pressure P [K]",
+        "T": "Temperature [K]"
+      },
+      "interpretation": "Displacive phase transitions (e.g., alpha-beta quartz at 847 K) are modeled by Landau theory with three database parameters: Tc0 (critical temperature at P=0), VD (maximum excess volume), and SD (maximum excess entropy). Only quartz and stishovite use these parameters in SLB2011."
+    }
+  ],
+  "physical_concepts": [
+    {
+      "concept": "Endmember Mineral",
+      "definition": "A mineral phase with a fixed chemical composition that serves as a thermodynamic building block. Endmembers are the pure compositional extremes of a solid solution series.",
+      "physical_intuition": "Just as any color can be mixed from primary colors, any mantle rock composition can be described as a mixture of endmember minerals. Forsterite (Mg2SiO4) and fayalite (Fe2SiO4) are the endmembers of the olivine solid solution. The thermodynamic properties of the solution are built from endmember properties plus mixing terms.",
+      "common_misconceptions": [
+        "Endmembers are not necessarily stable phases in nature; they are thermodynamic reference states. Pure fayalite is rare in the mantle, but its endmember parameters are essential for computing properties of Fe-bearing olivine.",
+        "The 46 endmembers do not represent 46 independent phases in a single rock. A typical mantle assemblage at given P-T has only 4-6 stable phases, each being a solid solution of several endmembers."
+      ]
+    },
+    {
+      "concept": "Global Inversion for Parameter Determination",
+      "definition": "A simultaneous least-squares fit of all endmember parameters to multiple types of experimental data (P-V-T, Cp, sound velocities, phase boundaries) ensuring thermodynamic self-consistency.",
+      "physical_intuition": "Each type of experiment constrains different parameter combinations. Static compression constrains V0, K0, K0'. Calorimetry constrains theta0 and gamma0 through heat capacity. Sound velocities constrain G0, G0', eta_S0. Phase boundaries constrain F0 values (relative free energies). By fitting everything simultaneously, parameter trade-offs are resolved and self-consistency is enforced.",
+      "common_misconceptions": [
+        "Parameters are not independently measured for each mineral and then assembled. The global inversion means changing one parameter (e.g., K0 of forsterite) may shift other parameters (e.g., gamma0 of forsterite or F0 of wadsleyite) to maintain the fit to phase boundaries.",
+        "Parameter uncertainties from the global inversion are correlated, not independent. Reporting K0 = 128 +/- 2 GPa for forsterite without noting its correlation with K0' is misleading."
+      ]
+    },
+    {
+      "concept": "Mineral Families and Structural Analogy",
+      "definition": "Minerals sharing the same crystal structure form a family (e.g., olivine: forsterite + fayalite). Within a family, certain parameters are often constrained to be equal or systematically related.",
+      "physical_intuition": "Because Mg and Fe have similar ionic radii and bonding character, replacing Mg by Fe in a crystal structure changes the mass and bond strength but preserves the structural topology. This means pressure derivatives (K0', G0') and the volume exponent q0 are often assumed equal within a family, while V0, K0, G0, and theta0 vary systematically with composition.",
+      "common_misconceptions": [
+        "Shared parameters within a family are not exact physical laws but practical constraints that reduce the number of free parameters in the global inversion. With more experimental data, these constraints could be relaxed.",
+        "The olivine-wadsleyite-ringwoodite sequence involves the same chemistry (Mg2SiO4) but different crystal structures, so they are different mineral families with independent parameter sets."
+      ]
+    },
+    {
+      "concept": "Reference State Convention",
+      "definition": "All SLB2011 parameters are referenced to T0 = 300 K and P = 0 GPa. The Helmholtz free energy F0 is defined relative to the elements in their standard states.",
+      "physical_intuition": "Choosing a common reference state for all endmembers allows direct comparison of free energies to determine which phases are thermodynamically stable at any P-T condition. The reference temperature of 300 K (rather than 0 K) avoids complications with zero-point energy and simplifies connection to room-temperature laboratory measurements.",
+      "common_misconceptions": [
+        "F0 is not the total energy of the mineral; it is a relative quantity that depends on the chosen reference for the elements. Only differences in F0 between phases of the same composition are physically meaningful for phase equilibrium calculations.",
+        "V0 is the volume at 300 K and 1 bar, not at 0 K. The thermal expansion from 0 K to 300 K is already incorporated into the reference volume."
+      ]
+    },
+    {
+      "concept": "Landau Displacive Transition Parameters",
+      "definition": "Three parameters (Tc0, VD, SD) describe second-order or weakly first-order structural phase transitions where atoms shift position without breaking bonds, modeled by Landau theory.",
+      "physical_intuition": "In quartz, the alpha-beta transition at 847 K (at 1 bar) involves a slight rotation of SiO4 tetrahedra. Below Tc the structure is distorted (lower symmetry, smaller volume). The Landau parameters capture the excess volume VD and entropy SD associated with this distortion. Only 2 of the 46 endmembers (quartz and stishovite) require Landau parameters in SLB2011.",
+      "common_misconceptions": [
+        "A negative Tc0 (as in stishovite, Tc0 = -4250 K) does not mean the transition occurs at negative temperature. It indicates that the transition occurs only at high pressure, where Tc(P) = Tc0 + P*VD/SD becomes positive.",
+        "Landau parameters are distinct from the reconstructive transitions (e.g., olivine to wadsleyite) which are handled by comparing free energies of separate endmembers."
+      ]
+    },
+    {
+      "concept": "Magnetic Contribution in Iron-Bearing Phases",
+      "definition": "Iron-bearing endmembers have unpaired d-electrons that contribute paramagnetic entropy at high temperature, parameterized by spin quantum number S and magnetic atom count r.",
+      "physical_intuition": "High-spin Fe2+ has 4 unpaired electrons (S=2), giving 2S+1 = 5 spin microstates. At temperatures well above magnetic ordering temperatures (typically below 100 K for silicates), all microstates are equally populated, contributing R*ln(5) per Fe atom to the entropy. This stabilizes iron-bearing phases relative to iron-free ones at high temperature.",
+      "common_misconceptions": [
+        "The magnetic contribution in SLB2011 is the high-temperature paramagnetic limit. No attempt is made to model the low-temperature magnetic ordering (antiferromagnetic Neel transition), which is irrelevant at mantle temperatures.",
+        "Not all iron-bearing minerals have the same magnetic atom count r. Fe-wadsleyite has r=8 (reflecting the number of Fe sites per formula unit in the chosen formula basis) while fayalite has r=2."
+      ]
+    }
+  ],
+  "key_references": [
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2011,
+      "title": "Thermodynamics of mantle minerals - II. Phase equilibria",
+      "journal": "Geophysical Journal International, 184, 1180-1213",
+      "why_essential": "The primary source for the 46-endmember database (Table A1). Contains all parameter values, the global inversion methodology, and validation against experimental phase equilibria. This is the paper the SLB2011Endmembers class directly implements."
+    },
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2005,
+      "title": "Thermodynamics of mantle minerals - I. Physical properties",
+      "journal": "Geophysical Journal International, 162, 610-632",
+      "why_essential": "The companion Part I paper that develops the theoretical framework (Mie-Gruneisen-Debye formalism, finite-strain elasticity, shear modulus treatment) that the database parameters feed into. Essential for understanding what each parameter physically means."
+    },
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2012,
+      "title": "Geophysics of chemical heterogeneity in the mantle",
+      "journal": "Annual Review of Earth and Planetary Sciences, 40, 569-595",
+      "why_essential": "A review that demonstrates how the SLB2011 database is applied to compute seismic velocity profiles for various mantle compositions (pyrolite, harzburgite, MORB), showing the practical impact of parameter choices on geophysical interpretations."
+    },
+    {
+      "author": "Xu, W., Lithgow-Bertelloni, C., Stixrude, L., and Ritsema, J.",
+      "year": 2008,
+      "title": "The effect of bulk composition and temperature on mantle seismic structure",
+      "journal": "Earth and Planetary Science Letters, 275, 70-79",
+      "why_essential": "An earlier application using a precursor database that demonstrates the sensitivity of seismic velocity predictions to mineral database parameters, motivating the careful global inversion approach of SLB2011."
+    },
+    {
+      "author": "Holland, T.J.B. and Powell, R.",
+      "year": 2011,
+      "title": "An improved and extended internally consistent thermodynamic dataset for phases of petrological interest",
+      "journal": "Journal of Metamorphic Geology, 29, 333-383",
+      "why_essential": "The principal competing mineral database (HP11). Comparison with SLB2011 highlights different parameterization choices: HP11 uses a Mie-Gruneisen thermal pressure approach with different equation of state formulations, providing perspective on parameter uncertainties."
+    }
+  ],
+  "worked_examples": [
+    {
+      "problem": "Compare the parameter sets for the three bridgmanite (perovskite) endmembers (Mg, Fe, Al) and explain which parameters are shared and which differ, and what this implies about parameter constraints.",
+      "solution_approach": "Extract the parameters from SLB2011Endmembers for mpv, fpv, and apv. Compare K0', q0, gamma0, and other values that may be constrained to be equal within the family.",
+      "numerical_values": "All three bridgmanite endmembers share: K0' = 4.14, gamma0 = 1.56508, q0 = 1.10945, and n = 5 atoms. They differ in: V0 (24.445, 25.485, 24.944 cm3/mol), K0 (250.53, 272.12, 258.20 GPa), G0 (172.90, 132.68, 171.31 GPa), G0' (1.6904, 1.3748, 1.4971), theta0 (905.94, 870.81, 886.46 K), eta_S0 (2.5654, 2.2921, 2.4713), and F0 (-1368.283, -1040.920, -1533.878 kJ/mol). Fe-bridgmanite additionally has S=2, r=1 for magnetic contribution.",
+      "interpretation": "The shared K0', gamma0, and q0 values reflect the constraint that these parameters are tied to crystal structure topology rather than composition. Fe substitution increases V0 and K0 (heavier, slightly more compressible bonds) but significantly decreases G0 (Fe-O bonds are weaker in shear). The much less negative F0 of Fe-bridgmanite reflects the lower thermodynamic stability of iron in the bridgmanite structure. Al-bridgmanite has the most negative F0, consistent with Al being a stabilizing substituent."
+    },
+    {
+      "problem": "Calculate the magnetic entropy contribution to fayalite (Fe2SiO4) and Fe-wadsleyite at mantle temperatures and assess its impact on phase stability.",
+      "solution_approach": "Use S_mag = n_r * R * ln(2S+1) with the database values for SpinQuantumNumber and MagneticAtomCount. Compare the magnetic entropy for fayalite (S=2, r=2) and Fe-wadsleyite (S=2, r=8).",
+      "numerical_values": "For fayalite: S_mag = 2 * 8.314 * ln(2*2+1) = 2 * 8.314 * ln(5) = 2 * 8.314 * 1.6094 = 26.76 J/mol/K. For Fe-wadsleyite: S_mag = 8 * 8.314 * ln(5) = 107.04 J/mol/K. At T=1500 K, the magnetic free energy contribution is -T*S_mag = -40.14 kJ/mol for fayalite and -160.56 kJ/mol for Fe-wadsleyite.",
+      "interpretation": "The large difference in magnetic atom count (r=2 vs r=8) between fayalite and Fe-wadsleyite reflects different formula unit conventions in the database. Fe-wadsleyite uses a formula basis with 4 formula units of Fe2SiO4 (i.e., Fe8Si4O16 with n=28 atoms would be needed, but it uses n=7 corresponding to Fe2SiO4 with r=8 distributed among the magnetic sites). This convention must be carefully tracked to avoid errors. The T*S_mag terms are large and significantly affect phase boundaries between iron-bearing polymorphs."
+    },
+    {
+      "problem": "Explain why quartz has a nearly zero Gruneisen parameter (gamma0 = -0.00296) and what this implies for its thermal properties.",
+      "solution_approach": "Examine the quartz parameters in context. The Gruneisen parameter relates thermal pressure to thermal energy: P_th = gamma * E_th / V. A near-zero gamma means thermal pressure is negligible.",
+      "numerical_values": "Quartz: gamma0 = -0.00296, theta0 = 816.33 K, K0 = 49.55 GPa, K0' = 4.33. The thermal expansion coefficient alpha is proportional to gamma*Cv/(K_T*V). With gamma nearly zero, alpha should be anomalously small. In practice, the Landau transition (Tc0 = 847 K) dominates the thermal behavior of quartz near its alpha-beta transition temperature.",
+      "interpretation": "The near-zero (slightly negative) Gruneisen parameter for quartz is a consequence of the open framework structure of SiO2, where thermal vibrations can be accommodated without significant volume change. This is physically reasonable: quartz has a very open crystal structure compared to close-packed oxides. The Landau parameters (Tc0=847 K, VD=1.222 cm3/mol, SD=5.164 J/mol/K) provide the dominant thermal effects near the transition temperature, effectively decoupling thermal expansion from the Debye model."
+    }
+  ],
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch01: Thermodynamics of Solids at High Pressure",
+      "nature_of_connection": "prerequisite",
+      "explanation": "Chapter 1 develops the Birch-Murnaghan equation of state that uses the K0 and K0' parameters from the database. Every cold compression calculation in SLB2011 passes through the BM3 expressions derived in Ch01."
+    },
+    {
+      "related_chapter": "Ch02: Debye Model and Thermal Properties",
+      "nature_of_connection": "prerequisite",
+      "explanation": "Chapter 2 develops the Debye model that uses the theta0 parameter from the database. The Debye function evaluation and heat capacity calculation transform theta0 into thermal energy and entropy at arbitrary P-T."
+    },
+    {
+      "related_chapter": "Ch03: Gruneisen Parameter and Anharmonicity",
+      "nature_of_connection": "prerequisite",
+      "explanation": "Chapter 3 explains the physical meaning of gamma0, q0, and eta_S0 from the database. The volume dependence of the Gruneisen parameter (gamma = gamma0 * (V/V0)^q0) is central to computing thermal pressure and elastic property corrections."
+    },
+    {
+      "related_chapter": "Ch04: Elastic Moduli and Seismic Velocities",
+      "nature_of_connection": "prerequisite",
+      "explanation": "Chapter 4 shows how G0, G0', and eta_S0 from the database are used to compute shear modulus and seismic velocities at high P-T. The BM3GT finite-strain expression for shear modulus uses G0, G0', K0, and K0' together."
+    },
+    {
+      "related_chapter": "Ch08: Solid Solutions and Mixing (anticipated)",
+      "nature_of_connection": "extension",
+      "explanation": "The endmember database is the foundation for solid solution models. Chapter 8 would build on these 46 endmembers by adding interaction parameters (Margules parameters) to describe non-ideal mixing in multi-component phases like garnet and pyroxene."
+    },
+    {
+      "related_chapter": "Ch09: Phase Equilibria and Mantle Mineralogy (anticipated)",
+      "nature_of_connection": "application",
+      "explanation": "The F0 values in the database determine the relative stability of competing phases. Gibbs free energy minimization using these F0 values (plus PV and -TS terms) predicts which mineral assemblage is stable at each P-T condition along a mantle geotherm."
+    }
+  ],
+  "computational_methods": "The SLB2011 endmember database is implemented in the SLB2011Endmembers.GetAll() static method, which returns a List<MineralParams> containing all 46 endmembers with their parameters hardcoded from Table A1. Each MineralParams object encapsulates not only the raw parameter values but also the computational methods that use them: GetPressure(f) evaluates the BM3 pressure at finite strain f, BM3Finite(P) inverts the BM3 EOS to find f at target pressure P using Regula Falsi root-finding, BM3KT(f) evaluates the isothermal bulk modulus at strain f, and BM3GT(f) evaluates the shear modulus at strain f. Derived quantities Aii = 6*gamma0, Aiikk = -12*gamma0 + 36*gamma0^2 - 18*gamma0*q0, and As = -2*gamma0 - 2*eta_S0 are computed as properties from gamma0, q0, and eta_S0, and feed into the Mie-Gruneisen-Debye thermal corrections in ThermoMineralParams. The database supports JSON and CSV import/export through MineralParams.ExportJson(), ImportJson(), ExportCsvRow(), and ImportCsvRow() methods, enabling parameter exploration and sensitivity analysis. The root-finding for BM3Finite uses a dynamic upper bound estimated from f_est = P/(3*K0) with a safety margin, and converges to machine precision. For the 46 endmembers, typical BM3Finite inversion takes fewer than 30 iterations at any mantle pressure up to 140 GPa.",
+  "open_questions": [
+    "How should spin crossover in iron-bearing phases (ferropericlase, bridgmanite) be incorporated into the database? SLB2011 uses high-spin parameters only, but the high-spin to low-spin transition around 40-60 GPa significantly changes V0, K0, and other properties.",
+    "What are the correct elastic parameters for the CaFerrite-type phases (NAL phase)? The current values for Mg-CaFerrite, Fe-CaFerrite, and Na-CaFerrite use round numbers (e.g., K0'=4.1, G0'=1.7) suggesting limited experimental constraints.",
+    "How do anharmonic effects beyond the quasi-harmonic Debye model affect parameter values at the highest mantle temperatures (>3000 K)? The intrinsic anharmonicity neglected in SLB2011 could shift effective parameter values.",
+    "Should the database include hydrous phases (e.g., phase D, superhydrous phase B, delta-AlOOH) for modeling water transport in subducting slabs? The current 46 endmembers assume an anhydrous mantle.",
+    "How sensitive are computed seismic velocities to correlated parameter uncertainties? A formal covariance matrix from the global inversion is not published, making rigorous uncertainty propagation difficult.",
+    "Are the constraints on Na-majorite parameters adequate? The round values (K0'=5.0, G0'=1.7, q0=1.5) suggest these are estimates rather than well-constrained fit results.",
+    "How should the database be updated to incorporate post-2011 experimental data, particularly new Brillouin scattering measurements on bridgmanite and post-perovskite at megabar pressures?"
+  ],
+  "exercise_suggestions": [
+    "List all 46 endmembers and classify them by mineral family. For each family, identify which parameters are shared (constrained equal) and which vary across endmembers. What physical reasoning justifies the shared constraints?",
+    "Using the SLB2011Endmembers database, compute the zero-pressure density of each endmember from V0 and MolarWeight. Rank them from least to most dense and relate the ranking to crystal structure (coordination number, packing efficiency).",
+    "For the olivine endmembers (forsterite, fayalite), compute K_T, G, Vp, Vs, and density at P=10 GPa, T=1500 K using the full Mie-Gruneisen-Debye machinery. Compare with the wadsleyite endmembers at the same conditions. What is the velocity contrast at the 410-km discontinuity?",
+    "Investigate the effect of Landau parameters on quartz properties. Plot the volume and entropy of quartz as a function of temperature from 300 K to 1200 K with and without the Landau contribution. Where does the alpha-beta transition occur?",
+    "Compute the magnetic entropy contribution for all iron-bearing endmembers. Which phase has the largest magnetic entropy per mole? Which has the largest per atom of iron? How does this affect the iron partition coefficient between coexisting phases?",
+    "Compare the bulk modulus and its pressure derivative across all mineral families. Do high-pressure phases (bridgmanite, post-perovskite) systematically have higher K0 and lower K0' than low-pressure phases (olivine, pyroxene)? Relate this to the finite strain theory prediction that K0' approaches 4 at infinite pressure.",
+    "Perform a sensitivity analysis: change K0 of Mg-bridgmanite by +/- 5 GPa and recompute Vp and Vs at 50 GPa and 2000 K. How large is the velocity change compared to seismological resolution (~0.1%)? Repeat for G0 and theta0.",
+    "Export the full database to CSV using MineralParams.ExportCsvFile(), modify one parameter (e.g., increase G0 of periclase by 10%), reimport, and compare computed velocities before and after. This exercises the import/export infrastructure and demonstrates parameter sensitivity."
+  ],
+  "figure_suggestions": [
+    {
+      "description": "Parameter overview table rendered as a heatmap or color-coded matrix showing all 46 endmembers (rows) versus their key parameters (V0, K0, K0', G0, G0', theta0, gamma0, q0, eta_S0, F0) as columns. Color intensity represents the magnitude of each parameter normalized within its column. This provides an at-a-glance view of parameter ranges and highlights which endmembers are outliers.",
+      "axes": "Rows: mineral names grouped by family; Columns: parameter names; Color: normalized parameter value",
+      "key_features": "Stishovite and seifertite should stand out with high K0 and G0; quartz should stand out with anomalously low gamma0; CaFerrite phases should show similar (round) values suggesting estimation."
+    },
+    {
+      "description": "Bulk modulus K0 versus molar volume V0 scatter plot for all 46 endmembers, with symbols colored by mineral family. Include the empirical Birch law trend K0 * V0^(4/3) = constant for comparison.",
+      "axes": "x-axis: V0 [cm3/mol]; y-axis: K0 [GPa]; symbol color: mineral family",
+      "key_features": "High-pressure phases (bridgmanite, post-perovskite, stishovite) cluster at low V0 and high K0. Low-pressure phases (quartz, albite, nepheline) cluster at high V0 and low K0. The Birch law line should approximately fit the trend."
+    },
+    {
+      "description": "Bar chart comparing Debye temperatures (theta0) across all 46 endmembers, sorted in ascending order. Bars colored by mineral family.",
+      "axes": "x-axis: endmember name; y-axis: theta0 [K]",
+      "key_features": "Stishovite and seifertite have the highest Debye temperatures (>1100 K), reflecting the stiff Si-O bonds in rutile-type structures. Wuestite has one of the lowest theta0 values (454 K), consistent with the weaker Fe-O bonds."
+    },
+    {
+      "description": "Plot of Gruneisen parameter gamma0 versus q0 for all endmembers, with error bars or ellipses indicating the typical trade-off between these two parameters in fitting thermal expansion data.",
+      "axes": "x-axis: gamma0; y-axis: q0; symbol: mineral family",
+      "key_features": "Most endmembers cluster near gamma0 = 1.0-1.5 and q0 = 1-3. Quartz is a dramatic outlier with gamma0 near zero. Enstatite and ferrosilite have unusually high q0 (~3.4), reflecting the strong volume dependence of gamma in pyroxene structures."
+    },
+    {
+      "description": "Schematic diagram showing the mineral family tree: which endmembers combine into which solid solutions, and which solid solutions compete at which depth ranges in the mantle. Arrows indicate the endmember-to-solution-to-assemblage hierarchy.",
+      "axes": "Horizontal: depth/pressure range; Vertical: phase groupings",
+      "key_features": "Show olivine -> wadsleyite -> ringwoodite -> bridgmanite + ferropericlase progression with depth. Show garnet and pyroxene families expanding in the transition zone before dissolving into bridgmanite. Ca-perovskite appears as a separate phase in the lower mantle."
+    }
+  ],
+  "historical_context": "The SLB2011 database represents the culmination of decades of effort to build a self-consistent thermodynamic framework for mantle minerals. Early mineral databases in the 1970s-1980s (e.g., Berman 1988, Holland and Powell 1990) focused on crustal and upper-mantle phases and used empirical thermal expansion and compressibility functions rather than physics-based equations of state. The breakthrough came with Stixrude and Bukowinski (1990), who first applied the Mie-Gruneisen-Debye formalism with Birch-Murnaghan EOS to mantle minerals, connecting microscopic vibrational properties (Debye temperature, Gruneisen parameter) to macroscopic observables. This approach was systematized in Stixrude and Lithgow-Bertelloni (2005, Part I), which established the theoretical framework, and brought to fruition in the 2011 Part II paper which presented the 46-endmember database determined by global inversion. The database was rapidly adopted by the geophysics community and integrated into tools such as BurnMan (Cottaar et al., 2014) and HeFESTo. The ThermoElasticCalculator project implements the same parameter set in its SLB2011Endmembers class. Competing databases include the Holland-Powell dataset (HP11, updated regularly) which uses a different thermal pressure formulation, and newer ab initio databases that derive parameters from density functional theory rather than experimental fitting. As of the 2020s, efforts are underway to extend the SLB framework to include hydrous phases, spin crossover, and anelastic effects (the latter implemented in ThermoElasticCalculator's AnelasticityDatabase), but the core 46-endmember anhydrous database remains the standard reference.",
+  "uncertain": [
+    "connections_to_other_chapters"
+  ]
+}

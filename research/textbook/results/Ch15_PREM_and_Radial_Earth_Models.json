@@ -1,0 +1,309 @@
+{
+  "chapter_summary": "The Preliminary Reference Earth Model (PREM), published by Dziewonski and Anderson in 1981, is the most widely used one-dimensional reference model for the Earth's interior. PREM was constructed by simultaneously inverting a massive dataset of body-wave travel times, surface-wave dispersion measurements, and free-oscillation (normal mode) frequencies to obtain radial profiles of compressional velocity (Vp), shear velocity (Vs), density (rho), pressure, gravity, and attenuation (Q) as functions of depth from the surface to the center of the Earth. The model represents a spherically symmetric, non-rotating, elastically isotropic (with an anisotropic correction in the uppermost mantle) reference state against which lateral heterogeneity and regional variations can be measured. PREM provides the essential framework for converting between depth and pressure, which is the fundamental link between seismological observations (parameterized by depth) and mineral physics experiments (parameterized by pressure).\n\nThe radial structure of PREM reveals several major discontinuities that partition the Earth into distinct layers. The Mohorovicic discontinuity (Moho) at approximately 24.4 km depth (for the oceanic average used in PREM) marks the crust-mantle boundary with a sharp increase in Vp from about 6.8 to 8.1 km/s and density from 2.9 to 3.38 g/cm3. The 410-km discontinuity shows velocity and density jumps attributed to the olivine-to-wadsleyite phase transition. The 660-km discontinuity, marking the boundary between the transition zone and lower mantle, is associated with the ringwoodite-to-bridgmanite+ferropericlase dissociation and features substantial jumps in both velocity and density. The core-mantle boundary (CMB) at 2891 km depth is the most dramatic discontinuity, where shear velocity drops to zero (in the liquid outer core) and density jumps from about 5.57 to 9.90 g/cm3.\n\nFor mineral physics applications, PREM serves as the observational target that theoretical mineral assemblage calculations must reproduce. By computing the elastic properties (K_S, G) and density of candidate mantle compositions along a geotherm using equations of state and mixing models, one can compare predicted velocity-depth profiles against PREM to constrain mantle composition and temperature. The depth-pressure conversion provided by PREM is critical because laboratory experiments measure properties as functions of pressure, while seismological observations are parameterized by depth. The ThermoElasticCalculator implements the PREM model via the PREMModel class, which stores a table of (depth, pressure, density, Vp, Vs) values at key boundaries and intermediate points and uses linear interpolation to provide properties at arbitrary depths. The DepthConverter class uses this PREM table to perform bidirectional depth-pressure conversion via bisection search.\n\nBeyond PREM, several other 1D radial Earth models exist, including IASP91 (Kennett and Engdahl, 1991), AK135 (Kennett, Engdahl, and Buland, 1995), and STW105 (Kustowski, Ekstrom, and Dziewonski, 2008). These models differ primarily in their treatment of the upper mantle, transition zone structure, and the parameterization of anisotropy and attenuation. AK135 is now the preferred reference for travel-time calculations by the International Seismological Centre, while PREM remains the standard reference for normal-mode studies and mineral physics comparisons due to its self-consistent treatment of density and elastic moduli.",
+
+  "prerequisite_knowledge": [
+    "Basic seismology: body waves (P and S), surface waves, and free oscillations of the Earth",
+    "Elastic moduli (bulk modulus K, shear modulus G) and their relationship to seismic velocities (Ch04)",
+    "Equation of state concepts: pressure-volume-temperature relationships (Ch01, Ch06)",
+    "Phase transitions in mantle minerals: olivine polymorphs, pyroxene-garnet system (Ch08, Ch12)",
+    "Elastic mixing models for computing aggregate rock properties from mineral constituents (Ch10)",
+    "Fundamentals of inverse theory: how observations constrain model parameters",
+    "Gravitational self-compression and hydrostatic equilibrium in planetary interiors"
+  ],
+
+  "key_equations": [
+    {
+      "equation": "P(r) = \\int_r^{R_E} \\rho(r') g(r') \\, dr'",
+      "name": "Hydrostatic Pressure from Self-Gravitation",
+      "variables": {
+        "P(r)": "Pressure at radius r [GPa]",
+        "R_E": "Radius of the Earth (6371 km)",
+        "\\rho(r')": "Density at radius r' [kg/m^3]",
+        "g(r')": "Gravitational acceleration at radius r' [m/s^2]"
+      },
+      "interpretation": "Pressure at any depth in the Earth is the weight of the overlying column of material. This integral connects the density profile to the pressure profile and is the basis for the Adams-Williamson equation. In PREM, this integral is already evaluated and tabulated, but understanding it is essential for building self-consistent planetary models."
+    },
+    {
+      "equation": "g(r) = \\frac{G_N}{r^2} \\int_0^r 4\\pi r'^2 \\rho(r') \\, dr' = \\frac{G_N M(r)}{r^2}",
+      "name": "Gravitational Acceleration at Radius r",
+      "variables": {
+        "g(r)": "Gravitational acceleration at radius r [m/s^2]",
+        "G_N": "Newton's gravitational constant (6.674 x 10^-11 N m^2 kg^-2)",
+        "M(r)": "Mass enclosed within radius r [kg]",
+        "\\rho(r')": "Density at radius r' [kg/m^3]"
+      },
+      "interpretation": "By the shell theorem, only the mass interior to radius r contributes to the gravitational acceleration at r. This equation couples density and gravity, making the pressure integration self-consistent. In PREM, g increases slightly from the surface (~9.8 m/s^2) to the CMB (~10.7 m/s^2) because the density increase more than compensates for the decreasing radius."
+    },
+    {
+      "equation": "\\frac{d\\rho}{dr} = -\\frac{\\rho g}{\\Phi} = -\\frac{\\rho g}{V_\\phi^2}",
+      "name": "Adams-Williamson Equation",
+      "variables": {
+        "\\rho": "Density [kg/m^3]",
+        "g": "Gravitational acceleration [m/s^2]",
+        "\\Phi": "Seismic parameter = V_\\phi^2 = K_S/\\rho [m^2/s^2]",
+        "V_\\phi": "Bulk sound velocity [m/s]"
+      },
+      "interpretation": "This equation relates the radial density gradient to observable seismic velocities, assuming adiabatic, homogeneous, self-compressed material. It was historically used to infer the density profile from seismic velocity observations. Departures from Adams-Williamson predictions at certain depths (410, 660 km) indicate phase transitions or compositional changes rather than simple self-compression."
+    },
+    {
+      "equation": "V_\\phi = \\sqrt{V_p^2 - \\frac{4}{3}V_s^2} = \\sqrt{\\frac{K_S}{\\rho}}",
+      "name": "Bulk Sound Velocity",
+      "variables": {
+        "V_\\phi": "Bulk sound velocity [km/s or m/s]",
+        "V_p": "Compressional wave velocity [km/s]",
+        "V_s": "Shear wave velocity [km/s]",
+        "K_S": "Adiabatic bulk modulus [GPa]",
+        "\\rho": "Density [g/cm^3]"
+      },
+      "interpretation": "The bulk sound velocity isolates the compressional response from shear contributions. It is particularly useful for mineral physics comparisons because it depends only on K_S and rho, not on G, making it more directly relatable to equation-of-state calculations. The bulk sound velocity is also the relevant velocity for the Adams-Williamson equation."
+    },
+    {
+      "equation": "\\Delta V_p / V_p \\approx \\frac{1}{2}\\left(\\frac{\\Delta K_S}{K_S + \\frac{4}{3}G} + \\frac{\\frac{4}{3}\\Delta G}{K_S + \\frac{4}{3}G} - \\frac{\\Delta \\rho}{\\rho}\\right)",
+      "name": "Linearized Velocity Perturbation",
+      "variables": {
+        "\\Delta V_p / V_p": "Fractional P-wave velocity anomaly",
+        "\\Delta K_S": "Perturbation in adiabatic bulk modulus [GPa]",
+        "\\Delta G": "Perturbation in shear modulus [GPa]",
+        "\\Delta \\rho": "Perturbation in density [g/cm^3]",
+        "K_S": "Reference adiabatic bulk modulus [GPa]",
+        "G": "Reference shear modulus [GPa]"
+      },
+      "interpretation": "This linearized expression shows how small perturbations in elastic moduli and density map onto velocity anomalies. It is the basis for interpreting seismic tomography in terms of temperature, composition, or phase changes. PREM provides the reference values around which these perturbations are computed."
+    }
+  ],
+
+  "physical_concepts": [
+    {
+      "concept": "Reference Earth Model",
+      "definition": "A one-dimensional (radially symmetric) model of the Earth's interior specifying density, elastic wave velocities, pressure, gravity, and attenuation as functions of radius or depth, derived from the joint inversion of seismological datasets.",
+      "physical_intuition": "Just as sea level provides a reference for measuring elevation, a 1D reference Earth model provides a baseline against which all lateral variations (from tomography) and mineral physics predictions are compared. The reference model represents an average Earth with all lateral heterogeneity removed.",
+      "common_misconceptions": [
+        "PREM is not a direct measurement but an inversion result, so it contains modeling assumptions (e.g., layer parameterization, smoothness constraints).",
+        "PREM's crustal structure (24.4 km Moho) is an oceanic-continental average and does not represent any real location on Earth.",
+        "The isotropic version of PREM is often used, but the original model includes transverse isotropy (radial anisotropy) in the uppermost mantle (24.4-220 km)."
+      ]
+    },
+    {
+      "concept": "Major Seismic Discontinuities",
+      "definition": "Sharp or rapid changes in seismic velocity and density at specific depths, caused by phase transitions or compositional boundaries, that produce reflected and converted seismic waves.",
+      "physical_intuition": "Seismic discontinuities are like interfaces in layered optics: when a wave hits a boundary where the wave speed changes abruptly, part of the energy is reflected and part is transmitted/refracted. The amplitude of the reflected wave depends on the impedance contrast (rho * V) across the boundary. The Moho (crust-mantle), 410 km (olivine-wadsleyite), 660 km (ringwoodite dissociation), and CMB (mantle-core) are the four most prominent discontinuities.",
+      "common_misconceptions": [
+        "The 410 and 660 km discontinuities are not at exactly these depths everywhere; they vary by tens of kilometers due to lateral temperature and composition variations.",
+        "The 660 km discontinuity does not always coincide with a single phase transition; in pyrolitic compositions it involves multiple simultaneous reactions.",
+        "Not all seismic discontinuities indicate compositional changes; phase transitions in a homogeneous composition can produce sharp velocity jumps."
+      ]
+    },
+    {
+      "concept": "Depth-Pressure Conversion",
+      "definition": "The mapping between depth in the Earth (measured in km from the surface) and pressure (measured in GPa), obtained by integrating the hydrostatic equilibrium equation through a self-gravitating density profile.",
+      "physical_intuition": "Pressure increases with depth because of the weight of overlying rock, but the rate of increase is not constant because both density and gravity change with depth. At the surface, pressure increases at roughly 0.033 GPa/km (for typical mantle density), but the gradient steepens with depth as density increases. PREM gives 13.7 GPa at 410 km, 23.8 GPa at 660 km, and 135.8 GPa at the CMB (2891 km).",
+      "common_misconceptions": [
+        "The depth-pressure relationship is not linear; assuming constant density and gravity gives significant errors at depths beyond a few hundred kilometers.",
+        "Different 1D models (PREM, AK135) give slightly different P(z) curves, introducing systematic uncertainty of order 1-2 GPa in the transition zone.",
+        "Lateral temperature variations cause local deviations from the 1D pressure-depth curve, though these are small (< 1% for mantle convection-scale thermal anomalies)."
+      ]
+    },
+    {
+      "concept": "Seismic Parameter (Phi)",
+      "definition": "The ratio of the adiabatic bulk modulus to density, Phi = K_S/rho, equal to the square of the bulk sound velocity. It is the key observable linking seismology to equation-of-state studies.",
+      "physical_intuition": "The seismic parameter strips away the shear contribution from P-wave velocities, isolating the purely compressional response. This is advantageous for mineral physics comparisons because K_S is directly obtained from equations of state, while G requires additional modeling (shear strain derivatives). Phi increases monotonically with depth in the mantle except at phase transitions.",
+      "common_misconceptions": [
+        "Phi is not the same as Vp^2; it equals Vp^2 - (4/3)Vs^2, and the shear correction is substantial (typically 20-30% of Vp^2).",
+        "Although Phi depends only on K_S and rho, it is not independent of shear properties in practice because K_S and G are both determined by the same interatomic potential."
+      ]
+    },
+    {
+      "concept": "Radial Attenuation (Q) Structure",
+      "definition": "The quality factor Q describes how efficiently seismic energy is dissipated as waves propagate. PREM specifies radial profiles of shear attenuation (Q_mu) and bulk attenuation (Q_kappa) as step functions varying with depth.",
+      "physical_intuition": "A low Q means high attenuation and energy loss per cycle. The low-velocity zone (80-220 km) has very low Q_mu (~80) due to high temperatures near the solidus and possibly partial melt. The lower mantle has much higher Q_mu (~312), indicating more efficient elastic wave transmission. Attenuation also causes velocity dispersion: velocities at seismic frequencies (mHz to Hz) are lower than those at ultrasonic laboratory frequencies.",
+      "common_misconceptions": [
+        "PREM's Q model is a very simplified step-function; real Q varies laterally and may have frequency dependence not captured by the model.",
+        "Q_kappa (bulk attenuation) is often assumed infinite in PREM for the mantle, meaning essentially all attenuation is due to shear losses.",
+        "The velocity dispersion correction from Q is small (~1-2%) but systematic, and must be accounted for when comparing mineral physics predictions at infinite frequency with seismic observations at finite frequency."
+      ]
+    }
+  ],
+
+  "key_references": [
+    {
+      "author": "Dziewonski, A.M. and Anderson, D.L.",
+      "year": 1981,
+      "title": "Preliminary Reference Earth Model",
+      "journal": "Physics of the Earth and Planetary Interiors, 25, 297-356",
+      "why_essential": "The original PREM paper. Describes the data, inversion methodology, polynomial parameterization, and the resulting radial profiles of velocity, density, attenuation, and pressure. The most cited paper in solid Earth geophysics."
+    },
+    {
+      "author": "Kennett, B.L.N., Engdahl, E.R., and Buland, R.",
+      "year": 1995,
+      "title": "Constraints on seismic velocities in the Earth from traveltimes",
+      "journal": "Geophysical Journal International, 122, 108-124",
+      "why_essential": "Presents the AK135 model, the primary alternative to PREM for travel-time reference. Provides improved velocity structure particularly in the upper mantle and transition zone."
+    },
+    {
+      "author": "Anderson, D.L.",
+      "year": 2007,
+      "title": "New Theory of the Earth",
+      "journal": "Cambridge University Press",
+      "why_essential": "Comprehensive textbook discussing the physical basis for radial Earth models, how seismological observations constrain interior structure, and the interpretation in terms of composition and mineralogy."
+    },
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2011,
+      "title": "Thermodynamics of mantle minerals - II. Phase equilibria",
+      "journal": "Geophysical Journal International, 184, 1180-1213",
+      "why_essential": "Demonstrates how mineral physics calculations using a self-consistent thermodynamic database can predict velocity-depth profiles that are compared against PREM. The SLB2011 database is implemented in ThermoElasticCalculator."
+    },
+    {
+      "author": "Stacey, F.D. and Davis, P.M.",
+      "year": 2008,
+      "title": "Physics of the Earth",
+      "journal": "Cambridge University Press, 4th edition",
+      "why_essential": "Textbook providing detailed derivations of the Adams-Williamson equation, hydrostatic pressure integration, and the physical principles underlying radial Earth model construction."
+    }
+  ],
+
+  "worked_examples": [
+    {
+      "problem": "Using PREM, compute the pressure, density, and seismic velocities at 500 km depth, and determine the adiabatic bulk modulus K_S and shear modulus G.",
+      "solution_approach": "Look up or interpolate PREM values at 500 km depth, then use the velocity-modulus relationships to extract K_S and G from Vp, Vs, and rho.",
+      "numerical_values": {
+        "depth": "500 km",
+        "pressure": "16.73 GPa",
+        "density": "3.787 g/cm^3 = 3787 kg/m^3",
+        "Vp": "9349 m/s",
+        "Vs": "5043 m/s",
+        "G": "rho * Vs^2 = 3787 * 5043^2 = 96.3 GPa",
+        "K_S": "rho * (Vp^2 - 4/3 * Vs^2) = 3787 * (9349^2 - 4/3 * 5043^2) = 202.6 GPa",
+        "bulk_sound_velocity": "Vphi = sqrt(K_S/rho) = sqrt(202.6e9/3787) = 7314 m/s"
+      },
+      "interpretation": "At 500 km depth (within the transition zone), PREM shows elevated velocities and density compared to the upper mantle, consistent with the transformation of olivine to wadsleyite/ringwoodite. The K_S/G ratio is about 2.1, typical for silicates at these pressures. These PREM-derived moduli serve as the target values that mineral physics predictions must match."
+    },
+    {
+      "problem": "Use the DepthConverter to find what depth corresponds to a laboratory experiment conducted at 25 GPa, and compare PREM properties at that depth.",
+      "solution_approach": "Use the PREM pressure-depth table to perform inverse interpolation (bisection search) from pressure to depth, then extract the corresponding PREM properties.",
+      "numerical_values": {
+        "target_pressure": "25 GPa",
+        "corresponding_depth": "~745 km (interpolated from PREM table: 700 km = 23.55 GPa, 750 km = 25.28 GPa)",
+        "interpolated_depth": "745 km = 700 + 50 * (25 - 23.55)/(25.28 - 23.55) = 741.9 km",
+        "density_at_depth": "~4.10 g/cm^3",
+        "Vp_at_depth": "~10,565 m/s",
+        "Vs_at_depth": "~5,670 m/s"
+      },
+      "interpretation": "A pressure of 25 GPa corresponds to approximately 742 km depth, which is in the uppermost lower mantle just below the 660-km discontinuity. At this depth, the dominant mineralogy is bridgmanite + ferropericlase + Ca-perovskite. Laboratory measurements of these phases at 25 GPa can be directly compared with PREM values at ~742 km to test compositional models."
+    },
+    {
+      "problem": "Estimate the velocity jumps at the 660-km discontinuity from PREM and interpret them in terms of the impedance contrast for seismic reflection.",
+      "solution_approach": "Compare PREM values just above (650 km) and just below (660 km) the discontinuity. Compute the impedance contrast rho*V for reflected wave amplitude estimation.",
+      "numerical_values": {
+        "above_660": {
+          "depth": "650 km",
+          "density": "3.898 g/cm^3",
+          "Vp": "9661 m/s",
+          "Vs": "5195 m/s"
+        },
+        "below_660": {
+          "depth": "660 km",
+          "density": "3.993 g/cm^3",
+          "Vp": "10268 m/s",
+          "Vs": "5570 m/s"
+        },
+        "delta_Vp": "607 m/s (6.3% jump)",
+        "delta_Vs": "375 m/s (7.2% jump)",
+        "delta_rho": "0.095 g/cm^3 (2.4% jump)",
+        "impedance_contrast_P": "(rho2*Vp2 - rho1*Vp1)/(rho1*Vp1) = (40,980 - 37,639)/37,639 = 8.9%",
+        "reflection_coefficient_approx": "~0.044 (approximately half the impedance contrast for normal incidence)"
+      },
+      "interpretation": "The 660-km discontinuity shows a larger fractional jump in Vs than Vp, which is characteristic of the ringwoodite-to-bridgmanite+ferropericlase transition. The ~9% P-impedance contrast produces detectable reflections (P660P) and conversions (P660s) that are routinely observed in receiver function studies. The magnitude of these jumps constrains the sharpness of the phase transition and the Clapeyron slope."
+    }
+  ],
+
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch04: Elastic Moduli and Seismic Velocities",
+      "connection_type": "prerequisite",
+      "explanation": "Understanding how K_S, G, and density determine Vp and Vs is essential before using PREM, which tabulates these velocities. Chapter 4 provides the equations needed to extract moduli from PREM velocities and density."
+    },
+    {
+      "related_chapter": "Ch05: The Stixrude-Lithgow-Bertelloni Formulation",
+      "connection_type": "application",
+      "explanation": "The SLB formulation computes mineral properties along a pressure-temperature path. PREM provides the pressure-depth relationship needed to place these calculations at the correct depth, and the velocity-depth profiles serve as the observational target for SLB predictions."
+    },
+    {
+      "related_chapter": "Ch08: Landau Phase Transitions",
+      "connection_type": "application",
+      "explanation": "The major discontinuities in PREM (410, 660 km) are caused by pressure-induced phase transitions. The Landau formalism describes the thermodynamics of these transitions, and PREM provides the observed velocity and density jumps that the phase transition models must reproduce."
+    },
+    {
+      "related_chapter": "Ch10: Elastic Mixing Models",
+      "connection_type": "application",
+      "explanation": "Comparing mineral physics with PREM requires computing the aggregate elastic properties of multi-phase rock assemblages using mixing models (Voigt-Reuss-Hill, Hashin-Shtrikman). The mixed-phase velocities are then plotted against PREM profiles."
+    },
+    {
+      "related_chapter": "Ch11: Rock Compositions and Assemblages",
+      "connection_type": "application",
+      "explanation": "PREM profiles constrain mantle composition: different bulk compositions (pyrolite, harzburgite, MORB) predict different velocity-depth profiles, and the composition that best matches PREM is the preferred model. Chapter 11 defines these compositions."
+    },
+    {
+      "related_chapter": "Ch12: Gibbs Free Energy and Phase Stability",
+      "connection_type": "prerequisite",
+      "explanation": "The mineral assemblage at each depth is determined by Gibbs free energy minimization. The resulting phase proportions, combined with individual mineral properties, produce the aggregate velocities compared against PREM."
+    }
+  ],
+
+  "computational_methods": "The ThermoElasticCalculator implements PREM through the PREMModel static class in ThermoElastic.Core.Models. The implementation uses a lookup table approach rather than the original polynomial parameterization: key depth-property tuples (depth_km, pressure_GPa, density_g/cm3, Vp_m/s, Vs_m/s) are stored for 28 reference depths spanning 0-2891 km (surface to CMB). Properties at arbitrary depths are obtained by linear interpolation (Lerp) between adjacent table entries. The GetProfile method generates a complete radial profile with configurable depth spacing (default 50 km).\n\nThe DepthConverter class provides bidirectional depth-pressure conversion. The forward conversion (depth to pressure) is a simple table lookup with interpolation via PREMModel.GetPropertiesAtDepth. The inverse conversion (pressure to depth) uses a bisection search over the 0-2891 km range, converging in 50 iterations to machine-precision accuracy. This is efficient because the PREM pressure-depth relationship is monotonically increasing.\n\nThe PREMModel also provides a GetQSAtDepth method returning the PREM shear quality factor as a step function: Q_S = 600 for the crust/lid (0-80 km), Q_S = 80 for the low-velocity zone (80-220 km), Q_S = 143 for the upper mantle and transition zone (220-670 km), and Q_S = 312 for the lower mantle (670-2891 km). This Q model is used by the AnelasticityCalculator for computing velocity dispersion corrections.\n\nThe RadialProfile model class provides a more general container for radial profiles of any planet, storing arrays of radius, depth, pressure, temperature, density, gravity, Vp, and Vs, along with integrated quantities like total mass and moment of inertia factor. This is used by the PlanetaryInteriorSolver for self-consistent forward modeling where PREM-like profiles are computed from assumed composition and temperature structures.",
+
+  "open_questions": [
+    "What is the exact nature of the low-velocity zone (80-220 km in PREM): is it caused by high temperature, partial melt, volatiles (water/CO2), or a combination? PREM parameterizes this as a distinct layer with low Q, but the physical mechanism remains debated.",
+    "Is the 220-km discontinuity in PREM a real global feature or an artifact of the model parameterization? Some studies find evidence for a discontinuity at this depth only in certain tectonic settings.",
+    "Are there additional discontinuities in the lower mantle (e.g., at 1000 km, 1700 km, 2600 km) that PREM does not include? Some seismological studies report intermittent reflectors that could indicate phase transitions (post-perovskite) or compositional boundaries.",
+    "How well does a 1D reference model represent an Earth with strong lateral heterogeneity? The concept of a meaningful spherical average becomes questionable near strongly 3D features like subducting slabs and large low-shear-velocity provinces (LLSVPs).",
+    "What is the correct radial Q profile for the lower mantle? PREM's constant Q_mu = 312 is a crude approximation, and recent studies suggest Q may vary significantly with depth in the lower mantle, with possible minima near the CMB.",
+    "Should the next-generation reference Earth model incorporate radial anisotropy throughout the mantle (not just the uppermost mantle as in PREM), and if so, how should it be parameterized?"
+  ],
+
+  "exercise_suggestions": [
+    "Using the PREM table in PREMModel.cs, plot density, Vp, Vs, and pressure as functions of depth from 0 to 2891 km. Identify and label all major discontinuities. Compute and overlay the bulk sound velocity Vphi profile.",
+    "Derive the Adams-Williamson equation starting from hydrostatic equilibrium (dP/dr = -rho*g) and the adiabatic compressibility (drho/dP = rho/K_S). Verify numerically that the PREM density gradient between discontinuities is approximately consistent with the Adams-Williamson prediction using PREM velocities.",
+    "Using the DepthConverter, create a table mapping pressures from 0 to 135 GPa (in 5 GPa increments) to depths. Plot P(z) and compare with the linear approximation P = rho_avg * g * z. At what depth does the linear approximation become inaccurate (error > 5%)?",
+    "Compute the adiabatic bulk modulus K_S and shear modulus G from PREM Vp, Vs, and density at depths of 200, 400, 500, 700, 1000, and 2000 km. Plot K_S(P) and G(P). Compare the pressure derivatives dK_S/dP and dG/dP with typical experimental values for mantle minerals.",
+    "Calculate the P-wave and S-wave impedance (rho*V) at 10 km depth intervals across the 410-km and 660-km discontinuities. Estimate the normal-incidence reflection coefficients. Which discontinuity produces stronger reflections?",
+    "Compare PREM density values at 300 km, 500 km, and 1000 km depth with self-compression predictions from the Adams-Williamson equation starting from the 220-km discontinuity values. Discuss whether the discrepancy at 410 and 660 km can be explained by phase transitions alone.",
+    "Implement a function that computes the total mass of the Earth by numerically integrating the PREM density profile: M = integral of 4*pi*r^2*rho(r)*dr from 0 to R_E. Compare with the known value of 5.972 x 10^24 kg. Note: PREM in ThermoElasticCalculator only covers the mantle; discuss what assumption you need for the core.",
+    "Using the Q_S values from PREMModel.GetQSAtDepth, compute the anelastic velocity correction for Vs at 150 km depth (in the LVZ) and at 1500 km depth (lower mantle), assuming a reference frequency of 1 Hz and seismic frequency of 0.01 Hz with frequency exponent alpha = 0.1. How significant is the correction relative to the elastic velocity?"
+  ],
+
+  "figure_suggestions": [
+    {
+      "description": "PREM radial profiles: four-panel plot showing density (g/cm^3), Vp (km/s), Vs (km/s), and pressure (GPa) as functions of depth from 0 to 2891 km. Use vertical dashed lines to mark the Moho, 410, 660, and CMB discontinuities. Label each discontinuity with its depth and the associated phase transition or boundary.",
+      "axes": "X-axis: depth (km, 0-2891), Y-axes: density, Vp, Vs, pressure in respective panels",
+      "key_features": "Sharp jumps at 24.4 km (Moho), 410 km, 660 km; smooth gradients between discontinuities; dramatic changes at CMB (2891 km)"
+    },
+    {
+      "description": "Pressure-depth relationship from PREM, with comparison to a linear approximation (P = 0.033 * depth). Show the difference between PREM and linear approximation as a secondary plot or inset.",
+      "axes": "X-axis: depth (km, 0-2891), Y-axis: pressure (GPa, 0-140). Inset or lower panel: relative error of linear approximation (%)",
+      "key_features": "Non-linearity becoming pronounced below ~300 km; linear approximation overestimates at shallow depths and underestimates in the deep lower mantle"
+    },
+    {
+      "description": "Derived elastic moduli from PREM: plot K_S and G (both in GPa) versus depth, computed from Vp, Vs, and density. Include the bulk sound velocity Vphi = sqrt(K_S/rho) as an additional curve.",
+      "axes": "X-axis: depth (km), Y-axes: K_S and G (GPa), Vphi (km/s)",
+      "key_features": "K_S increases more steeply than G with depth; G shows a change in gradient at phase transitions; K_S/G ratio increases with depth"
+    },
+    {
+      "description": "Comparison of mineral physics predictions vs. PREM: overlay computed Vp and Vs profiles for a pyrolitic mantle composition (from SLB2011 database calculations along a 1600 K adiabat) on top of PREM profiles. Shade the Voigt-Reuss bounds.",
+      "axes": "X-axis: depth (km, 0-2891), Y-axis: velocity (km/s). Two curves for Vp and two for Vs (PREM and prediction)",
+      "key_features": "Good agreement in the lower mantle; discrepancies at phase transition depths revealing model sensitivity; upper mantle differences highlighting composition and temperature trade-offs"
+    },
+    {
+      "description": "PREM Q_S (shear quality factor) profile as a step function of depth, with annotations explaining the physical meaning of each Q region (lid, LVZ, transition zone, lower mantle).",
+      "axes": "X-axis: depth (km, 0-2891), Y-axis: Q_S (dimensionless, log scale)",
+      "key_features": "Very low Q in the LVZ (80-220 km); moderate Q in the transition zone; higher Q in the lower mantle; step-function nature highlighting the simplified parameterization"
+    }
+  ],
+
+  "historical_context": "The quest to determine the Earth's radial structure began in the early 20th century with the identification of major seismic phases. In 1909, Andrija Mohorovicic discovered the crust-mantle boundary from observations of two distinct P-wave arrivals from a Croatian earthquake. Beno Gutenberg determined the core-mantle boundary depth (2900 km, remarkably close to the modern value of 2891 km) in 1914 by analyzing the P-wave shadow zone. Inge Lehmann discovered the inner core in 1936 from observations of P-waves within the shadow zone.\n\nThe first quantitative radial velocity models were constructed by Harold Jeffreys and Keith Bullen in the 1930s-1940s using travel-time tables. Bullen introduced the lettered nomenclature (A through G) for Earth's layers and developed methods for inferring the density profile from velocity observations using the Adams-Williamson equation. Francis Birch's landmark 1952 paper established the compositional interpretation of the velocity-density structure, arguing that the mantle is composed of silicates while the core is predominantly iron.\n\nThe advent of digital seismology and the observation of the Earth's free oscillations (first detected after the great 1960 Chilean earthquake) provided fundamentally new constraints on the deep interior. Normal modes are sensitive to density and elastic structure throughout the entire Earth, complementing body-wave and surface-wave observations. Adam Dziewonski pioneered the use of normal-mode data for Earth structure inversion, culminating in the 1981 PREM paper with Don Anderson. PREM was revolutionary in jointly inverting body waves, surface waves, and normal modes within a single self-consistent framework, providing the first model with reliable density, attenuation, and anisotropy profiles.\n\nSince PREM's publication, several updates and alternative models have been proposed. IASP91 (1991) improved upper-mantle velocity structure using ISC travel-time data. AK135 (1995) further refined the velocity model and is now the standard for earthquake location. The STW105 model (2008) updated PREM's anisotropic structure using improved surface-wave measurements. Despite these alternatives, PREM remains the standard reference for mineral physics comparisons due to its self-consistent density and velocity profiles, and it continues to be the most cited paper in solid Earth geophysics with over 10,000 citations.",
+
+  "uncertain": [
+    "chapter_summary",
+    "historical_context"
+  ]
+}

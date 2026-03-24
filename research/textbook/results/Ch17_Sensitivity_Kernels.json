@@ -1,0 +1,261 @@
+{
+  "chapter_summary": "Sensitivity kernels quantify how seismic velocities respond to changes in temperature, pressure, and composition at depth within the Earth. The central quantities are the logarithmic partial derivatives dlnVs/dT, dlnVp/dT, dlnVs/dP, and dlnVp/dP, which describe the fractional change in P-wave and S-wave velocities per unit change in temperature or pressure. These derivatives are essential for translating seismic tomographic images (maps of velocity anomalies) into physically meaningful quantities such as temperature perturbations and compositional variations. Because seismic tomography measures velocity anomalies relative to a reference model, sensitivity kernels provide the quantitative link between the observed anomaly (e.g., dlnVs = -2%) and the underlying cause (e.g., a temperature excess of +200 K or an iron enrichment of +2 mol% FeO).\n\nThe ratio R = dlnVs/dlnVp is a particularly powerful diagnostic parameter. For purely thermal anomalies in a chemically homogeneous mantle, R takes characteristic values that depend on the mineral assemblage and thermodynamic conditions. In the upper mantle (olivine-dominated), thermal R is typically 1.5 to 2.0, while in the lower mantle (bridgmanite-dominated) it is approximately 1.5 to 2.5. Crucially, compositional variations (changes in Mg# or Fe content) produce different R values than thermal variations. Iron enrichment, for example, increases density and reduces Vs more strongly than Vp, yielding R values that can exceed 2.5 or even become negative in extreme cases. When seismically observed R values deviate significantly from the predicted thermal R, this is strong evidence for compositional heterogeneity, as seen in the Large Low Shear Velocity Provinces (LLSVPs) at the base of the mantle where observed R values of 2.5 to 3.5 suggest a thermochemical origin.\n\nThe computation of sensitivity kernels in this codebase uses central finite differences applied to the Mie-Gruneisen equation of state. The SensitivityKernelCalculator evaluates the full thermodynamic and elastic solution at (P, T+dT) and (P, T-dT), then computes dlnV/dT = (ln V(T+dT) - ln V(T-dT)) / (2*dT). This numerical differentiation approach is robust and naturally incorporates all the nonlinear effects of the SLB2011 formulation, including the strain-dependent Gruneisen parameter, anharmonic corrections to elastic moduli, and the coupling between thermal pressure and finite strain. The default perturbation step dT = 5 K provides a good balance between accuracy and numerical stability. The calculator can evaluate kernels for a single mineral at a given P-T point or over an array of pressures at fixed temperature, enabling construction of depth-dependent sensitivity profiles.\n\nSensitivity to composition is evaluated by computing velocities for minerals with different iron content (Mg# = Mg/(Mg+Fe) ratio). For example, comparing forsterite (Mg2SiO4) and fayalite (Fe2SiO4) endmembers, or bridgmanite endmembers with varying Fe substitution, allows the construction of dlnVs/dXFe and dlnVp/dXFe compositional sensitivity kernels. These compositional sensitivities are typically larger for Vs than for Vp, and they have different signs and depth-dependencies compared to thermal sensitivities, which is the physical basis for using the R ratio as a discriminant. The application to seismic tomography interpretation requires combining thermal and compositional kernels with anelastic corrections (Chapter 16) and knowledge of the mineral assemblage at depth (Chapter 11), making sensitivity kernel analysis a synthesis topic that draws on nearly every aspect of computational mineral physics.",
+  "prerequisite_knowledge": [
+    "Elastic moduli and seismic velocities: Vp, Vs, K_S, G, and their dependence on P and T (Ch04)",
+    "Mie-Gruneisen equation of state: self-consistent computation of density and elastic properties at high P-T (Ch06)",
+    "SLB2011 thermodynamic formulation: the 11-parameter mineral description and finite strain theory (Ch05)",
+    "Mineral database: endmember minerals and their thermoelastic parameters (Ch07)",
+    "Anelasticity and Q: frequency-dependent velocity corrections for comparing with seismic observations (Ch16)",
+    "Rock compositions and assemblages: mineral volume fractions for realistic mantle compositions (Ch11)",
+    "Basic seismology: seismic tomography, body waves, reference models like PREM (Ch15)",
+    "Numerical differentiation: finite difference methods for computing partial derivatives"
+  ],
+  "key_equations": [
+    {
+      "equation": "\\frac{\\partial \\ln V_s}{\\partial T} = \\frac{\\ln V_s(P, T + \\delta T) - \\ln V_s(P, T - \\delta T)}{2 \\, \\delta T}",
+      "name": "Thermal Sensitivity of Vs (Central Finite Difference)",
+      "variables": {
+        "V_s": "Shear wave velocity [m/s]",
+        "T": "Temperature [K]",
+        "P": "Pressure [GPa], held constant",
+        "\\delta T": "Temperature perturbation step (default 5 K)"
+      },
+      "interpretation": "This is the primary computed quantity: the fractional change in S-wave velocity per Kelvin. It is always negative because increasing temperature reduces elastic moduli (thermal softening) and decreases density (thermal expansion), with the modulus effect dominating. Typical values range from -0.5 to -1.5 x 10^{-4} /K for upper mantle minerals. Implemented as the core computation in SensitivityKernelCalculator.ComputeThermalSensitivity()."
+    },
+    {
+      "equation": "\\frac{\\partial \\ln V_p}{\\partial T} = \\frac{\\ln V_p(P, T + \\delta T) - \\ln V_p(P, T - \\delta T)}{2 \\, \\delta T}",
+      "name": "Thermal Sensitivity of Vp (Central Finite Difference)",
+      "variables": {
+        "V_p": "P-wave velocity [m/s]",
+        "T": "Temperature [K]",
+        "P": "Pressure [GPa], held constant",
+        "\\delta T": "Temperature perturbation step (default 5 K)"
+      },
+      "interpretation": "The fractional change in P-wave velocity per Kelvin. Also negative, but with smaller magnitude than dlnVs/dT because Vp depends on both bulk modulus K (less temperature-sensitive) and shear modulus G (more temperature-sensitive). The ratio |dlnVp/dT| / |dlnVs/dT| is typically 0.4 to 0.7 for silicate minerals."
+    },
+    {
+      "equation": "R = \\frac{\\partial \\ln V_s / \\partial T}{\\partial \\ln V_p / \\partial T} = \\frac{\\partial \\ln V_s}{\\partial \\ln V_p}",
+      "name": "R Ratio (Velocity Sensitivity Ratio)",
+      "variables": {
+        "R": "Dimensionless ratio of S-to-P velocity sensitivities",
+        "\\partial \\ln V_s": "Fractional S-wave velocity perturbation",
+        "\\partial \\ln V_p": "Fractional P-wave velocity perturbation"
+      },
+      "interpretation": "The R ratio is the key diagnostic for distinguishing thermal from compositional anomalies in seismic tomography. For purely thermal perturbations in olivine at upper mantle conditions, R is approximately 1.5-2.0. For bridgmanite in the lower mantle, R is approximately 1.5-2.5. Values of R significantly above 2.5 or below 1.0 suggest compositional heterogeneity. Computed in SensitivityKernelCalculator as R_thermal = dlnVs_dT / dlnVp_dT, with a guard against division by zero."
+    },
+    {
+      "equation": "\\frac{\\partial \\ln V_s}{\\partial T} \\approx \\frac{1}{2 V_s^2} \\left( \\frac{\\partial G}{\\partial T} \\cdot \\frac{1}{\\rho} - G \\cdot \\frac{\\alpha}{\\rho} \\right)",
+      "name": "Analytical Approximation for dlnVs/dT",
+      "variables": {
+        "G": "Shear modulus [GPa]",
+        "\\rho": "Density [kg/m^3]",
+        "\\alpha": "Thermal expansivity [1/K]",
+        "\\partial G / \\partial T": "Temperature derivative of shear modulus [GPa/K]"
+      },
+      "interpretation": "This analytical form shows the two competing effects: (1) the shear modulus decreases with T (dG/dT < 0), reducing velocity, and (2) thermal expansion reduces density, which alone would increase velocity. The modulus effect dominates, giving net negative dlnVs/dT. The numerical finite-difference approach in the codebase implicitly captures this and all higher-order terms."
+    },
+    {
+      "equation": "\\delta \\ln V_s = \\frac{\\partial \\ln V_s}{\\partial T} \\delta T + \\frac{\\partial \\ln V_s}{\\partial X_{\\text{Fe}}} \\delta X_{\\text{Fe}}",
+      "name": "Linearized Velocity Anomaly Decomposition",
+      "variables": {
+        "\\delta \\ln V_s": "Observed fractional S-wave velocity anomaly",
+        "\\delta T": "Temperature perturbation from reference [K]",
+        "\\delta X_{\\text{Fe}}": "Iron content perturbation (change in Fe/(Mg+Fe))",
+        "\\partial \\ln V_s / \\partial X_{\\text{Fe}}": "Compositional sensitivity kernel [dimensionless]"
+      },
+      "interpretation": "This linearization underpins the interpretation of seismic tomography. A measured velocity anomaly is decomposed into thermal and compositional contributions. Sensitivity kernels provide the coefficients. The inverse problem (Chapter 18) uses this equation to estimate dT and dXFe from observed dlnVs and dlnVp jointly."
+    },
+    {
+      "equation": "\\frac{\\partial \\ln \\rho}{\\partial T} = \\frac{\\ln \\rho(P, T + \\delta T) - \\ln \\rho(P, T - \\delta T)}{2 \\, \\delta T} \\approx -\\alpha",
+      "name": "Thermal Sensitivity of Density",
+      "variables": {
+        "\\rho": "Density [kg/m^3]",
+        "\\alpha": "Thermal expansivity [1/K]",
+        "T": "Temperature [K]"
+      },
+      "interpretation": "The fractional change in density per Kelvin is approximately equal to the negative of the thermal expansivity. This is always negative (density decreases with temperature). Typical mantle values are -2 to -4 x 10^{-5} /K. This derivative governs the buoyancy of thermal anomalies and is crucial for geodynamic interpretations. Computed in SensitivityKernelCalculator as DlnRho_dT."
+    }
+  ],
+  "physical_concepts": [
+    {
+      "concept": "Sensitivity Kernel",
+      "definition": "A partial derivative that quantifies how a seismic observable (velocity, density) changes in response to a perturbation in a physical parameter (temperature, pressure, composition) at a given P-T condition.",
+      "physical_intuition": "Think of a sensitivity kernel as a conversion factor: if you know the temperature anomaly is +100 K and the kernel dlnVs/dT = -1.0 x 10^{-4} /K, then the velocity anomaly is dlnVs = -1.0%. The kernel encapsulates all the complex mineral physics into a single number usable for interpretation.",
+      "common_misconceptions": "Sensitivity kernels are not constants; they depend on pressure, temperature, mineral phase, and composition. Using a single value throughout the mantle is a significant oversimplification. The kernels also change across phase boundaries (e.g., the 410 km and 660 km discontinuities)."
+    },
+    {
+      "concept": "R Ratio (dlnVs/dlnVp)",
+      "definition": "The ratio of fractional S-wave to P-wave velocity perturbations, used to diagnose the origin of seismic anomalies.",
+      "physical_intuition": "Shear modulus G is more temperature-sensitive than bulk modulus K. Since Vs depends only on G while Vp depends on both K and G, Vs is more sensitive to temperature than Vp, giving R > 1 for thermal anomalies. Iron enrichment affects G and K differently from temperature, producing different R values. By measuring R from tomography and comparing with predicted thermal R, we can identify compositional anomalies.",
+      "common_misconceptions": "R is not a universal constant for the mantle. It varies with depth, mineral assemblage, and the nature of the perturbation. Also, R for thermal anomalies in the presence of anelasticity differs from the purely elastic R, because anelastic effects are themselves temperature-dependent and frequency-dependent."
+    },
+    {
+      "concept": "Thermal vs Compositional Anomaly",
+      "definition": "A thermal anomaly is a velocity perturbation caused solely by a temperature deviation from a reference geotherm. A compositional anomaly is caused by a change in chemical composition (e.g., iron content, Mg#) without a temperature change.",
+      "physical_intuition": "A hot upwelling plume is primarily a thermal anomaly: it is slow because it is hot, and both Vs and Vp decrease in a predictable ratio. A chemically distinct pile at the base of the mantle (like LLSVPs) may have anomalous iron content: this changes Vs and Vp in a different ratio from pure heating, allowing seismologists to distinguish the two cases.",
+      "common_misconceptions": "Real mantle anomalies are almost never purely thermal or purely compositional. The power of sensitivity kernel analysis is in providing a framework for quantifying the relative contributions, not in claiming a binary classification."
+    },
+    {
+      "concept": "Finite Difference Numerical Differentiation",
+      "definition": "A method for computing derivatives by evaluating a function at nearby points and computing the slope, here applied as central differences: df/dx = (f(x+h) - f(x-h)) / (2h).",
+      "physical_intuition": "Rather than deriving analytical expressions for the complex chain of equations in the SLB2011 formulation, the sensitivity kernel calculator perturbs the temperature by a small amount (default 5 K), recomputes all properties from scratch, and extracts the derivative from the difference. This is simple, robust, and automatically captures all nonlinear coupling.",
+      "common_misconceptions": "The step size dT must be chosen carefully. Too large (e.g., 100 K) and higher-order terms contaminate the derivative. Too small (e.g., 0.001 K) and floating-point cancellation introduces noise. The default 5 K is a pragmatic choice for mantle temperatures (1000-4000 K), representing a perturbation of ~0.1-0.5%."
+    },
+    {
+      "concept": "Compositional Sensitivity (Mg# dependence)",
+      "definition": "The change in seismic velocity when the Mg/(Mg+Fe) ratio of a mineral assemblage changes, computed by evaluating velocities for endmembers with different iron content.",
+      "physical_intuition": "Iron is heavier than magnesium and substitutes into the same crystal sites. Increasing Fe content increases density significantly, decreases Vs (through density effect and changes in G), and has a variable effect on Vp. For lower mantle bridgmanite, an increase of 1 mol% Fe can produce a Vs reduction comparable to a temperature increase of 50-100 K.",
+      "common_misconceptions": "Compositional sensitivity is not simply the difference between pure Mg and pure Fe endmembers. The sensitivity depends on the baseline Mg# and on the P-T conditions. Also, Fe affects not just the density but also the elastic moduli through changes in bonding and crystal field effects."
+    }
+  ],
+  "key_references": [
+    {
+      "author": "Karato, S.",
+      "year": 1993,
+      "title": "Importance of anelasticity in the interpretation of seismic tomography",
+      "journal": "Geophysical Research Letters, 20(15), 1623-1626",
+      "why_essential": "Demonstrated that anelastic effects amplify thermal sensitivity kernels at seismic frequencies, showing that purely elastic kernel calculations underestimate the true dlnVs/dT by 30-50% in the upper mantle. Established the framework for correcting sensitivity kernels for anelasticity."
+    },
+    {
+      "author": "Trampert, J., Deschamps, F., Resovsky, J., and Yuen, D.",
+      "year": 2004,
+      "title": "Probabilistic tomography maps chemical heterogeneities throughout the lower mantle",
+      "journal": "Science, 306(5697), 853-856",
+      "why_essential": "Used R ratio analysis with mineral physics sensitivity kernels to demonstrate that seismic anomalies in the lower mantle cannot be explained by temperature alone, providing evidence for large-scale compositional heterogeneity."
+    },
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2011,
+      "title": "Thermodynamics of mantle minerals - II. Phase equilibria",
+      "journal": "Geophysical Journal International, 184(3), 1180-1213",
+      "why_essential": "Provides the thermodynamic formulation and mineral parameter database (SLB2011) used by the SensitivityKernelCalculator. The self-consistent finite-strain framework ensures that computed sensitivity kernels are internally consistent."
+    },
+    {
+      "author": "Karato, S. and Karki, B. B.",
+      "year": 2001,
+      "title": "Origin of lateral variation of seismic wave velocities and density in the deep mantle",
+      "journal": "Journal of Geophysical Research, 106(B10), 21771-21783",
+      "why_essential": "Systematically computed sensitivity kernels for lower mantle minerals and showed how to use the R ratio and density-velocity scaling to distinguish thermal from compositional heterogeneity. Provided benchmark values widely used in the community."
+    },
+    {
+      "author": "Cammarano, F., Goes, S., Vacher, P., and Giardini, D.",
+      "year": 2003,
+      "title": "Inferring upper-mantle temperatures from seismic velocities",
+      "journal": "Physics of the Earth and Planetary Interiors, 138(3-4), 197-222",
+      "why_essential": "Demonstrated the practical application of sensitivity kernels to infer mantle temperatures from seismic models, including detailed treatment of uncertainties arising from mineral physics parameters, compositional assumptions, and anelastic corrections."
+    }
+  ],
+  "worked_examples": [
+    {
+      "problem_statement": "Compute the thermal sensitivity kernels dlnVs/dT, dlnVp/dT, and dlnRho/dT for forsterite (Mg2SiO4) at 10 GPa and 1500 K, representing upper mantle conditions (~300 km depth). Estimate R_thermal and interpret a -2% Vs anomaly observed at this depth.",
+      "solution_approach": "Use SensitivityKernelCalculator.ComputeThermalSensitivity() with the forsterite parameters from SLB2011. The calculator calls MieGruneisenEOSOptimizer at T-5 K and T+5 K, computes Vp, Vs, density at each, then evaluates central finite differences.",
+      "numerical_values": "For forsterite at 10 GPa, 1500 K: dlnVs/dT is approximately -7 x 10^{-5} /K (i.e., Vs decreases by about 0.007% per Kelvin). dlnVp/dT is approximately -4 x 10^{-5} /K. dlnRho/dT is approximately -3 x 10^{-5} /K. R_thermal = dlnVs/dlnVp is approximately 1.7. For a -2% Vs anomaly: delta_T = dlnVs / (dlnVs/dT) = -0.02 / (-7e-5) = +286 K, suggesting the anomaly corresponds to about 286 K excess temperature. The predicted Vp anomaly would be dlnVp = dlnVp/dT * 286 = -1.14%, or about -1.2%.",
+      "interpretation": "The R value of approximately 1.7 is characteristic of thermal anomalies in olivine. If the observed Vp anomaly at this location is close to -1.2%, the anomaly is consistent with a thermal origin. If the Vp anomaly is significantly less (e.g., -0.5%), R_observed = 2/0.5 = 4.0, which exceeds the thermal prediction, suggesting compositional enrichment in iron."
+    },
+    {
+      "problem_statement": "Compute the pressure dependence of the thermal sensitivity kernel for forsterite across the upper mantle pressure range (5-25 GPa) at 1500 K. How does the sensitivity change with depth?",
+      "solution_approach": "Use SensitivityKernelCalculator.ComputeOnPressureProfile() with pressures [5, 10, 15, 20, 25] GPa at T = 1500 K. Plot the resulting kernels as a function of pressure.",
+      "numerical_values": "At 5 GPa: dlnVs/dT is approximately -8 x 10^{-5} /K, R approximately 1.8. At 10 GPa: dlnVs/dT is approximately -7 x 10^{-5} /K, R approximately 1.7. At 15 GPa: dlnVs/dT is approximately -6 x 10^{-5} /K, R approximately 1.6. At 20 GPa: dlnVs/dT is approximately -5 x 10^{-5} /K, R approximately 1.6. At 25 GPa: dlnVs/dT is approximately -4 x 10^{-5} /K, R approximately 1.5. The magnitude of the sensitivity decreases systematically with increasing pressure.",
+      "interpretation": "Higher pressure suppresses thermal effects on elastic moduli because the interatomic potential stiffens under compression. This means that a given temperature anomaly produces a smaller velocity anomaly at greater depth. Consequently, resolving thermal anomalies from seismic tomography becomes more challenging in the deep mantle. The decreasing R with pressure also means that the thermal signature becomes less distinctive from compositional effects at depth."
+    },
+    {
+      "problem_statement": "Compare the thermal sensitivity of bridgmanite (MgSiO3 perovskite) at lower mantle conditions (50 GPa, 2000 K) with forsterite at upper mantle conditions (10 GPa, 1500 K). Why is seismic tomography less sensitive to temperature in the lower mantle?",
+      "solution_approach": "Compute sensitivity kernels for bridgmanite (mpv) at 50 GPa, 2000 K and forsterite (fo) at 10 GPa, 1500 K using ComputeThermalSensitivity().",
+      "numerical_values": "Forsterite at 10 GPa, 1500 K: dlnVs/dT approximately -7 x 10^{-5} /K. Bridgmanite at 50 GPa, 2000 K: dlnVs/dT approximately -3 x 10^{-5} /K. The bridgmanite sensitivity is roughly half that of forsterite. Additionally, anelastic amplification (Chapter 16) is smaller in the lower mantle due to higher Q, further reducing the effective sensitivity.",
+      "interpretation": "The lower thermal sensitivity at deep mantle conditions arises from two factors: (1) higher pressure stiffens the mineral, reducing the temperature dependence of elastic moduli, and (2) bridgmanite has inherently less anharmonic behavior than olivine at its ambient conditions. This means that the large slow anomalies observed in the lowermost mantle (LLSVPs, with dlnVs = -2 to -3%) would require improbably large temperature excess (>1000 K) if purely thermal, strongly suggesting a compositional contribution."
+    }
+  ],
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch04 Elastic Moduli and Seismic Velocities",
+      "nature": "prerequisite",
+      "explanation": "Sensitivity kernels are derivatives of the elastic velocities Vp and Vs. Understanding how K_S, G, and density determine these velocities is essential for interpreting the physical meaning of the kernels."
+    },
+    {
+      "related_chapter": "Ch06 Mie-Gruneisen Equation of State Solver",
+      "nature": "prerequisite",
+      "explanation": "The SensitivityKernelCalculator uses MieGruneisenEOSOptimizer to compute velocities at perturbed temperatures. The self-consistent pressure-volume-temperature solution is the computational engine underlying the finite-difference differentiation."
+    },
+    {
+      "related_chapter": "Ch16 Anelasticity and Q",
+      "nature": "extension",
+      "explanation": "Purely elastic sensitivity kernels underestimate the true temperature sensitivity at seismic frequencies. Anelastic corrections amplify dlnVs/dT by 30-50% in the upper mantle where Q is low. A complete interpretation requires combining elastic kernels with anelastic correction factors."
+    },
+    {
+      "related_chapter": "Ch15 PREM and Radial Earth Models",
+      "nature": "application",
+      "explanation": "PREM provides the reference velocity profiles against which tomographic anomalies are measured. Sensitivity kernels convert these anomalies into temperature or composition perturbations relative to a reference geotherm and composition."
+    },
+    {
+      "related_chapter": "Ch18 Composition Inversion",
+      "nature": "extension",
+      "explanation": "Sensitivity kernels are the forward model ingredients for the inverse problem of Chapter 18. The composition inverter uses both thermal and compositional sensitivity kernels to estimate Mg# from observed velocity anomalies."
+    },
+    {
+      "related_chapter": "Ch11 Rock Compositions and Assemblages",
+      "nature": "prerequisite",
+      "explanation": "Real mantle sensitivity kernels require multi-mineral assemblages (pyrolite, harzburgite, MORB). Single-mineral kernels are combined using volume-weighted averaging with mixing models from the rock composition framework."
+    },
+    {
+      "related_chapter": "Ch20 LLSVPs and ULVZs",
+      "nature": "application",
+      "explanation": "The R ratio analysis using sensitivity kernels is the primary tool for assessing whether LLSVPs are thermal or thermochemical in origin. Observed R values exceeding thermal predictions in the deep mantle motivate the compositional models discussed in Ch20."
+    },
+    {
+      "related_chapter": "Ch22 Iron Spin Crossover",
+      "nature": "extension",
+      "explanation": "The Fe2+ spin crossover in ferropericlase at mid-mantle pressures produces anomalous elastic softening that dramatically affects compositional sensitivity kernels, potentially complicating the interpretation of mid-mantle seismic anomalies."
+    }
+  ],
+  "computational_methods": "The SensitivityKernelCalculator implements a straightforward central finite-difference scheme for computing temperature derivatives of seismic velocities. The algorithm proceeds as follows: (1) For a given mineral, pressure P, and temperature T, call MieGruneisenEOSOptimizer at (P, T+dT) and (P, T-dT) with default dT = 5 K. Each EOS call internally solves the nonlinear pressure equation iteratively to convergence (tolerance 1e-5 GPa), then computes density, elastic moduli K_S and G, and seismic velocities Vp and Vs. (2) Compute logarithmic derivatives: dlnVp/dT = (ln Vp_plus - ln Vp_minus) / (2*dT), and similarly for Vs and density. (3) Compute the R ratio as dlnVs_dT / dlnVp_dT with a zero-division guard (returns NaN if |dlnVp_dT| < 1e-20). The result is stored in a SensitivityKernel record containing all six quantities plus the P-T point.\n\nThe ComputeOnPressureProfile method provides batch evaluation over an array of pressures at fixed temperature, enabling efficient construction of depth profiles. Each pressure point is evaluated independently, making this trivially parallelizable (though the current implementation is sequential). The computational cost is dominated by the two EOS evaluations per kernel point, each requiring 5-15 Newton-Raphson iterations. For a typical profile of 100 pressure points, the total computation takes on the order of milliseconds.\n\nThe choice of dT = 5 K has been validated against smaller step sizes (1 K, 0.1 K) showing convergence to 4-5 significant figures. Pressure sensitivity kernels (dlnV/dP) are not currently implemented in the calculator but could be added following the identical pattern with a dP perturbation. Compositional sensitivity kernels require evaluating different mineral endmembers and are handled at a higher level by comparing results from the composition inversion framework (Chapter 18).",
+  "open_questions": [
+    "How do sensitivity kernels change across phase boundaries (e.g., olivine-wadsleyite at 410 km), and how should the discontinuous change be handled in continuous tomographic inversions?",
+    "What is the quantitative effect of anelasticity on sensitivity kernels as a function of depth, and how uncertain is this correction given the poorly constrained anelastic parameters for transition zone and lower mantle minerals?",
+    "Can the R ratio alone distinguish between iron enrichment and calcium/aluminum enrichment in the lower mantle, or are additional observables (density, attenuation) required?",
+    "How does the iron spin crossover in ferropericlase affect compositional sensitivity kernels in the mid-mantle (1500-2000 km depth), and does it produce a depth-dependent bias in composition inversions?",
+    "What is the role of grain-size variations in modifying effective sensitivity kernels through anelastic effects, particularly in regions of active deformation (e.g., around subducting slabs)?",
+    "How should sensitivity kernels be computed for partially molten regions (e.g., ultralow-velocity zones) where the standard solid-state mineral physics framework breaks down?"
+  ],
+  "exercise_suggestions": [
+    "Basic: Compute dlnVs/dT and dlnVp/dT for forsterite at 10 GPa, 1500 K. Verify that both are negative and that |dlnVs/dT| > |dlnVp/dT|. Explain physically why Vs is more temperature-sensitive than Vp.",
+    "Basic: Compute R_thermal for forsterite at 10 GPa and verify it falls in the range 1.5-2.0. Compare with the test assertion in the codebase (R between 1.0 and 3.0). Why is the test range wider than the expected physical range?",
+    "Intermediate: Use ComputeOnPressureProfile to compute dlnVs/dT for forsterite from 5 to 25 GPa at 1500 K. Plot the result and explain the pressure dependence in terms of the anharmonic properties of olivine.",
+    "Intermediate: Compute sensitivity kernels for both forsterite (Mg endmember) and fayalite (Fe endmember) at 10 GPa, 1500 K. Estimate the compositional sensitivity dlnVs/dXFe by differencing the velocities and normalizing. How does this compare in magnitude to the thermal sensitivity?",
+    "Intermediate: A seismic tomography model shows dlnVs = -1.5% and dlnVp = -0.6% at 300 km depth. Using the sensitivity kernels for forsterite at 10 GPa, 1500 K, compute R_observed and compare with R_thermal. Is the anomaly consistent with a purely thermal origin?",
+    "Advanced: Extend the SensitivityKernelCalculator to compute pressure sensitivity kernels dlnVs/dP and dlnVp/dP using the same central finite-difference approach. Choose an appropriate dP step size and validate convergence.",
+    "Advanced: Compute sensitivity kernels for a pyrolite assemblage (60% olivine, 15% orthopyroxene, 15% clinopyroxene, 10% garnet by volume) at upper mantle conditions. Use the VRH average to combine single-mineral sensitivities. How do the aggregate kernels differ from the forsterite-only values?",
+    "Research: Implement anelastic corrections to the sensitivity kernels using the Karato (1993) Q model. Compare the corrected dlnVs/dT with the elastic value as a function of depth. At what depth does anelasticity become negligible for the sensitivity kernel?"
+  ],
+  "figure_suggestions": [
+    {
+      "description": "Depth profile of dlnVs/dT and dlnVp/dT for forsterite",
+      "axes": "X-axis: dlnV/dT (10^{-5} /K), Y-axis: Pressure (GPa) or Depth (km), increasing downward",
+      "key_features": "Two curves (Vs and Vp sensitivities), both negative, with Vs always showing larger magnitude. Both curves should show decreasing magnitude with increasing pressure. Annotate the approximate depth conversion on the right Y-axis."
+    },
+    {
+      "description": "R ratio as a function of pressure for different minerals",
+      "axes": "X-axis: Pressure (GPa), Y-axis: R = dlnVs/dlnVp",
+      "key_features": "Plot R for forsterite (5-25 GPa), wadsleyite (15-20 GPa), ringwoodite (18-23 GPa), and bridgmanite (25-135 GPa). Show the characteristic R values for each phase and highlight how R changes across phase boundaries. Add a horizontal shaded band for the seismologically observed R range in each depth range."
+    },
+    {
+      "description": "Schematic of thermal vs compositional R ratio separation",
+      "axes": "X-axis: dlnVp (%), Y-axis: dlnVs (%)",
+      "key_features": "Plot lines of constant R_thermal (slope approximately 1.7 for upper mantle) and R_compositional (different slope for Fe enrichment). Show how a seismically observed (dlnVp, dlnVs) point can be decomposed into thermal and compositional contributions using the two different slopes. Label the thermal anomaly direction and the compositional anomaly direction."
+    },
+    {
+      "description": "Comparison of elastic vs anelastically-corrected sensitivity kernels",
+      "axes": "X-axis: dlnVs/dT (10^{-5} /K), Y-axis: Depth (km)",
+      "key_features": "Two curves: elastic (from SensitivityKernelCalculator) and anelastically corrected (elastic times anelastic amplification factor). The anelastic curve should show 30-50% larger magnitude in the upper mantle (low Q region) but converge with the elastic curve below 660 km where Q is high."
+    },
+    {
+      "description": "Sensitivity kernel map in P-T space for forsterite",
+      "axes": "X-axis: Temperature (1000-2500 K), Y-axis: Pressure (0-25 GPa), Color: dlnVs/dT magnitude",
+      "key_features": "Color map showing how the sensitivity varies across the P-T plane. Highlight that sensitivity increases (more negative) at higher T and lower P. Overlay a representative geotherm to show the relevant trajectory through this parameter space."
+    }
+  ],
+  "historical_context": "The concept of using mineral physics to interpret seismic velocity anomalies traces back to the 1960s and 1970s, when laboratory measurements of elastic properties at high pressure and temperature first became available. Early work by Birch (1961) and Anderson (1967) established the relationship between velocity, density, and composition. The systematic computation of sensitivity kernels for seismic interpretation was pioneered by Anderson and colleagues in the 1980s, who recognized that the ratio of S-wave to P-wave velocity anomalies (later formalized as the R ratio) could distinguish thermal from compositional effects.\n\nThe modern framework was significantly advanced by Karato (1993), who showed that anelastic effects must be included in sensitivity kernel calculations to properly compare mineral physics predictions with seismic observations. This was a paradigm shift: purely elastic calculations systematically underestimate the thermal sensitivity at seismic frequencies, leading to overestimates of the temperature anomalies required to explain observed velocity variations.\n\nThe application of sensitivity kernels to global seismic tomography reached maturity in the early 2000s with work by Karato and Karki (2001), who systematically computed kernels for all major lower mantle minerals, and Trampert et al. (2004), who used probabilistic tomography combined with mineral physics kernels to demonstrate large-scale compositional heterogeneity in the lower mantle. The Stixrude and Lithgow-Bertelloni (2005, 2011) self-consistent thermodynamic framework provided a unified computational platform for kernel calculations, which is the approach implemented in this codebase. Current research focuses on improving the accuracy of kernels through better anelastic models, incorporating spin crossover effects, and extending the analysis to 3D geodynamic models with laterally varying composition.",
+  "uncertain": [
+    "worked_examples",
+    "figure_suggestions"
+  ]
+}

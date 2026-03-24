@@ -1,0 +1,333 @@
+{
+  "chapter_summary": "Elastic mixing models provide the theoretical and computational framework for determining the effective elastic properties of multi-phase mineral aggregates from the properties of their constituent phases. This is essential because Earth's mantle is composed of multiple coexisting minerals (e.g., olivine, pyroxene, garnet in the upper mantle; bridgmanite, ferropericlase, Ca-perovskite in the lower mantle), and seismological observations reflect the aggregate response. The fundamental challenge is that the stress and strain fields within a polycrystalline or polyphase aggregate are heterogeneous, depending on grain geometry, orientation, and elastic contrast between phases. Exact solutions exist only for special microstructures, so bounding approaches and empirical averages are used instead.\n\nThe Voigt (1928) bound assumes uniform strain throughout the aggregate (iso-strain condition), leading to an arithmetic (volume-weighted) average of elastic moduli: M_V = sum(f_i * M_i). This provides a rigorous upper bound on the effective modulus. The Reuss (1929) bound assumes uniform stress (iso-stress condition), leading to a harmonic average: 1/M_R = sum(f_i / M_i). This provides a rigorous lower bound. The Hill (1952) average, also called the Voigt-Reuss-Hill (VRH) average, is simply the arithmetic mean of the Voigt and Reuss bounds: M_H = (M_V + M_R) / 2. While not itself a rigorous bound, the Hill average is widely used in mineral physics as a practical estimate that lies between the two extremes.\n\nHashin and Shtrikman (1963) derived tighter variational bounds using a more sophisticated analysis based on the elastic polarization tensor. The Hashin-Shtrikman (HS) lower bound uses the softest phase as reference, while the upper bound uses the stiffest phase. For N-component mixtures, the HS bounds involve auxiliary variables zeta_K = 4G_ref/3 and zeta_G = G_ref(9K_ref + 8G_ref) / (6(K_ref + 2G_ref)), and the effective modulus is computed as K_HS = (sum(f_i / (K_i + zeta_K)))^{-1} - zeta_K, with an analogous expression for G. These bounds are always tighter than or equal to the Voigt-Reuss bounds and coincide with them only when all phases have identical moduli.\n\nIn the ThermoElasticCalculator, the MixtureCalculator class implements Voigt, Reuss, Hill, and Hashin-Shtrikman (lower bound) averaging for arbitrary N-component mixtures specified by volume fractions and individually computed thermoelastic properties (ResultSummary). The RockCalculator class orchestrates the workflow: it takes a RockComposition (list of minerals with volume ratios), computes individual mineral properties at specified P-T using MieGruneisenEOSOptimizer, normalizes volume fractions, and applies the selected mixing method. The EquilibriumAggregateCalculator extends this by optionally re-equilibrating phase proportions via Gibbs free energy minimization before applying mechanical mixing. Volume-weighted mixing is used throughout, where the volume fractions f_i represent the fraction of the total volume occupied by each phase. Density is computed as a volume-weighted average: rho_agg = sum(f_i * V_i * rho_i) / sum(f_i * V_i), ensuring mass conservation.",
+  "prerequisite_knowledge": [
+    "Elastic moduli (bulk modulus K, shear modulus G) and their relationship to seismic velocities (Ch04)",
+    "Continuum mechanics: stress, strain, and the elastic constitutive relation (Hooke's law for isotropic media)",
+    "Thermodynamic equation of state: computing K_T, K_S, and G at arbitrary P-T conditions (Ch05-Ch06)",
+    "Variational principles in elasticity: minimum potential energy and minimum complementary energy theorems",
+    "Basic tensor algebra: fourth-rank elastic stiffness and compliance tensors, Voigt notation",
+    "The SLB2011 mineral parameter database and endmember properties (Ch07)"
+  ],
+  "key_equations": [
+    {
+      "equation": "M_V = \\sum_i f_i \\, M_i",
+      "name": "Voigt (Iso-Strain) Average",
+      "variables": {
+        "M_V": "Voigt-averaged effective modulus (K or G) [GPa]",
+        "f_i": "Volume fraction of phase i [dimensionless, sum = 1]",
+        "M_i": "Elastic modulus (K or G) of phase i [GPa]"
+      },
+      "interpretation": "The Voigt average assumes all phases experience the same strain. It is the arithmetic volume-weighted mean of moduli and provides a rigorous upper bound on the effective modulus. Physically appropriate when stiff phases form a connected framework that controls deformation. Implemented in MixtureCalculator.VoigtAverage() as direct summation: KS = sum(f_i * KS_i), GS = sum(f_i * GS_i)."
+    },
+    {
+      "equation": "\\frac{1}{M_R} = \\sum_i \\frac{f_i}{M_i}",
+      "name": "Reuss (Iso-Stress) Average",
+      "variables": {
+        "M_R": "Reuss-averaged effective modulus (K or G) [GPa]",
+        "f_i": "Volume fraction of phase i [dimensionless]",
+        "M_i": "Elastic modulus of phase i [GPa]"
+      },
+      "interpretation": "The Reuss average assumes all phases experience the same stress. It is the harmonic volume-weighted mean and provides a rigorous lower bound. Physically appropriate when soft phases form interconnected layers or films. Implemented in MixtureCalculator.ReussAverage() as KS = 1 / sum(f_i / KS_i)."
+    },
+    {
+      "equation": "M_H = \\frac{M_V + M_R}{2}",
+      "name": "Hill (Voigt-Reuss-Hill, VRH) Average",
+      "variables": {
+        "M_H": "Hill-averaged effective modulus [GPa]",
+        "M_V": "Voigt bound [GPa]",
+        "M_R": "Reuss bound [GPa]"
+      },
+      "interpretation": "The Hill average is the arithmetic mean of the Voigt and Reuss bounds. It has no rigorous theoretical justification but empirically provides a good estimate for most polycrystalline aggregates and mineral mixtures. It is the default mixing method in the ThermoElasticCalculator. Implemented in MixtureCalculator.HillAverage()."
+    },
+    {
+      "equation": "K_{HS}^{-} = \\left( \\sum_i \\frac{f_i}{K_i + \\zeta_K} \\right)^{-1} - \\zeta_K, \\quad \\zeta_K = \\frac{4}{3} G_{\\min}",
+      "name": "Hashin-Shtrikman Lower Bound for Bulk Modulus",
+      "variables": {
+        "K_{HS}^{-}": "HS lower bound on effective bulk modulus [GPa]",
+        "f_i": "Volume fraction of phase i",
+        "K_i": "Bulk modulus of phase i [GPa]",
+        "\\zeta_K": "Auxiliary parameter involving the minimum shear modulus [GPa]",
+        "G_{\\min}": "Shear modulus of the softest phase [GPa]"
+      },
+      "interpretation": "The HS lower bound uses the softest phase as reference material in the variational formulation. It is always tighter than the Reuss bound. For two phases with very different moduli, the HS bounds can be significantly narrower than the Voigt-Reuss bounds. Implemented in MixtureCalculator.HashinShtrikmanAverage() using the minimum KS and GS across all phases."
+    },
+    {
+      "equation": "G_{HS}^{-} = \\left( \\sum_i \\frac{f_i}{G_i + \\zeta_G} \\right)^{-1} - \\zeta_G, \\quad \\zeta_G = \\frac{G_{\\min}(9K_{\\min} + 8G_{\\min})}{6(K_{\\min} + 2G_{\\min})}",
+      "name": "Hashin-Shtrikman Lower Bound for Shear Modulus",
+      "variables": {
+        "G_{HS}^{-}": "HS lower bound on effective shear modulus [GPa]",
+        "f_i": "Volume fraction of phase i",
+        "G_i": "Shear modulus of phase i [GPa]",
+        "\\zeta_G": "Auxiliary parameter involving K_min and G_min [GPa]",
+        "K_{\\min}": "Bulk modulus of the softest phase [GPa]",
+        "G_{\\min}": "Shear modulus of the softest phase [GPa]"
+      },
+      "interpretation": "The HS lower bound for G involves both the minimum K and minimum G of the constituent phases. The zeta_G parameter captures the coupling between bulk and shear deformation modes. The upper bound is obtained by replacing min with max for the reference moduli."
+    },
+    {
+      "equation": "\\rho_{\\text{agg}} = \\frac{\\sum_i f_i V_i \\rho_i}{\\sum_i f_i V_i}",
+      "name": "Volume-Weighted Average Density",
+      "variables": {
+        "\\rho_{\\text{agg}}": "Aggregate density [g/cm^3]",
+        "f_i": "Volume fraction of phase i",
+        "V_i": "Molar volume of phase i [cm^3/mol]",
+        "\\rho_i": "Density of phase i [g/cm^3]"
+      },
+      "interpretation": "Density is averaged by weighting each phase's density by its volume contribution (f_i * V_i), ensuring mass conservation. This is exact regardless of microstructure, unlike the elastic moduli which depend on the averaging scheme. Implemented identically in both Voigt and Reuss averages in MixtureCalculator."
+    }
+  ],
+  "physical_concepts": [
+    {
+      "name": "Iso-Strain (Voigt) Condition",
+      "definition": "The assumption that all phases in a composite material undergo the same strain. Each phase then develops a stress proportional to its own stiffness, and the aggregate stress is the volume-weighted average of individual stresses.",
+      "physical_intuition": "Imagine stretching a bundle of parallel rods of different materials by the same amount. The stiffer rods carry more force, so the effective stiffness is dominated by the stiff components. This gives the maximum possible stiffness for a given composition.",
+      "common_misconceptions": [
+        "Assuming Voigt gives the exact answer rather than an upper bound",
+        "Applying the Voigt average to compliances (1/M) instead of moduli (M), which would give the Reuss bound",
+        "Forgetting that the Voigt bound becomes exact only for a single-phase material"
+      ]
+    },
+    {
+      "name": "Iso-Stress (Reuss) Condition",
+      "definition": "The assumption that all phases in a composite experience the same stress. Each phase then deforms by an amount inversely proportional to its stiffness, and the aggregate strain is the volume-weighted average of individual strains.",
+      "physical_intuition": "Imagine stacking layers of different materials and pressing on them. Each layer compresses by a different amount depending on its softness, and the total deformation is dominated by the softest layer. This gives the minimum possible stiffness.",
+      "common_misconceptions": [
+        "Thinking that the Reuss bound is always much lower than Voigt (the spread depends on the elastic contrast between phases)",
+        "Applying the Reuss harmonic average to density (density should always be a simple volume-weighted average)",
+        "Confusing the Reuss average for moduli with a simple arithmetic mean of compliances"
+      ]
+    },
+    {
+      "name": "Voigt-Reuss-Hill (VRH) Average",
+      "definition": "The arithmetic mean of the Voigt upper bound and Reuss lower bound: M_VRH = (M_Voigt + M_Reuss) / 2. Proposed by Hill (1952) as a practical compromise.",
+      "physical_intuition": "In a real polycrystalline aggregate, some grains are oriented to deform like the Voigt model and others like the Reuss model. The true effective modulus lies between the bounds, and the midpoint is a reasonable first estimate. For most mantle mineral assemblages, the VRH average agrees with more rigorous self-consistent methods to within 1-2%.",
+      "common_misconceptions": [
+        "Treating the Hill average as a rigorous bound or exact solution (it is neither)",
+        "Assuming the Hill average is always the best estimate (Hashin-Shtrikman bounds are more rigorous)",
+        "Not recognizing that the Hill average can fall outside the HS bounds in rare cases with extreme elastic contrast"
+      ]
+    },
+    {
+      "name": "Hashin-Shtrikman Variational Bounds",
+      "definition": "Rigorous bounds on effective elastic moduli derived from variational principles applied to the elastic energy of a heterogeneous medium. They require only the volume fractions and elastic moduli of constituent phases, not the geometry.",
+      "physical_intuition": "The HS bounds exploit the principle that the elastic energy of a composite is bounded by embedding each phase in a reference medium and computing the energy perturbation. Using the softest phase as reference gives the lower bound; using the stiffest gives the upper bound. These bounds are geometry-independent and always lie within the Voigt-Reuss bounds.",
+      "common_misconceptions": [
+        "Confusing the HS lower bound with the Reuss bound (HS lower is always >= Reuss)",
+        "Assuming HS bounds require knowledge of the microstructure (they are microstructure-independent)",
+        "Thinking the HS upper bound always uses the phase with the largest K (it uses the stiffest phase, which may differ for K and G)"
+      ]
+    },
+    {
+      "name": "Volume-Weighted vs Molar-Weighted Mixing",
+      "definition": "Volume-weighted mixing uses the volume fraction f_i = V_i_total / V_total as the weight for each phase. Molar-weighted mixing would use the molar fraction n_i / n_total. For elastic moduli averaging, volume weighting is the physically correct choice.",
+      "physical_intuition": "Elastic moduli are intensive properties that describe the mechanical response per unit volume. A phase occupying 50% of the volume contributes 50% of the elastic response under uniform strain. Molar weighting would give incorrect results because phases with different molar volumes would be weighted disproportionately to their volumetric presence.",
+      "common_misconceptions": [
+        "Using molar fractions instead of volume fractions in Voigt/Reuss averaging (this is physically incorrect for elastic moduli)",
+        "Confusing volume ratios with mass ratios (they differ when phases have different densities)",
+        "Assuming the distinction does not matter (it can lead to errors of several percent for phases with very different molar volumes)"
+      ]
+    },
+    {
+      "name": "Elastic Contrast and Bound Spread",
+      "definition": "The difference between Voigt and Reuss bounds (the 'spread') depends on the elastic contrast between phases. Phases with similar moduli have narrow bounds; phases with very different moduli have wide bounds.",
+      "physical_intuition": "If all phases have the same modulus M, then Voigt = Reuss = M regardless of microstructure. As the contrast increases, the microstructure matters more, and the bounds widen. For the mantle, bridgmanite (K~250 GPa) and ferropericlase (K~160 GPa) have moderate contrast, so the Voigt-Reuss spread is typically 2-5% for lower mantle assemblages.",
+      "common_misconceptions": [
+        "Assuming the Voigt-Reuss spread is always small for mantle minerals (it can be large if a very soft phase like melt is present)",
+        "Neglecting the bound spread when reporting mineral physics velocity predictions without uncertainty",
+        "Thinking that the Hill average always lies at the exact center of the true distribution (it is just one estimate)"
+      ]
+    }
+  ],
+  "key_references": [
+    {
+      "author": "Voigt, W.",
+      "year": 1928,
+      "title": "Lehrbuch der Kristallphysik",
+      "journal": "Teubner, Leipzig",
+      "why_essential": "The foundational work introducing the iso-strain (uniform strain) assumption for polycrystalline averaging, establishing the upper bound on effective elastic moduli."
+    },
+    {
+      "author": "Reuss, A.",
+      "year": 1929,
+      "title": "Berechnung der Fliessgrenze von Mischkristallen auf Grund der Plastizitatsbedingung fur Einkristalle",
+      "journal": "Zeitschrift fur Angewandte Mathematik und Mechanik, 9, 49-58",
+      "why_essential": "Introduced the iso-stress (uniform stress) assumption, providing the complementary lower bound to the Voigt average."
+    },
+    {
+      "author": "Hill, R.",
+      "year": 1952,
+      "title": "The elastic behaviour of a crystalline aggregate",
+      "journal": "Proceedings of the Physical Society A, 65, 349-354",
+      "why_essential": "Proved that Voigt and Reuss are rigorous upper and lower bounds and proposed the arithmetic mean (VRH average) as a practical estimate. This paper is the basis for the Hill average universally used in mineral physics."
+    },
+    {
+      "author": "Hashin, Z. and Shtrikman, S.",
+      "year": 1963,
+      "title": "A variational approach to the theory of the elastic behaviour of multiphase materials",
+      "journal": "Journal of the Mechanics and Physics of Solids, 11, 127-140",
+      "why_essential": "Derived tighter variational bounds on effective elastic moduli using the elastic polarization tensor. The Hashin-Shtrikman bounds are the tightest possible bounds without knowledge of microstructure."
+    },
+    {
+      "author": "Watt, J.P., Davies, G.F., and O'Connell, R.J.",
+      "year": 1976,
+      "title": "The elastic properties of composite materials",
+      "journal": "Reviews of Geophysics and Space Physics, 14, 541-563",
+      "why_essential": "Comprehensive review of elastic averaging methods applied to geophysical problems, including Voigt-Reuss-Hill and Hashin-Shtrikman bounds for multi-phase mixtures. Cited in the MixtureCalculator source code as the reference for the HS implementation."
+    },
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2005,
+      "title": "Thermodynamics of mantle minerals - I. Physical properties",
+      "journal": "Geophysical Journal International, 162, 610-632",
+      "why_essential": "Provides the self-consistent thermodynamic framework for computing individual mineral elastic properties that are input to mixing models. The SLB formulation computes K_S, K_T, and G at any P-T, which MixtureCalculator then averages."
+    },
+    {
+      "author": "Cottaar, S., Heister, T., Rose, I., and Unterborn, C.",
+      "year": 2014,
+      "title": "BurnMan: A lower mantle mineral physics toolkit",
+      "journal": "Geochemistry, Geophysics, Geosystems, 15, 1164-1179",
+      "why_essential": "Open-source Python toolkit implementing Voigt, Reuss, Hill, and Hashin-Shtrikman averaging for multi-mineral assemblages. Serves as a reference implementation and validation benchmark for the ThermoElasticCalculator's mixing models."
+    }
+  ],
+  "worked_examples": [
+    {
+      "problem_statement": "For a two-phase aggregate of 50 vol% phase A (K_S = 200 GPa, G = 100 GPa) and 50 vol% phase B (K_S = 300 GPa, G = 150 GPa), compute the Voigt, Reuss, and Hill average bulk and shear moduli.",
+      "solution_approach": "1. Voigt (arithmetic mean): K_V = 0.5*200 + 0.5*300 = 250 GPa; G_V = 0.5*100 + 0.5*150 = 125 GPa.\n2. Reuss (harmonic mean): 1/K_R = 0.5/200 + 0.5/300 = 0.0025 + 0.001667 = 0.004167; K_R = 240.0 GPa. 1/G_R = 0.5/100 + 0.5/150 = 0.005 + 0.003333 = 0.008333; G_R = 120.0 GPa.\n3. Hill (mean of V and R): K_H = (250 + 240) / 2 = 245.0 GPa; G_H = (125 + 120) / 2 = 122.5 GPa.\n4. Verify Voigt >= Hill >= Reuss for both K and G.",
+      "numerical_values": {
+        "K_Voigt": "250.0 GPa",
+        "G_Voigt": "125.0 GPa",
+        "K_Reuss": "240.0 GPa",
+        "G_Reuss": "120.0 GPa",
+        "K_Hill": "245.0 GPa",
+        "G_Hill": "122.5 GPa",
+        "Voigt_Reuss_spread_K": "10.0 GPa (4.0%)",
+        "Voigt_Reuss_spread_G": "5.0 GPa (4.0%)"
+      },
+      "interpretation": "The Voigt-Reuss spread is about 4% of the average value for both K and G, which is typical for mantle mineral mixtures with moderate elastic contrast. The Hill average lies exactly at the midpoint. This example matches the test case in MixtureCalculatorTests.cs, confirming the MixtureCalculator implementation."
+    },
+    {
+      "problem_statement": "Compute the Hashin-Shtrikman lower bound for K_S and G_S for a lower mantle assemblage of 80 vol% bridgmanite (K_S = 380 GPa, G = 220 GPa) and 20 vol% ferropericlase (K_S = 300 GPa, G = 130 GPa) at 50 GPa, 2000 K.",
+      "solution_approach": "1. Identify softest phase: K_min = 300 GPa (ferropericlase), G_min = 130 GPa (ferropericlase).\n2. Compute auxiliary parameters: zeta_K = 4*G_min/3 = 4*130/3 = 173.33 GPa. zeta_G = G_min*(9*K_min + 8*G_min) / (6*(K_min + 2*G_min)) = 130*(2700 + 1040) / (6*(300 + 260)) = 130*3740 / (6*560) = 486200/3360 = 144.70 GPa.\n3. K_HS = (sum(f_i/(K_i + zeta_K)))^{-1} - zeta_K = (0.8/(380+173.33) + 0.2/(300+173.33))^{-1} - 173.33 = (0.8/553.33 + 0.2/473.33)^{-1} - 173.33 = (0.001446 + 0.000423)^{-1} - 173.33 = 535.05 - 173.33 = 361.7 GPa.\n4. G_HS = (0.8/(220+144.70) + 0.2/(130+144.70))^{-1} - 144.70 = (0.8/364.70 + 0.2/274.70)^{-1} - 144.70 = (0.002194 + 0.000728)^{-1} - 144.70 = 342.24 - 144.70 = 197.5 GPa.",
+      "numerical_values": {
+        "K_min": "300 GPa (ferropericlase)",
+        "G_min": "130 GPa (ferropericlase)",
+        "zeta_K": "173.33 GPa",
+        "zeta_G": "144.70 GPa [uncertain]",
+        "K_HS_lower": "361.7 GPa [uncertain]",
+        "G_HS_lower": "197.5 GPa [uncertain]",
+        "K_Voigt": "364.0 GPa",
+        "K_Reuss": "360.0 GPa",
+        "K_Hill": "362.0 GPa"
+      },
+      "interpretation": "The HS lower bound (361.7 GPa for K) lies between the Reuss bound (360.0 GPa) and the Voigt bound (364.0 GPa), as expected. For this particular assemblage, the Voigt-Reuss spread is only about 1% because bridgmanite and ferropericlase have relatively similar bulk moduli. The HS bounds narrow this further. The implementation in MixtureCalculator.HashinShtrikmanAverage() computes only the lower bound, which is the more commonly used estimate."
+    },
+    {
+      "problem_statement": "Using ThermoElasticCalculator's RockCalculator, compute Hill-averaged Vp and Vs for a pyrolite-like upper mantle (60 vol% forsterite, 20 vol% enstatite, 20 vol% pyrope) at 10 GPa, 1500 K, and compare with expected upper mantle values.",
+      "solution_approach": "1. RockCalculator takes a RockComposition with three RockMineralEntry items and the target P-T.\n2. For each mineral, MieGruneisenEOSOptimizer computes K_S, K_T, G, rho at 10 GPa, 1500 K.\n3. Volume fractions are normalized: (0.6, 0.2, 0.2) already sum to 1.0.\n4. MixtureCalculator.HillAverage() computes: K_H = (K_Voigt + K_Reuss)/2, G_H = (G_Voigt + G_Reuss)/2.\n5. Velocities: Vp = sqrt((K_H + 4G_H/3)/rho) * 1000, Vs = sqrt(G_H/rho) * 1000.",
+      "numerical_values": {
+        "forsterite_KS_10GPa_1500K": "~190 GPa [uncertain]",
+        "enstatite_KS_10GPa_1500K": "~170 GPa [uncertain]",
+        "pyrope_KS_10GPa_1500K": "~195 GPa [uncertain]",
+        "aggregate_rho": "~3.5 g/cm^3 [uncertain]",
+        "Hill_Vp": "~8.5-9.0 km/s [uncertain]",
+        "Hill_Vs": "~4.8-5.2 km/s [uncertain]"
+      },
+      "interpretation": "The predicted Vp of ~8.5-9.0 km/s and Vs of ~4.8-5.2 km/s at 10 GPa (~300 km depth) are consistent with PREM upper mantle values. This three-mineral mixture test is implemented in MixingModelVerificationTests.ThreeMineral_Mix_ProducesValidResults(), confirming that the multi-phase mixing workflow produces geophysically reasonable results."
+    }
+  ],
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch04 Elastic Moduli and Seismic Velocities",
+      "connection_type": "prerequisite",
+      "explanation": "Mixing models operate on the elastic moduli (K_S, K_T, G) of individual phases, which are computed from the finite-strain + Mie-Gruneisen-Debye framework described in Ch04. Understanding what these moduli represent and how they are calculated is essential before averaging them."
+    },
+    {
+      "related_chapter": "Ch05 The Stixrude-Lithgow-Bertelloni Formulation",
+      "connection_type": "prerequisite",
+      "explanation": "The SLB formulation provides the complete thermodynamic model for computing individual mineral properties at arbitrary P-T. MixtureCalculator requires ResultSummary objects from the SLB EOS solver as input."
+    },
+    {
+      "related_chapter": "Ch07 SLB2011 Mineral Database",
+      "connection_type": "prerequisite",
+      "explanation": "The mineral parameters (K0, G0, etc.) for each endmember phase come from the SLB2011 database. RockCalculator retrieves these parameters to compute individual mineral properties before mixing."
+    },
+    {
+      "related_chapter": "Ch11 Rock Compositions and Assemblages",
+      "connection_type": "extension",
+      "explanation": "Ch11 describes how to define realistic mantle rock compositions (pyrolite, harzburgite, MORB) as RockComposition objects, which are then passed to RockCalculator along with the mixing method from Ch10."
+    },
+    {
+      "related_chapter": "Ch12 Gibbs Free Energy and Phase Stability",
+      "connection_type": "extension",
+      "explanation": "EquilibriumAggregateCalculator combines Gibbs minimization (Ch12) with mechanical mixing (Ch10): it first re-equilibrates phase proportions at each P-T point, then applies Voigt/Reuss/Hill/HS averaging to the equilibrated assemblage."
+    },
+    {
+      "related_chapter": "Ch15 PREM and Radial Earth Models",
+      "connection_type": "application",
+      "explanation": "The ultimate application of elastic mixing models is comparing computed aggregate velocities with PREM. MixingModelVerificationTests includes tests comparing Pv80+Fp20 aggregate Vp/Vs with PREM lower mantle values."
+    },
+    {
+      "related_chapter": "Ch26 Elastic Anisotropy",
+      "connection_type": "extension",
+      "explanation": "Voigt-Reuss-Hill averaging also applies to single-crystal elastic constants (C_ijkl) to obtain isotropic polycrystalline averages. The same bounding principles from Ch10 govern the averaging of the full elastic tensor in Ch26."
+    }
+  ],
+  "computational_methods": "The ThermoElasticCalculator implements elastic mixing through three main classes. MixtureCalculator is the core engine, taking a list of (volumeFraction, ResultSummary) tuples and computing Voigt, Reuss, Hill, and Hashin-Shtrikman averages. The Voigt average is a direct summation O(N) over N phases; the Reuss average computes the reciprocal of summed reciprocals, also O(N). The Hill average calls both Voigt and Reuss, then averages, costing O(N). The Hashin-Shtrikman lower bound first finds the minimum K_S and G_S across all phases in O(N), then computes auxiliary parameters zeta_K and zeta_G, followed by an O(N) summation. For a single-phase input, the HS method returns the phase's own properties as a special case.\n\nRockCalculator orchestrates the full workflow: (1) iterate over RockComposition.Minerals, calling MieGruneisenEOSOptimizer for each mineral at the target P-T; (2) normalize volume ratios so they sum to 1.0; (3) construct a MixtureCalculator with the normalized ratios and results; (4) dispatch to the selected MixtureMethod (Hill, Voigt, Reuss, or HS via a switch expression). The computational cost is dominated by the N EOS optimizations (each requiring ~10-30 Brent iterations), not by the mixing step itself.\n\nEquilibriumAggregateCalculator adds an equilibration step via GibbsMinimizer before mixing, updating phase fractions at each P-T point. This is computationally more expensive because Gibbs minimization involves iterative optimization over phase proportions and compositions.\n\nInput validation in MixtureCalculator checks that all volume fractions are in [0,1], their sum does not exceed 1.01, and all phases are evaluated at the same P-T conditions (within 0.01 GPa/K tolerance). If validation fails, null is returned rather than incorrect results. Density is computed identically for all mixing methods as a volume-weighted average, ensuring mass conservation regardless of the elastic averaging scheme.",
+  "open_questions": [
+    "The Hill average lacks rigorous theoretical justification yet remains the default in most mineral physics codes. Is there a better practical estimator that accounts for realistic grain geometry without the computational cost of full-field simulations?",
+    "The current implementation computes only the Hashin-Shtrikman lower bound. Adding the upper bound would provide a rigorous uncertainty range, but the question of which bound (or their average) best represents Earth's mantle microstructure remains open.",
+    "How do grain-scale stress and strain heterogeneities in deforming mantle rocks affect the effective elastic moduli? Dynamic recrystallization and lattice preferred orientation create textures that may invalidate isotropic averaging assumptions.",
+    "For assemblages containing phases with extreme elastic contrast (e.g., partial melt with G=0 in a solid matrix), the Voigt-Reuss spread becomes very large and neither bound is useful. Self-consistent effective medium theories exist but are not yet implemented in ThermoElasticCalculator.",
+    "Should mixing be performed on adiabatic moduli (K_S, G) directly, or is it more thermodynamically consistent to mix isothermal moduli (K_T, G) and then apply the adiabatic correction to the aggregate? The current implementation mixes K_S and K_T independently.",
+    "The volume fractions used in mixing are static in the mechanical mixing mode (RockCalculator). In reality, phase proportions change with P-T due to phase transitions. EquilibriumAggregateCalculator addresses this but requires accurate Gibbs free energy data for all phases."
+  ],
+  "exercise_suggestions": [
+    "Verify analytically that for a two-phase mixture, the Voigt bound is always greater than or equal to the Reuss bound for any positive volume fractions and positive moduli. Under what condition are they exactly equal?",
+    "Compute the Voigt, Reuss, and Hill averages for K_S and G of a 70:30 olivine:pyroxene mixture using K_S(ol) = 129 GPa, G(ol) = 82 GPa, K_S(px) = 108 GPa, G(px) = 76 GPa. Calculate Vp and Vs for each averaging scheme.",
+    "Derive the Hashin-Shtrikman lower bound for K starting from the variational principle for the elastic energy functional. Show that the result reduces to the Reuss bound when the reference medium has zero moduli.",
+    "Using the MixtureCalculator, compare the Voigt-Reuss spread and HS bounds as a function of volume fraction for bridgmanite + ferropericlase at 50 GPa, 2000 K. At what volume fraction is the spread maximized?",
+    "Modify the Voigt averaging formula to use molar fractions instead of volume fractions. Show numerically for forsterite + periclase (which have very different molar volumes) that molar weighting gives a different and physically incorrect result.",
+    "For a three-phase assemblage (60% olivine, 25% garnet, 15% clinopyroxene), compute the Hill-averaged Vp at 5 GPa, 1200 K using realistic SLB2011 parameters. Compare with observed upper mantle velocities.",
+    "Investigate the effect of adding 1% partial melt (K = 20 GPa, G = 0 GPa, rho = 2.7 g/cm^3) to an olivine matrix on the Voigt, Reuss, and Hill Vs. Explain why the Reuss bound drops dramatically while the Voigt bound barely changes.",
+    "Implement the Hashin-Shtrikman upper bound by modifying the HashinShtrikmanAverage() method to use the maximum K and G as reference. Compare upper and lower bounds for a pyrolite assemblage across the pressure range 0-140 GPa."
+  ],
+  "figure_suggestions": [
+    {
+      "description": "Voigt, Reuss, Hill, and Hashin-Shtrikman bounds for K_S as a function of volume fraction for a bridgmanite + ferropericlase mixture",
+      "axes": "x-axis: Volume fraction of ferropericlase (0 to 1), y-axis: Effective K_S (GPa)",
+      "key_features": "Show Voigt as the upper line, Reuss as the lower line, Hill as the midpoint, and HS lower/upper bounds between them. Annotate the spread at 50:50 composition. Show that all curves converge at the endpoints (pure phases)."
+    },
+    {
+      "description": "Comparison of G_S averaging methods for a two-phase mixture with high elastic contrast (e.g., olivine + partial melt)",
+      "axes": "x-axis: Melt fraction (0 to 0.10), y-axis: Effective G (GPa, 0 to 90)",
+      "key_features": "Demonstrate the dramatic drop of the Reuss bound to near zero even at small melt fractions, while the Voigt bound decreases linearly. The HS lower bound should be close to the Reuss bound. Highlight the large uncertainty range when melt is present."
+    },
+    {
+      "description": "Aggregate Vp and Vs along a 1600 K adiabat for pyrolite (80% Pv + 20% Fp) compared with PREM",
+      "axes": "x-axis: Depth (km, 660-2890) or Pressure (GPa, 23-136), y-axis: Velocity (km/s)",
+      "key_features": "Show Hill-averaged Vp and Vs as solid lines, Voigt-Reuss bounds as shaded region, PREM as dashed reference. Highlight the good agreement in the mid-lower mantle and any deviations near the CMB."
+    },
+    {
+      "description": "Flowchart of the RockCalculator computational workflow",
+      "axes": "N/A (schematic diagram)",
+      "key_features": "Show the pipeline: RockComposition -> individual MieGruneisenEOSOptimizer calls -> ResultSummary for each phase -> normalization of volume fractions -> MixtureCalculator -> selected mixing method -> aggregate ResultSummary. Include the EquilibriumAggregateCalculator branch with GibbsMinimizer."
+    },
+    {
+      "description": "Sensitivity of Hill-averaged Vp to the number of phases: compare 2-phase (Pv+Fp), 3-phase (Pv+Fp+CaPv), and 4-phase (Pv+Fp+CaPv+St) lower mantle models",
+      "axes": "x-axis: Pressure (GPa, 25-135), y-axis: Vp (km/s)",
+      "key_features": "Show that adding minor phases (CaPv ~5%, St ~5%) shifts Vp by a small but potentially detectable amount. Compare all models with PREM. Illustrate why accurate phase proportions matter for matching seismic observations."
+    }
+  ],
+  "historical_context": "The theory of effective elastic properties of heterogeneous media has deep roots in 19th-century continuum mechanics, but the specific bounding approaches used in mineral physics emerged in the early-to-mid 20th century. Woldemar Voigt (1928) proposed the uniform-strain assumption in his textbook on crystal physics, originally for computing polycrystalline averages from single-crystal elastic constants. Andras Reuss (1929) independently developed the complementary uniform-stress approach in the context of plasticity theory for alloys.\n\nThe crucial theoretical advance came from Rodney Hill (1952), who rigorously proved that the Voigt and Reuss estimates are true upper and lower bounds on the effective moduli of any isotropic aggregate. Hill also proposed using their arithmetic mean as a practical estimate, which became known as the VRH average and has been the standard in mineral physics and geophysics for over seven decades.\n\nZvi Hashin and Shmuel Shtrikman (1963) achieved a major breakthrough by deriving tighter bounds using variational methods from elasticity theory. Their approach, based on the concept of a comparison (reference) medium and the elastic polarization tensor, showed that geometry-independent bounds tighter than Voigt-Reuss could be obtained. The Hashin-Shtrikman bounds became the gold standard in composite mechanics and were brought into geophysics through the comprehensive review by Watt, Davies, and O'Connell (1976), which remains a key reference for the geophysical applications of these methods.\n\nIn computational mineral physics, the implementation of mixing models became essential with the development of self-consistent thermodynamic databases like SLB2011 (Stixrude and Lithgow-Bertelloni, 2005, 2011). Tools like BurnMan (Cottaar et al., 2014) and the present ThermoElasticCalculator implement Voigt, Reuss, Hill, and Hashin-Shtrikman averaging as standard options, enabling routine comparison of computed aggregate velocities with seismological observations such as PREM.",
+  "uncertain": [
+    "worked_examples[1].numerical_values.zeta_G",
+    "worked_examples[1].numerical_values.K_HS_lower",
+    "worked_examples[1].numerical_values.G_HS_lower",
+    "worked_examples[2].numerical_values.forsterite_KS_10GPa_1500K",
+    "worked_examples[2].numerical_values.enstatite_KS_10GPa_1500K",
+    "worked_examples[2].numerical_values.pyrope_KS_10GPa_1500K",
+    "worked_examples[2].numerical_values.aggregate_rho",
+    "worked_examples[2].numerical_values.Hill_Vp",
+    "worked_examples[2].numerical_values.Hill_Vs"
+  ]
+}

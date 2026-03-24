@@ -1,0 +1,299 @@
+{
+  "chapter_summary": "Rock compositions in mineral physics are defined by specifying the constituent minerals and their volume fractions within the aggregate. Unlike chemical compositions expressed in oxide weight percentages, volume-fraction-based rock definitions directly connect to the mechanical mixing schemes (Voigt, Reuss, Hill, Hashin-Shtrikman) used to compute aggregate elastic properties and seismic velocities. A rock is modeled as a mechanical mixture of endmember minerals (or solid solutions), each contributing to the bulk properties in proportion to its volume fraction. This approach is central to comparing laboratory-derived mineral physics data with seismological observations of Earth's interior, because seismic waves sample the aggregate elastic response of multi-phase rocks, not individual minerals.\n\nThe ThermoElasticCalculator implements this concept through the RockComposition model, which stores a list of RockMineralEntry objects, each pairing a MineralParams instance with a VolumeRatio (and optionally a SolidSolution with its composition). The PredefinedRocks database provides four canonical mantle lithologies: Pyrolite (60% olivine, 15% orthopyroxene, 15% clinopyroxene, 10% garnet), representing the model upper mantle composition proposed by Ringwood (1962); Harzburgite (80% olivine, 20% orthopyroxene), representing depleted mantle residue after basalt extraction; MORB (45% garnet, 30% clinopyroxene, 15% stishovite, 10% jadeite), representing subducted oceanic crust in eclogite facies; and Lower Mantle Peridotite (75% bridgmanite, 17% ferropericlase, 8% Ca-perovskite), representing the dominant assemblage below the 660-km discontinuity. These compositions span the range of lithologies believed to coexist in Earth's convecting mantle.\n\nConstructing a realistic mantle rock from endmember minerals requires decisions at several levels. First, one must choose which mineral phases are stable at the pressure-temperature conditions of interest -- olivine dominates the upper mantle but transforms to wadsleyite, ringwoodite, and eventually bridgmanite plus ferropericlase with increasing depth. Second, the volume fractions must reflect the bulk chemical composition of the mantle (approximately pyrolitic) partitioned among the stable phases. Third, each phase may itself be a solid solution (e.g., olivine is (Mg,Fe)2SiO4), requiring specification of endmember proportions within the solution. The RockCalculator orchestrates the computation: it evaluates the equation of state for each mineral at the specified P-T conditions, then applies the chosen mechanical mixing method (MixtureCalculator) to obtain aggregate density, bulk modulus, shear modulus, and seismic velocities.\n\nThe architecture supports both fixed-composition calculations (where volume fractions remain constant, suitable for quick estimates) and equilibrium calculations (where the EquilibriumAggregateCalculator re-equilibrates phase proportions using Gibbs free energy minimization at each P-T point). The equilibrium approach is more physically realistic for slowly convecting mantle material that has time to reach thermodynamic equilibrium, while the fixed-composition approach is appropriate for rapidly subducting slabs or for pedagogical exploration of how individual mineral proportions affect aggregate properties.",
+  "prerequisite_knowledge": [
+    "Elastic moduli: bulk modulus K, shear modulus G, and their relationship to seismic velocities Vp and Vs (Chapter 4)",
+    "The SLB2011 equation of state framework for computing mineral properties at high P-T (Chapters 5-6)",
+    "The SLB2011 mineral database: endmember parameters and how they define individual minerals (Chapter 7)",
+    "Solid solutions: how mineral compositions are described by mixing endmembers on crystallographic sites (Chapter 10)",
+    "Basic petrology: what olivine, pyroxene, garnet, and bridgmanite are, and where they are stable in the mantle",
+    "Mechanical averaging schemes: Voigt (uniform strain), Reuss (uniform stress), and Hill (arithmetic mean of Voigt and Reuss)"
+  ],
+  "key_equations": [
+    {
+      "equation": "M_{\\text{Voigt}} = \\sum_{i=1}^{N} f_i \\, M_i",
+      "name": "Voigt average (iso-strain bound)",
+      "variables": {
+        "M_{\\text{Voigt}}": "Voigt-averaged elastic modulus (GPa), applies to K or G",
+        "f_i": "Volume fraction of the i-th phase (dimensionless, sum to 1)",
+        "M_i": "Elastic modulus of the i-th phase (GPa)",
+        "N": "Number of mineral phases in the rock"
+      },
+      "interpretation": "The Voigt average assumes all phases experience the same strain (iso-strain condition). This gives an upper bound on the effective modulus of the aggregate. It is equivalent to a parallel spring model and overestimates the stiffness of the rock because it ignores stress concentrations at phase boundaries."
+    },
+    {
+      "equation": "M_{\\text{Reuss}} = \\left( \\sum_{i=1}^{N} \\frac{f_i}{M_i} \\right)^{-1}",
+      "name": "Reuss average (iso-stress bound)",
+      "variables": {
+        "M_{\\text{Reuss}}": "Reuss-averaged elastic modulus (GPa)",
+        "f_i": "Volume fraction of the i-th phase",
+        "M_i": "Elastic modulus of the i-th phase (GPa)"
+      },
+      "interpretation": "The Reuss average assumes all phases experience the same stress (iso-stress condition). This gives a lower bound on the effective modulus. It is equivalent to a series spring model and underestimates the stiffness because it assumes the softest phase controls the overall compliance. The Reuss average is always less than or equal to the Voigt average."
+    },
+    {
+      "equation": "M_{\\text{Hill}} = \\frac{1}{2}\\left( M_{\\text{Voigt}} + M_{\\text{Reuss}} \\right)",
+      "name": "Voigt-Reuss-Hill (VRH) average",
+      "variables": {
+        "M_{\\text{Hill}}": "Hill-averaged elastic modulus (GPa)",
+        "M_{\\text{Voigt}}": "Voigt upper bound (GPa)",
+        "M_{\\text{Reuss}}": "Reuss lower bound (GPa)"
+      },
+      "interpretation": "The Hill average is the arithmetic mean of the Voigt and Reuss bounds. It has no rigorous theoretical justification but is widely used in mineral physics because it provides a good empirical estimate of aggregate properties for randomly oriented polycrystalline aggregates. Most experimental measurements of rock moduli fall close to the Hill average."
+    },
+    {
+      "equation": "K_{\\text{HS}}^{-} = \\left( \\sum_{i} \\frac{f_i}{K_i + \\frac{4}{3}G_{\\min}} \\right)^{-1} - \\frac{4}{3}G_{\\min}",
+      "name": "Hashin-Shtrikman lower bound for bulk modulus",
+      "variables": {
+        "K_{\\text{HS}}^{-}": "Hashin-Shtrikman lower bound on effective bulk modulus (GPa)",
+        "f_i": "Volume fraction of the i-th phase",
+        "K_i": "Bulk modulus of the i-th phase (GPa)",
+        "G_{\\min}": "Minimum shear modulus among all phases (GPa)"
+      },
+      "interpretation": "The Hashin-Shtrikman bounds are tighter than the Voigt-Reuss bounds and represent the narrowest possible range for the effective moduli of an isotropic composite, given only the volume fractions and moduli of the constituents. The lower bound uses the softest phase as the reference medium. For multi-phase mantle rocks, HS bounds can significantly narrow the uncertainty compared to Voigt-Reuss."
+    },
+    {
+      "equation": "\\rho_{\\text{agg}} = \\frac{\\sum_i f_i V_i \\rho_i}{\\sum_i f_i V_i}",
+      "name": "Volume-weighted aggregate density",
+      "variables": {
+        "\\rho_{\\text{agg}}": "Aggregate density of the rock (kg/m^3)",
+        "f_i": "Volume fraction of the i-th mineral phase",
+        "V_i": "Molar volume of the i-th phase (m^3/mol)",
+        "\\rho_i": "Density of the i-th phase (kg/m^3)"
+      },
+      "interpretation": "Density is computed by volume-weighting the individual mineral densities, weighted by their molar volumes. Unlike elastic moduli, density averaging is exact and does not require Voigt/Reuss/Hill approximations. The aggregate density is the quantity directly compared with radial density profiles from seismology (e.g., PREM)."
+    }
+  ],
+  "physical_concepts": [
+    {
+      "concept": "Rock composition by volume fractions",
+      "definition": "A rock is defined by listing its constituent mineral phases and the fraction of the total volume occupied by each phase. Volume fractions must sum to 1 (or be normalized to 1). Each mineral is described by its equation of state parameters (MineralParams) and, if it is a solid solution, by its compositional endmember proportions.",
+      "physical_intuition": "Think of a rock as a mosaic of mineral grains. If you could slice the rock and measure the area occupied by each mineral type, the area fractions approximate the volume fractions. A pyrolite mantle rock is about 60% olivine grains, 15% orthopyroxene, 15% clinopyroxene, and 10% garnet by volume. These proportions determine the bulk elastic behavior that seismic waves sense as they pass through the mantle.",
+      "common_misconceptions": [
+        "Confusing volume fractions with weight fractions or molar fractions -- volume fractions are the relevant quantity for mechanical mixing because elastic wave propagation depends on the spatial arrangement of phases.",
+        "Assuming volume fractions are constant with depth -- as P-T conditions change, phase transitions alter which minerals are stable and their relative proportions.",
+        "Treating the endmember minerals in the predefined rocks as pure Mg endmembers -- real mantle minerals are solid solutions with Fe, Al, and Ca substitution. The predefined rocks use pure endmembers as simplified approximations."
+      ]
+    },
+    {
+      "concept": "Predefined mantle lithologies",
+      "definition": "Canonical rock types that represent the major compositional domains of Earth's mantle: Pyrolite (fertile upper mantle), Harzburgite (depleted residue), MORB/eclogite (recycled oceanic crust), and Lower Mantle Peridotite (bridgmanite-dominated deep mantle).",
+      "physical_intuition": "Earth's mantle is not chemically homogeneous. The dominant composition (pyrolite) represents what would melt to produce both basaltic oceanic crust and the residual harzburgite layer. When oceanic crust subducts, it transforms into a garnet-rich eclogite with very different seismic properties. Below 660 km, all these compositions transform into bridgmanite-dominated assemblages, but with subtly different proportions that may be detectable seismologically.",
+      "common_misconceptions": [
+        "Assuming pyrolite is the only mantle composition -- the mantle contains mechanical mixtures of depleted (harzburgite) and enriched (MORB) components that have not fully homogenized.",
+        "Believing the predefined compositions represent exact mantle mineralogy -- they are simplified models using pure endmembers as proxies for complex solid solutions.",
+        "Treating lower mantle and upper mantle with the same mineral assemblage -- phase transitions at 410 km and 660 km completely change the stable mineral phases."
+      ]
+    },
+    {
+      "concept": "Mechanical mixing vs. equilibrium assemblage",
+      "definition": "Mechanical mixing applies Voigt/Reuss/Hill averaging to fixed mineral proportions. Equilibrium assemblage calculation first re-equilibrates phase proportions and compositions by minimizing Gibbs free energy at each P-T point, then applies mechanical mixing to the equilibrated phases.",
+      "physical_intuition": "In the real mantle, minerals continuously re-equilibrate as convection carries them through different P-T conditions. Over geological time, phase proportions adjust to minimize the total Gibbs free energy. The equilibrium approach captures this by using Gibbs minimization (GibbsMinimizer) before computing elastic properties. The mechanical mixing approach, by contrast, freezes the mineral proportions and is appropriate when re-equilibration is incomplete (e.g., cold subducting slabs) or when exploring the effect of specific mineral proportions on aggregate properties.",
+      "common_misconceptions": [
+        "Assuming mechanical mixing and equilibrium assemblage give the same result -- they can differ significantly, especially near phase boundaries where one phase transforms into another.",
+        "Believing Voigt and Reuss averages bracket the true value with equal probability -- the true effective modulus depends on the microstructure (grain geometry), and certain textures can approach either bound.",
+        "Thinking the Hill average has a rigorous physical basis -- it is an empirical compromise, not derived from any physical principle about the arrangement of mineral grains."
+      ]
+    },
+    {
+      "concept": "Voigt-Reuss-Hill averaging",
+      "definition": "A set of three methods for computing effective elastic moduli of a multi-phase aggregate. Voigt assumes uniform strain (upper bound), Reuss assumes uniform stress (lower bound), and Hill takes their arithmetic mean as a practical estimate.",
+      "physical_intuition": "Imagine squeezing a rock made of stiff and soft minerals. If all grains deform by the same amount (Voigt), the stiff grains bear more stress and the average stiffness is high. If all grains bear the same stress (Reuss), the soft grains deform more and the average stiffness is low. Reality is somewhere in between, and the Hill average is a reasonable compromise. The Hashin-Shtrikman bounds provide a tighter bracket by considering spherical inclusion geometries.",
+      "common_misconceptions": [
+        "Applying Voigt/Reuss/Hill to density -- density averaging is exact (volume-weighted) and does not require these bounds.",
+        "Assuming all three methods give similar results -- when phases have very different moduli (e.g., melt inclusions), the Voigt-Reuss spread can be enormous.",
+        "Using volume fractions when the averaging assumes molar or weight fractions -- the Voigt/Reuss formulas as implemented in this codebase use volume fractions, which is the standard in mineral physics."
+      ]
+    }
+  ],
+  "key_references": [
+    {
+      "author": "Ringwood, A.E.",
+      "year": 1962,
+      "title": "A model for the upper mantle",
+      "journal": "Journal of Geophysical Research, 67, 857-867",
+      "why_essential": "Introduced the pyrolite model for the upper mantle composition, which remains the standard reference composition for interpreting mantle seismic velocities. The concept that the upper mantle has a composition that can produce both basaltic melt and residual harzburgite is foundational to mantle petrology."
+    },
+    {
+      "author": "Hill, R.",
+      "year": 1952,
+      "title": "The elastic behaviour of a crystalline aggregate",
+      "journal": "Proceedings of the Physical Society A, 65, 349-354",
+      "why_essential": "Proposed the arithmetic mean of the Voigt and Reuss bounds as a practical estimate for aggregate elastic properties. This VRH average remains the most widely used mixing method in mineral physics for computing seismic velocities of mantle rocks."
+    },
+    {
+      "author": "Hashin, Z. and Shtrikman, S.",
+      "year": 1963,
+      "title": "A variational approach to the theory of the elastic behaviour of multiphase materials",
+      "journal": "Journal of the Mechanics and Physics of Solids, 11, 127-140",
+      "why_essential": "Derived rigorous bounds on the effective elastic moduli of multi-phase composites that are tighter than the Voigt-Reuss bounds. The Hashin-Shtrikman bounds represent the best possible estimates without knowledge of the microstructure, and are implemented as the HS option in MixtureCalculator."
+    },
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2011,
+      "title": "Thermodynamics of mantle minerals - II. Phase equilibria",
+      "journal": "Geophysical Journal International, 184, 1180-1213",
+      "why_essential": "Provides the self-consistent thermodynamic framework and mineral database used to compute individual mineral properties before mixing. The volume fractions in the predefined rocks are guided by the phase equilibrium calculations in this paper."
+    },
+    {
+      "author": "Watt, J.P., Davies, G.F., and O'Connell, R.J.",
+      "year": 1976,
+      "title": "The elastic properties of composite materials",
+      "journal": "Reviews of Geophysics and Space Physics, 14, 541-563",
+      "why_essential": "Comprehensive review of elastic averaging methods applied to geological materials, including detailed derivations and comparisons of Voigt, Reuss, Hill, and Hashin-Shtrikman approaches. The reference cited in the MixtureCalculator implementation for the HS bounds."
+    },
+    {
+      "author": "Irifune, T. and Ringwood, A.E.",
+      "year": 1993,
+      "title": "Phase transformations in subducted oceanic crust and buoyancy relationships at depths of 600-800 km in the mantle",
+      "journal": "Earth and Planetary Science Letters, 117, 101-110",
+      "why_essential": "Determined the mineral assemblages in subducted MORB at transition zone and lower mantle pressures through multi-anvil experiments, providing the experimental basis for the MORB composition in the predefined rocks database."
+    }
+  ],
+  "worked_examples": [
+    {
+      "problem": "Compute the Hill-averaged bulk modulus and shear modulus for a simplified pyrolite at ambient conditions (P = 0 GPa, T = 300 K), given the following mineral properties: Forsterite (K = 128 GPa, G = 82 GPa, f = 0.60), Enstatite (K = 107 GPa, G = 77 GPa, f = 0.15), Diopside (K = 114 GPa, G = 67 GPa, f = 0.15), Pyrope (K = 171 GPa, G = 92 GPa, f = 0.10).",
+      "solution_approach": "1. Voigt average for K: K_V = 0.60*128 + 0.15*107 + 0.15*114 + 0.10*171 = 76.8 + 16.05 + 17.1 + 17.1 = 127.05 GPa. 2. Reuss average for K: K_R = 1/(0.60/128 + 0.15/107 + 0.15/114 + 0.10/171) = 1/(0.004688 + 0.001402 + 0.001316 + 0.000585) = 1/0.007990 = 125.16 GPa. 3. Hill average: K_H = (127.05 + 125.16)/2 = 126.10 GPa. 4. Voigt average for G: G_V = 0.60*82 + 0.15*77 + 0.15*67 + 0.10*92 = 49.2 + 11.55 + 10.05 + 9.2 = 80.0 GPa. 5. Reuss for G: G_R = 1/(0.60/82 + 0.15/77 + 0.15/67 + 0.10/92) = 1/(0.007317 + 0.001948 + 0.002239 + 0.001087) = 1/0.012591 = 79.42 GPa. 6. Hill: G_H = (80.0 + 79.42)/2 = 79.71 GPa.",
+      "numerical_values": {
+        "K_Voigt_GPa": 127.05,
+        "K_Reuss_GPa": 125.16,
+        "K_Hill_GPa": 126.10,
+        "G_Voigt_GPa": 80.0,
+        "G_Reuss_GPa": 79.42,
+        "G_Hill_GPa": 79.71
+      },
+      "interpretation": "The Voigt-Reuss spread is small (about 2 GPa for K and 0.6 GPa for G), indicating that the constituent minerals have relatively similar elastic moduli. This is typical for upper mantle assemblages where the dominant phases (olivine, pyroxenes, garnet) have moduli within a factor of ~1.5. The Hill average K ~ 126 GPa and G ~ 80 GPa are consistent with seismological estimates for the shallow upper mantle."
+    },
+    {
+      "problem": "Compare the aggregate Vp and Vs of pyrolite versus harzburgite at P = 10 GPa, T = 1500 K, using the Hill average. Assume: Pyrolite aggregate (rho = 3550 kg/m^3, K_H = 165 GPa, G_H = 105 GPa); Harzburgite aggregate (rho = 3500 kg/m^3, K_H = 162 GPa, G_H = 108 GPa). [uncertain]",
+      "solution_approach": "1. For pyrolite: Vp = sqrt((K + 4G/3)/rho) = sqrt((165e9 + 4*105e9/3)/3550) = sqrt((165e9 + 140e9)/3550) = sqrt(305e9/3550) = sqrt(8.592e7) = 9272 m/s. Vs = sqrt(G/rho) = sqrt(105e9/3550) = sqrt(2.958e7) = 5439 m/s. 2. For harzburgite: Vp = sqrt((162e9 + 4*108e9/3)/3500) = sqrt((162e9 + 144e9)/3500) = sqrt(306e9/3500) = sqrt(8.743e7) = 9350 m/s. Vs = sqrt(108e9/3500) = sqrt(3.086e7) = 5555 m/s.",
+      "numerical_values": {
+        "Pyrolite_Vp_m_s": 9272,
+        "Pyrolite_Vs_m_s": 5439,
+        "Harzburgite_Vp_m_s": 9350,
+        "Harzburgite_Vs_m_s": 5555,
+        "Delta_Vp_percent": 0.84,
+        "Delta_Vs_percent": 2.13
+      },
+      "interpretation": "Harzburgite is slightly faster than pyrolite (by ~0.8% in Vp and ~2.1% in Vs) because depleted harzburgite has more olivine and less of the softer clinopyroxene and garnet. This velocity difference is on the order of what seismology can resolve, and it provides one mechanism for lateral velocity heterogeneity in the upper mantle: regions with more depleted (harzburgitic) material appear as fast anomalies. [uncertain]"
+    },
+    {
+      "problem": "A lower mantle peridotite consists of 75% bridgmanite (Mg-Perovskite), 17% ferropericlase (Periclase), and 8% Ca-perovskite. At P = 50 GPa, T = 2000 K, the individual mineral properties are approximately: Bridgmanite (K = 310 GPa, G = 195 GPa, rho = 4600 kg/m^3), Periclase (K = 230 GPa, G = 140 GPa, rho = 4050 kg/m^3), Ca-perovskite (K = 290 GPa, G = 160 GPa, rho = 4350 kg/m^3). Compute the Hill-averaged aggregate properties. [uncertain]",
+      "solution_approach": "1. K_Voigt = 0.75*310 + 0.17*230 + 0.08*290 = 232.5 + 39.1 + 23.2 = 294.8 GPa. 2. K_Reuss = 1/(0.75/310 + 0.17/230 + 0.08/290) = 1/(0.002419 + 0.000739 + 0.000276) = 1/0.003434 = 291.2 GPa. 3. K_Hill = (294.8 + 291.2)/2 = 293.0 GPa. 4. G_Voigt = 0.75*195 + 0.17*140 + 0.08*160 = 146.25 + 23.8 + 12.8 = 182.85 GPa. 5. G_Reuss = 1/(0.75/195 + 0.17/140 + 0.08/160) = 1/(0.003846 + 0.001214 + 0.000500) = 1/0.005560 = 179.86 GPa. 6. G_Hill = (182.85 + 179.86)/2 = 181.4 GPa. 7. rho_agg = 0.75*4600 + 0.17*4050 + 0.08*4350 = 3450 + 688.5 + 348 = 4486.5 kg/m^3. 8. Vp = sqrt((293e9 + 4*181.4e9/3)/4486.5) = sqrt(534.9e9/4486.5) = sqrt(1.192e8) = 10917 m/s. 9. Vs = sqrt(181.4e9/4486.5) = sqrt(4.044e7) = 6359 m/s.",
+      "numerical_values": {
+        "K_Hill_GPa": 293.0,
+        "G_Hill_GPa": 181.4,
+        "rho_agg_kg_m3": 4486.5,
+        "Vp_m_s": 10917,
+        "Vs_m_s": 6359
+      },
+      "interpretation": "The lower mantle peridotite at 50 GPa has substantially higher moduli and density than upper mantle pyrolite, consistent with the monotonic increase of seismic velocities with depth in PREM. The Voigt-Reuss spread (~3.5 GPa for K, ~3 GPa for G) is small relative to the absolute values, indicating that the HS bounds would not add much additional constraint. The bridgmanite-dominated composition (75% by volume) means the aggregate properties are close to those of bridgmanite alone. [uncertain]"
+    }
+  ],
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch04 Elastic Moduli and Seismic Velocities",
+      "connection_type": "prerequisite",
+      "explanation": "The elastic moduli (K and G) and seismic velocities (Vp, Vs) computed for individual minerals are the inputs to the mixing calculations. Understanding how these moduli are defined and how they relate to seismic wave speeds is essential before computing aggregate rock properties."
+    },
+    {
+      "related_chapter": "Ch05 The Stixrude-Lithgow-Bertelloni Formulation",
+      "connection_type": "prerequisite",
+      "explanation": "The SLB2011 equation of state provides the framework for computing individual mineral properties (density, moduli, velocities) at high P-T conditions. The RockCalculator calls MieGruneisenEOSOptimizer for each mineral before applying the mixing scheme."
+    },
+    {
+      "related_chapter": "Ch07 SLB2011 Mineral Database",
+      "connection_type": "prerequisite",
+      "explanation": "The mineral parameters referenced in PredefinedRocks (forsterite, enstatite, diopside, pyrope, bridgmanite, etc.) come from the SLB2011 endmember database. The MineralDatabase.GetByName() calls connect rock definitions to specific EOS parameter sets."
+    },
+    {
+      "related_chapter": "Ch10 Solid Solutions and Chemical Mixing",
+      "connection_type": "prerequisite",
+      "explanation": "Real mantle minerals are solid solutions (e.g., (Mg,Fe)2SiO4 olivine). The RockMineralEntry can hold a SolidSolution and SolutionComposition, allowing rocks to be built from solid solutions rather than pure endmembers for more realistic modeling."
+    },
+    {
+      "related_chapter": "Ch12 Gibbs Free Energy and Phase Stability",
+      "connection_type": "extension",
+      "explanation": "The EquilibriumAggregateCalculator uses Gibbs free energy minimization (GibbsMinimizer) to determine equilibrium phase proportions before applying mechanical mixing. This connects rock composition to phase equilibrium thermodynamics."
+    },
+    {
+      "related_chapter": "Ch13 Velocity Profiles and PREM Comparison",
+      "connection_type": "application",
+      "explanation": "The ultimate purpose of defining rock compositions is to compute depth profiles of density and seismic velocity that can be compared with seismological reference models like PREM. The VProfileCalculator uses RockCalculator along a P-T geotherm to produce these profiles."
+    },
+    {
+      "related_chapter": "Ch08 Landau Phase Transitions",
+      "connection_type": "prerequisite",
+      "explanation": "Some minerals in the rock assemblage (e.g., quartz/stishovite in MORB) have Landau phase transition corrections that affect their individual properties. These corrections propagate through the mixing calculation to affect aggregate rock properties."
+    }
+  ],
+  "computational_methods": "The RockCalculator is the central class for computing aggregate properties of multi-mineral rocks. Its constructor takes a RockComposition, pressure, temperature, and MixtureMethod. The Calculate() method dispatches to either CalculateMechanical() (fixed proportions) or CalculateEquilibrium() (Gibbs-minimized proportions).\n\nIn CalculateMechanical(), the algorithm proceeds in three steps. First, for each mineral in Rock.Minerals, it creates a MieGruneisenEOSOptimizer with the mineral's parameters and the specified P-T conditions, calls ExecOptimize() to find the equilibrium volume and compute all thermodynamic properties, and exports the results as a ResultSummary. Second, the volume ratios are normalized so they sum to 1.0 (handling the case where the user-specified ratios do not exactly sum to unity). Third, the normalized (ratio, result) pairs are passed to MixtureCalculator, which applies the selected averaging method.\n\nThe MixtureCalculator implements four mixing schemes. VoigtAverage() computes volume-weighted arithmetic means of K_T, K_S, and G, with density computed as the volume-weighted average (weighted by both volume fraction and molar volume). ReussAverage() computes the harmonic mean: K_R = 1/sum(f_i/K_i). HillAverage() simply averages the Voigt and Reuss results. HashinShtrikmanAverage() implements the lower bounds using the softest phase as reference, computing zeta_K = 4*G_min/3 and zeta_G = G_min*(9*K_min+8*G_min)/(6*(K_min+2*G_min)), then applying K_HS = (sum(f_i/(K_i+zeta_K)))^(-1) - zeta_K and similarly for G.\n\nAll methods include input validation through the IsNotCalculatable check, which verifies that volume fractions are in [0,1], that they sum to at most 1.01, and that all minerals are evaluated at the same P-T conditions. The computational cost is dominated by the N calls to MieGruneisenEOSOptimizer (each requiring iterative volume optimization), while the mixing step itself is O(N) arithmetic. For the four predefined rocks with 2-4 minerals, a single calculation completes in milliseconds.\n\nThe EquilibriumAggregateCalculator extends this by first calling GibbsMinimizer.Minimize() to re-equilibrate phase proportions and solid solution compositions at each P-T point. This is significantly more expensive as it involves constrained optimization of the total Gibbs free energy with respect to phase amounts and compositions. The result is a PhaseAssemblage with updated amounts, which is then processed through the same mechanical mixing pipeline.",
+  "open_questions": [
+    "How sensitive are aggregate seismic velocities to the assumed volume fractions of minor phases (e.g., Ca-perovskite in the lower mantle), and can seismology meaningfully constrain these proportions?",
+    "Should the predefined rock compositions include iron partitioning among coexisting phases (e.g., Fe-Mg exchange between olivine and garnet) rather than using pure Mg endmembers?",
+    "How do grain size and texture (preferred orientation) affect the applicability of isotropic Voigt-Reuss-Hill averaging, particularly in deformed mantle regions with strong lattice preferred orientation?",
+    "Can the Hashin-Shtrikman upper and lower bounds be tightened further for mantle-relevant mineralogies using information about grain geometry or spatial correlations between phases?",
+    "How should metastable phases (e.g., metastable olivine in cold subducting slabs that has not yet transformed to wadsleyite) be handled in rock composition models -- as fixed mechanical mixtures or with kinetically modified equilibrium calculations?",
+    "What is the most appropriate mixing scheme for partially molten rocks where the melt fraction is small (1-5%) but the melt has dramatically different elastic properties from the solid phases?"
+  ],
+  "exercise_suggestions": [
+    "Compute the Voigt, Reuss, and Hill averages for the predefined Pyrolite composition at P = 0 GPa, T = 300 K using the SLB2011 mineral database values. Plot the three estimates as a bar chart and discuss which is likely most accurate.",
+    "For a two-phase mixture of forsterite and periclase, plot K_Hill and G_Hill as a function of periclase volume fraction (0 to 1) at P = 25 GPa, T = 1800 K. At what volume fraction does the aggregate modulus change most rapidly?",
+    "Construct a lower mantle assemblage with bridgmanite, ferropericlase, and Ca-perovskite. Vary the Mg/Fe ratio in ferropericlase (as a solid solution) and examine how the aggregate Vp and Vs change. What is the effect of 20% iron in ferropericlase versus pure periclase?",
+    "Compare pyrolite and MORB (eclogite) aggregate velocities along a 1600 K adiabatic geotherm from 0 to 25 GPa. At what depth is the velocity contrast greatest? Can this explain seismic observations of subducted slabs?",
+    "Implement the Hashin-Shtrikman upper bound (using the stiffest phase as reference) and compare it with the lower bound already in MixtureCalculator. How wide is the HS bracket for pyrolite at different depths?",
+    "Export a custom rock composition as JSON using RockComposition.ExportJson(), modify the volume fractions in the JSON file, re-import it using ImportJson(), and verify the aggregate properties change as expected.",
+    "Using the EquilibriumAggregateCalculator, compute pyrolite aggregate velocities along a geotherm with and without equilibrium re-calculation. At which P-T conditions do the two approaches diverge most?",
+    "Add a fifth mineral (e.g., spinel at 5% volume fraction) to the Pyrolite composition and recompute aggregate properties. How much does the addition of a minor phase affect Vp and Vs?"
+  ],
+  "figure_suggestions": [
+    {
+      "description": "Bar chart comparing aggregate K and G for the four predefined rock compositions (Pyrolite, Harzburgite, MORB, Lower Mantle Peridotite) at reference conditions, with Voigt/Reuss error bars showing the uncertainty range",
+      "axes": {
+        "x": "Rock type (categorical: Pyrolite, Harzburgite, MORB, Lower Mantle Peridotite)",
+        "y": "Elastic modulus (GPa)"
+      },
+      "key_features": "Show K and G as grouped bars. Use error bars spanning from Reuss to Voigt bounds. The Hill average is the bar center. Highlight that the spread is small for upper mantle rocks but may be larger for MORB due to the contrast between garnet and stishovite."
+    },
+    {
+      "description": "Pie charts showing the mineral proportions of each predefined rock type, illustrating how composition varies between depleted, fertile, and subducted mantle material",
+      "axes": {
+        "x": "Not applicable (pie chart)",
+        "y": "Not applicable (pie chart)"
+      },
+      "key_features": "Four pie charts arranged in a 2x2 grid. Color-code minerals consistently across charts (e.g., olivine = green, pyroxene = blue, garnet = red, bridgmanite = orange). Annotate volume percentages. Show how olivine content decreases from harzburgite (80%) to pyrolite (60%) to MORB (0%)."
+    },
+    {
+      "description": "Aggregate Vp and Vs depth profiles for pyrolite along a 1600 K adiabatic geotherm, compared with PREM, showing how the rock composition model matches seismological observations",
+      "axes": {
+        "x": "Depth (km, range 0-2900) or Pressure (GPa, range 0-135)",
+        "y": "Seismic velocity (km/s, range 4-14)"
+      },
+      "key_features": "Plot Vp and Vs as solid lines for pyrolite, with PREM shown as dashed reference lines. Mark the 410-km and 660-km discontinuities where phase transitions cause velocity jumps. Show the Voigt-Reuss envelope as a shaded band around the Hill average."
+    },
+    {
+      "description": "Schematic diagram showing the RockCalculator workflow: from RockComposition through individual mineral EOS calculations to MixtureCalculator and aggregate result",
+      "axes": {
+        "x": "Not applicable (flowchart)",
+        "y": "Not applicable (flowchart)"
+      },
+      "key_features": "Show the data flow: RockComposition (list of minerals + volume fractions) -> for each mineral, MieGruneisenEOSOptimizer computes ResultSummary -> normalize volume fractions -> MixtureCalculator applies Voigt/Reuss/Hill/HS -> aggregate ResultSummary with density, K, G, Vp, Vs."
+    },
+    {
+      "description": "Comparison of Voigt, Reuss, Hill, and Hashin-Shtrikman estimates for aggregate K as a function of the volume fraction of a second phase in a binary mixture, illustrating the bounds hierarchy",
+      "axes": {
+        "x": "Volume fraction of phase 2 (0 to 1)",
+        "y": "Effective bulk modulus K (GPa)"
+      },
+      "key_features": "Use two minerals with contrasting K values (e.g., periclase K~160 GPa and stishovite K~310 GPa). Show Voigt as the top curve, Reuss as the bottom curve, Hill in the middle, and HS lower/upper bounds between Voigt and Reuss. Highlight that HS bounds are tighter than Voigt-Reuss."
+    }
+  ],
+  "historical_context": "The concept of defining mantle composition in terms of mineral volume fractions traces back to the pioneering work of A.E. Ringwood in the early 1960s. Ringwood (1962) proposed the pyrolite model -- a name derived from 'pyroxene-olivine rock' -- as a hypothetical composition for the upper mantle that could produce both basaltic magma (by partial melting) and the residual peridotite observed in ophiolites and xenoliths. This unifying concept replaced earlier models that treated the oceanic crust and underlying mantle as compositionally unrelated, and it established the framework for comparing mineral physics calculations with seismological observations.\n\nThe mechanical averaging methods used to compute aggregate elastic properties were developed in the materials science and mechanics communities during the mid-20th century. Voigt (1928) proposed the iso-strain (uniform strain) bound, and Reuss (1929) proposed the iso-stress (uniform stress) bound, establishing the widest possible range for effective moduli of a composite material. Hill (1952) suggested taking the arithmetic mean of these two bounds as a practical estimate, an approach that became the standard in mineral physics despite lacking rigorous justification. Hashin and Shtrikman (1963) derived tighter variational bounds that account for the spherical symmetry of the inclusion geometry, representing a significant advance in composite mechanics.\n\nThe application of these mixing theories to mantle rocks accelerated in the 1970s and 1980s as high-pressure experimental techniques improved. Watt, Davies, and O'Connell (1976) provided an influential review that systematically applied Voigt, Reuss, Hill, and Hashin-Shtrikman methods to geological materials, establishing the conventions used in modern mineral physics software. The development of self-consistent thermodynamic databases like SLB2011 by Stixrude and Lithgow-Bertelloni (2005, 2011) enabled computation of individual mineral properties across the full mantle P-T range, making it possible for the first time to compute aggregate rock properties along a geotherm and compare directly with PREM and other seismological reference models. Modern codes like BurnMan and the ThermoElasticCalculator implement these mixing schemes as standard computational tools, bridging the gap between laboratory measurements of individual minerals and seismological observations of Earth's interior.",
+  "uncertain": [
+    "worked_examples[1].problem",
+    "worked_examples[1].numerical_values",
+    "worked_examples[1].interpretation",
+    "worked_examples[2].problem",
+    "worked_examples[2].numerical_values",
+    "worked_examples[2].interpretation"
+  ]
+}

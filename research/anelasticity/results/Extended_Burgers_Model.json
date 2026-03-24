@@ -1,0 +1,176 @@
+{
+  "summary": "The Extended Burgers Model is a viscoelastic rheological model that describes high-temperature background dissipation (attenuation) in polycrystalline olivine. It extends the classical Burgers model (a series combination of Maxwell and Kelvin-Voigt elements) by adding a continuous distribution of anelastic relaxation times, capturing both the high-frequency absorption band and the low-frequency viscous (Maxwell) creep. The Jackson & Faul (2010) parameterization provides a complete description of Q(T, P, f, d) for the upper mantle, enabling conversion of laboratory-measured mechanical properties to seismic frequencies and mantle conditions.",
+
+  "key_papers": [
+    {
+      "author": "Jackson, I. & Faul, U. H.",
+      "year": 2010,
+      "title": "Grainsize-sensitive viscoelastic relaxation in olivine: Towards a robust laboratory-based model for seismological application",
+      "journal": "Physics of the Earth and Planetary Interiors",
+      "volume": 183,
+      "pages": "151-163",
+      "doi": "10.1016/j.pepi.2010.09.005"
+    },
+    {
+      "author": "Faul, U. H. & Jackson, I.",
+      "year": 2015,
+      "title": "Transient creep and strain energy dissipation: An experimental perspective",
+      "journal": "Annual Review of Earth and Planetary Sciences",
+      "volume": 43,
+      "pages": "541-569",
+      "doi": "10.1146/annurev-earth-060313-054732"
+    },
+    {
+      "author": "Jackson, I., Fitz Gerald, J. D., Faul, U. H., & Tan, B. H.",
+      "year": 2002,
+      "title": "Grain-size-sensitive seismic wave attenuation in polycrystalline olivine",
+      "journal": "Journal of Geophysical Research",
+      "volume": 107,
+      "doi": "10.1029/2001JB001225"
+    },
+    {
+      "author": "McCarthy, C., Takei, Y., & Hiraga, T.",
+      "year": 2011,
+      "title": "Experimental study of attenuation and dispersion over a broad frequency range: 2. The universal scaling of polycrystalline materials",
+      "journal": "Journal of Geophysical Research",
+      "volume": 116,
+      "doi": "10.1029/2011JB008384"
+    },
+    {
+      "author": "Sundberg, M. & Cooper, R. F.",
+      "year": 2010,
+      "title": "A composite viscoelastic model for incorporating grain boundary sliding and transient diffusion creep; correlating creep and attenuation responses for materials with a fine grain size",
+      "journal": "Philosophical Magazine",
+      "volume": 90,
+      "pages": "2817-2840",
+      "doi": "10.1080/14786431003746656"
+    },
+    {
+      "author": "Lau, H. C. P. & Faul, U. H.",
+      "year": 2019,
+      "title": "Anelasticity from seismic to tidal timescales: Theory and observations",
+      "journal": "Earth and Planetary Science Letters",
+      "volume": 508,
+      "pages": "18-29",
+      "doi": "10.1016/j.epsl.2018.12.009"
+    },
+    {
+      "author": "Richards, F. D., Hoggard, M. J., Cowton, L. R., & White, N. J.",
+      "year": 2020,
+      "title": "Reassessing the thermal structure of oceanic lithosphere with revised global inventories of basement depths and heat flow measurements",
+      "journal": "Journal of Geophysical Research: Solid Earth",
+      "volume": 125,
+      "doi": "10.1029/2019JB018784"
+    },
+    {
+      "author": "Yamauchi, H. & Takei, Y.",
+      "year": 2016,
+      "title": "Polycrystal anelasticity at near-solidus temperatures",
+      "journal": "Journal of Geophysical Research: Solid Earth",
+      "volume": 121,
+      "pages": "7790-7820",
+      "doi": "10.1002/2016JB013316"
+    }
+  ],
+
+  "physical_mechanism": "The Extended Burgers Model captures two principal dissipation mechanisms in polycrystalline olivine at high temperatures. (1) Elastically-accommodated grain-boundary sliding (GBS): at short timescales, grain boundaries slide with elastic accommodation, producing a broad absorption band characterized by a continuous distribution of relaxation times. This is the dominant mechanism at seismic frequencies for typical mantle grain sizes and temperatures. The distribution of relaxation times arises from the heterogeneous stress field at grain boundaries and the spectrum of grain-boundary geometries. (2) Diffusion-assisted viscous relaxation (Maxwell element): at longer timescales, steady-state diffusion creep (Coble or Nabarro-Herring creep) provides a viscous response represented by the Maxwell dashpot. The transition between elastically-accommodated and diffusion-accommodated GBS produces the characteristic monotonic background dissipation observed experimentally. Dislocation-related mechanisms may also contribute at high stress or high temperature but are not explicitly included in the standard parameterization.",
+
+  "mathematical_formulation": "The Extended Burgers Model is defined through its creep function J(t) or equivalently the complex compliance J*(omega). The complex compliance is: J*(omega) = J_U + J_1 * Delta(omega) - i/(omega * eta_M), where J_U = 1/G_U is the unrelaxed compliance, J_1 * Delta(omega) represents the distributed anelastic (transient) response, and eta_M is the Maxwell (steady-state) viscosity.\n\nThe anelastic absorption band is parameterized with a distribution of relaxation times D(tau): Delta(omega) = integral from tau_L to tau_H of D(tau) / (1 + i*omega*tau) * d(ln tau), where D(tau) = alpha * tau^alpha * (tau_H^(-alpha) - tau_L^(-alpha))^(-1) for a power-law distribution (monotonic background), with alpha being the frequency exponent.\n\nDissipation Q^(-1) = Im(J*) / Re(J*), and the real shear modulus M(omega) = 1/Re(J*).\n\nThe relaxation times scale with temperature, pressure, and grain size as: tau(T,P,d) = tau_0 * (d/d_ref)^m * exp[(E* + P*V*) / (R*T)] * exp[-(E* + P_ref*V*) / (R*T_ref)], where d is grain size, m is the grain-size exponent, E* is activation energy, V* is activation volume, T_ref and P_ref are reference conditions.\n\nThe Maxwell viscosity similarly scales: eta_M = eta_0 * (d/d_ref)^m_v * exp[(E* + P*V*) / (R*T)].\n\nThe velocity correction is obtained from: V(omega)/V_U = sqrt(Re(J*) / J_U)^(-1) = [M(omega)/G_U]^(1/2), where V_U is the unrelaxed (infinite frequency) velocity.",
+
+  "experimental_conditions": "The Jackson & Faul (2010) parameterization is based on forced-oscillation experiments on melt-free sol-gel-derived polycrystalline olivine (Fo90). Typical conditions: temperature range 800-1300 deg C (1073-1573 K); confining pressure 200 MPa (gas-medium apparatus); oscillation periods 1-1000 s (frequencies 0.001-1 Hz, bridging the seismic band); grain sizes from ~3 to ~165 micrometers (with most data at ~2-30 micrometers); strain amplitudes ~10^(-5) to 10^(-4) (within the linear viscoelastic regime). Measurements use torsional forced-oscillation technique with low-frequency mechanical spectroscopy. Samples are synthetic, nominally melt-free, and well-characterized for grain size distribution. Some studies extend to higher pressures using multi-anvil apparatus (e.g., Faul & Jackson 2015 review).",
+
+  "key_parameters": [
+    {
+      "name": "alpha (frequency exponent)",
+      "symbol": "alpha",
+      "value": "0.274",
+      "unit": "dimensionless",
+      "description": "Exponent controlling the slope of the absorption band (Q ~ f^alpha in the high-Q regime)"
+    },
+    {
+      "name": "Activation energy",
+      "symbol": "E*",
+      "value": "505 (anelastic), 505 (viscous)",
+      "unit": "kJ/mol",
+      "description": "Activation energy for both the anelastic relaxation times and steady-state viscosity"
+    },
+    {
+      "name": "Activation volume",
+      "symbol": "V*",
+      "value": "~10 (estimated for dry olivine)",
+      "unit": "cm^3/mol",
+      "description": "Activation volume for pressure dependence; not well constrained by the original experiments at 200 MPa. Typical assumed range is 6-12 cm^3/mol. [uncertain]"
+    },
+    {
+      "name": "Grain-size exponent (anelastic)",
+      "symbol": "m",
+      "value": "1.31",
+      "unit": "dimensionless",
+      "description": "Grain-size exponent for the anelastic relaxation time distribution scaling"
+    },
+    {
+      "name": "Grain-size exponent (viscous)",
+      "symbol": "m_v",
+      "value": "3.0",
+      "unit": "dimensionless",
+      "description": "Grain-size exponent for Maxwell viscosity (consistent with Coble diffusion creep)"
+    },
+    {
+      "name": "Reference grain size",
+      "symbol": "d_ref",
+      "value": "13.4",
+      "unit": "micrometers",
+      "description": "Reference grain size for the parameterization (geometric mean of experimental data)"
+    },
+    {
+      "name": "Reference temperature",
+      "symbol": "T_ref",
+      "value": "1200 deg C (1473 K)",
+      "unit": "K",
+      "description": "Reference temperature at which tau_0 and eta_0 are defined"
+    },
+    {
+      "name": "tau_L (lower relaxation time bound)",
+      "symbol": "tau_L",
+      "value": "~10^(-4) (at reference conditions)",
+      "unit": "s",
+      "description": "Lower bound of the relaxation time distribution at reference conditions"
+    },
+    {
+      "name": "tau_H (upper relaxation time bound)",
+      "symbol": "tau_H",
+      "value": "~10^7 (at reference conditions)",
+      "unit": "s",
+      "description": "Upper bound of the relaxation time distribution at reference conditions"
+    },
+    {
+      "name": "Delta (total anelastic relaxation strength)",
+      "symbol": "Delta",
+      "value": "~1.4 (J_1/J_U)",
+      "unit": "dimensionless",
+      "description": "Ratio of anelastic to elastic compliance, representing the total relaxation strength [uncertain]"
+    },
+    {
+      "name": "Unrelaxed shear modulus",
+      "symbol": "G_U",
+      "value": "Obtained from mineral physics (Stixrude & Lithgow-Bertelloni or similar EoS)",
+      "unit": "GPa",
+      "description": "High-frequency (unrelaxed) shear modulus of the aggregate, typically from independent elastic property databases"
+    }
+  ],
+
+  "velocity_correction_magnitude": "For typical upper mantle conditions (T = 1200-1400 deg C, P = 3-7 GPa, d = 1-10 mm, f = 0.01-1 Hz): Vs correction is approximately -1% to -5%, with the largest corrections in the asthenosphere where temperatures approach the solidus. Vp correction is smaller, typically -0.5% to -2%, because bulk attenuation (Q_K) is much weaker than shear attenuation (Q_mu). At 1300 deg C and 1 Hz with mm grain size, the Vs reduction is roughly 2-3% relative to the unrelaxed (anharmonic) value. Near the solidus (~1350-1400 deg C at shallow upper mantle pressures), Vs reductions can exceed 5%, substantially affecting interpretations. The Vp/Vs ratio increases with increasing anelasticity, which can mimic or obscure compositional signatures.",
+
+  "implications_for_composition": "Neglecting anelastic effects leads to systematic overestimation of mantle temperature when interpreting seismic velocities, because the observed low velocities are attributed entirely to thermal effects on the elastic moduli. This in turn biases compositional estimates: if temperature is overestimated, then a more depleted (high-Mg#) composition is needed to match the observed velocities, potentially masking chemical heterogeneity. Conversely, properly accounting for anelasticity reduces the inferred temperature anomaly and allows for more fertile (lower-Mg#) compositions. For the asthenosphere, where anelastic corrections are 2-5% in Vs, the compositional bias can be equivalent to several units in Mg# or significant differences in modal mineralogy. The Extended Burgers Model also predicts frequency-dependent velocities (dispersion), meaning that surface-wave and body-wave observations sample slightly different effective moduli. Ignoring this dispersion introduces inconsistencies when jointly inverting different seismic data types for temperature and composition.",
+
+  "limitations": "1. Activation volume (V*) is poorly constrained because the original experiments were conducted at a single confining pressure (~200 MPa). Values used in mantle applications (6-12 cm^3/mol) are borrowed from diffusion creep experiments and introduce significant uncertainty at depths > 200 km. 2. Grain size in the mantle is poorly known (estimates range from 0.1 mm to >10 mm) and strongly affects attenuation through the grain-size exponent; small uncertainties in d map to large uncertainties in Q. 3. The model was calibrated on melt-free synthetic olivine; the effects of partial melt, water (hydrogen), and secondary phases (pyroxenes, garnet) are not included in the standard parameterization. Melt even at < 1% fraction dramatically enhances dissipation. 4. Extrapolation from laboratory frequencies (mHz-Hz) to very low frequencies (tidal, post-glacial rebound timescales) or to exactly seismic frequencies requires caution, as the functional form of D(tau) may change. 5. The model assumes a single activation energy for both anelastic and viscous processes; recent work suggests these may differ. 6. Non-linear effects (stress-dependent attenuation due to dislocations) are not captured. 7. The applicability to the lower mantle (bridgmanite + ferropericlase) is entirely unconstrained experimentally.",
+
+  "implementation_notes": "To implement the Extended Burgers Model in ThermoElasticCalculator: (1) Inputs required: temperature T (K), pressure P (GPa), seismic frequency f (Hz) or angular frequency omega, grain size d (m), and unrelaxed elastic moduli G_U and K_U from the existing mineral physics EoS (e.g., Stixrude & Lithgow-Bertelloni database). (2) Compute the scaling factor for relaxation times: tau_scale = (d/d_ref)^m * exp[(E* + P*V*)/(R*T) - (E* + P_ref*V*)/(R*T_ref)]. (3) Shift the relaxation time bounds: tau_L' = tau_L * tau_scale, tau_H' = tau_H * tau_scale. Similarly scale eta_M. (4) Numerically integrate the complex compliance J*(omega) over the distribution D(tau) using Gauss-Legendre quadrature in ln(tau) space (typically 100-200 points suffice). (5) Compute Q_mu^(-1) = Im(J*)/Re(J*) and the relaxed shear modulus M = 1/Re(J*). (6) Apply the velocity correction: Vs_anelastic = Vs_unrelaxed * sqrt(M/G_U). (7) For Vp, assume Q_K >> Q_mu (bulk attenuation negligible) so that only the shear modulus is corrected: Vp_anelastic = sqrt((K_U + 4/3 * M) / rho). (8) The implementation should allow user-selectable grain size and offer the option to toggle anelasticity on/off for comparison. Acceptable approximation: for Q > ~50 (moderate attenuation), the velocity correction can be approximated as DeltaV/V ~ -(1/2) * Q^(-1) * cot(pi*alpha/2), avoiding the full numerical integration.",
+
+  "relevance_score": 5,
+
+  "uncertain": [
+    "key_parameters[2] (Activation volume V*)",
+    "key_parameters[9] (Delta, total anelastic relaxation strength)"
+  ]
+}

@@ -1,0 +1,372 @@
+{
+  "chapter_summary": "Shock compression experiments provide a unique window into the behavior of materials at extreme pressures and temperatures that are otherwise difficult to achieve in static experiments. When a shock wave passes through a material, it produces a discontinuous jump in pressure, density, temperature, and particle velocity. The Rankine-Hugoniot conservation relations -- derived from conservation of mass, momentum, and energy across the shock front -- constrain the thermodynamic states accessible via single-shock compression. The locus of all achievable shocked states for a given initial condition defines the Hugoniot curve P_H(V), which is distinct from both the isotherm and the isentrope because shock compression is an irreversible process that generates entropy and heats the material.\n\nThe Hugoniot curve can be computed from a known equation of state (such as the Mie-Gruneisen-Debye model of SLB2011) by solving the Rankine-Hugoniot energy balance: E_H - E_0 = 0.5*(P_H + P_0)*(V_0 - V_H). For each compressed volume V_H, one must find the temperature T_H at which the internal energy from the EOS matches the energy required by the Hugoniot relation. This is an implicit equation in temperature that must be solved iteratively, typically via bisection. The resulting Hugoniot temperature is always higher than the corresponding isotherm or isentrope at the same volume, because the irreversible work done by the shock wave converts kinetic energy into heat. At moderate compressions (V/V0 ~ 0.8), Hugoniot temperatures for silicates may reach 2000-3000 K, while at deep-mantle compressions (V/V0 ~ 0.65), temperatures can exceed 5000-10000 K.\n\nThe shock velocity Us and particle velocity Up are the directly measured quantities in shock experiments, and they are related to the Hugoniot pressure and density through the jump conditions. Empirically, most materials exhibit a remarkably linear Us-Up relationship: Us = c0 + s*Up, where c0 is the zero-pressure bulk sound velocity and s is a dimensionless slope typically between 1.0 and 2.0 for oxides and silicates. This linearity is a powerful constraint on the equation of state, as it implies a specific form for P(V) along the Hugoniot.\n\nThe isomeke concept, originally introduced in the context of elastic geobarometry, describes surfaces of equal volumetric strain between two phases. In the shock compression context, the IsomekeCalculator computes the residual pressure in an inclusion mineral trapped within a host mineral, which is found by matching the volumetric strains of host and inclusion from entrapment conditions to observation conditions. This method connects shock-wave data (which constrains EOS parameters) to petrological observations of mineral inclusions, providing an independent cross-check on deep Earth equations of state.\n\nShock compression data have been instrumental in constraining the equations of state of major mantle minerals (olivine, perovskite/bridgmanite, periclase, stishovite) at pressures exceeding 100 GPa. By comparing Hugoniot-derived density-pressure relations with seismologically observed density profiles (PREM), researchers can test whether a proposed mantle composition is consistent with both laboratory and geophysical data. The combination of shock experiments, static compression, and computational mineral physics provides the most robust constraints on the thermodynamic properties of Earth's deep interior.",
+
+  "prerequisite_knowledge": [
+    "Thermodynamics fundamentals: internal energy, enthalpy, entropy, and equations of state (Chapter 1)",
+    "Birch-Murnaghan equation of state and Eulerian finite strain theory (Chapter 1)",
+    "Mie-Gruneisen-Debye thermal pressure model and the self-consistent pressure solver (Chapters 2, 3, 6)",
+    "Gruneisen parameter and its volume dependence (Chapter 3)",
+    "Elastic moduli (K, G) and seismic wave velocities (Vp, Vs, Vphi) (Chapter 4)",
+    "SLB2011 mineral parameterization and the ThermoMineralParams framework (Chapter 5)",
+    "Conservation laws for compressible fluid dynamics (mass, momentum, energy)",
+    "Basic numerical methods: bisection root-finding, linear regression"
+  ],
+
+  "key_equations": [
+    {
+      "equation": "E_H - E_0 = \\frac{1}{2}(P_H + P_0)(V_0 - V_H)",
+      "name": "Rankine-Hugoniot energy conservation",
+      "variables": {
+        "E_H": "Internal energy on the Hugoniot at compressed state (kJ/mol)",
+        "E_0": "Internal energy at initial (unshocked) state (kJ/mol)",
+        "P_H": "Hugoniot pressure at compressed state (GPa)",
+        "P_0": "Initial pressure (GPa)",
+        "V_0": "Initial molar volume (cm^3/mol)",
+        "V_H": "Compressed molar volume on Hugoniot (cm^3/mol)"
+      },
+      "interpretation": "The energy deposited by the shock wave equals the area under the Rayleigh line in P-V space. This is the fundamental constraint that determines the Hugoniot: for each V_H, only one combination of P_H and T_H satisfies both this energy balance and the equation of state simultaneously. The factor of 1/2 arises because the shock does PdV work against both the initial and final pressures."
+    },
+    {
+      "equation": "\\rho_0 U_s = \\rho_H (U_s - U_p)",
+      "name": "Rankine-Hugoniot mass conservation (continuity)",
+      "variables": {
+        "\\rho_0": "Initial density (kg/m^3)",
+        "\\rho_H": "Shocked density (kg/m^3)",
+        "U_s": "Shock wave velocity (km/s)",
+        "U_p": "Particle velocity behind the shock front (km/s)"
+      },
+      "interpretation": "Mass flux must be conserved across the shock front. The unshocked material approaches the front at velocity Us (in the shock frame), while the shocked material recedes at Us - Up. This directly relates the compression ratio rho_H/rho_0 to the velocity ratio Up/Us."
+    },
+    {
+      "equation": "P_H - P_0 = \\rho_0 U_s U_p",
+      "name": "Rankine-Hugoniot momentum conservation",
+      "variables": {
+        "P_H": "Hugoniot pressure (GPa)",
+        "P_0": "Initial pressure (GPa)",
+        "\\rho_0": "Initial density (kg/m^3)",
+        "U_s": "Shock velocity (km/s)",
+        "U_p": "Particle velocity (km/s)"
+      },
+      "interpretation": "The pressure jump across the shock equals the rate of momentum change per unit area. This is the equation that directly connects the experimentally measured velocities (Us, Up) to the Hugoniot pressure. Combined with mass conservation, it gives P_H in terms of the measured quantities alone."
+    },
+    {
+      "equation": "U_p^2 = (P_H - P_0)(v_0 - v_H)",
+      "name": "Particle velocity from Hugoniot state",
+      "variables": {
+        "U_p": "Particle velocity (m/s)",
+        "P_H": "Hugoniot pressure (Pa)",
+        "v_0": "Initial specific volume (m^3/kg)",
+        "v_H": "Hugoniot specific volume (m^3/kg)"
+      },
+      "interpretation": "Derived by combining mass and momentum conservation. The particle velocity squared equals the product of the pressure jump and the specific volume change. This allows computation of Up from the EOS-derived Hugoniot curve P(V)."
+    },
+    {
+      "equation": "U_s = v_0 \\frac{P_H - P_0}{U_p}",
+      "name": "Shock velocity from Hugoniot state",
+      "variables": {
+        "U_s": "Shock velocity (m/s)",
+        "v_0": "Initial specific volume (m^3/kg)",
+        "P_H": "Hugoniot pressure (Pa)",
+        "U_p": "Particle velocity (m/s)"
+      },
+      "interpretation": "The shock velocity can be derived from the Hugoniot pressure and particle velocity. For a given EOS, this allows construction of the Us-Up relation from the computed Hugoniot curve."
+    },
+    {
+      "equation": "U_s = c_0 + s \\cdot U_p",
+      "name": "Linear Us-Up relation",
+      "variables": {
+        "U_s": "Shock velocity (km/s)",
+        "c_0": "Zero-pressure bulk sound velocity (km/s)",
+        "s": "Hugoniot slope parameter (dimensionless)",
+        "U_p": "Particle velocity (km/s)"
+      },
+      "interpretation": "An empirical relation observed for most condensed matter. The intercept c0 corresponds to the bulk sound speed at ambient conditions, and s encodes information about K' (the pressure derivative of the bulk modulus). For a BM3 EOS, s is approximately (K' + 1)/4. This linearity is remarkably robust and provides a simple two-parameter description of the Hugoniot."
+    },
+    {
+      "equation": "\\epsilon_{\\text{host}} = \\frac{V_{\\text{host}}^{\\text{obs}} - V_{\\text{host}}^{\\text{entrap}}}{V_{\\text{host}}^{\\text{entrap}}} = \\frac{V_{\\text{inc}}^{\\text{obs}} - V_{\\text{inc}}^{\\text{entrap}}}{V_{\\text{inc}}^{\\text{entrap}}} = \\epsilon_{\\text{inc}}",
+      "name": "Isomeke condition (equal volumetric strain)",
+      "variables": {
+        "\\epsilon_{\\text{host}}": "Volumetric strain of host mineral from entrapment to observation",
+        "\\epsilon_{\\text{inc}}": "Volumetric strain of inclusion mineral from entrapment to observation",
+        "V^{\\text{obs}}": "Volume at observation conditions",
+        "V^{\\text{entrap}}": "Volume at entrapment conditions"
+      },
+      "interpretation": "The isomeke condition states that the host and inclusion must undergo the same fractional volume change from entrapment to observation. Since the host is at ambient pressure but the inclusion is under residual stress, the inclusion pressure at observation conditions is the unknown to be determined by this constraint."
+    }
+  ],
+
+  "physical_concepts": [
+    {
+      "concept": "Shock wave and Hugoniot curve",
+      "definition": "A shock wave is a discontinuous compression front that propagates supersonically through a material. The Hugoniot curve is the locus of all thermodynamic states (P, V, T, E) that can be reached by a single shock from a given initial state.",
+      "physical_intuition": "Imagine hitting a mineral sample with a high-velocity impactor. The impact launches a pressure wave that steepens into a discontinuous shock front because higher-pressure regions travel faster than lower-pressure regions (nonlinear wave steepening). Behind the shock front, the material is simultaneously compressed and heated. The Hugoniot curve is NOT a thermodynamic path -- it is the set of final states achievable by shocks of different strengths. Each point on the Hugoniot corresponds to a different impact velocity.",
+      "common_misconceptions": [
+        "Confusing the Hugoniot with an isotherm or isentrope -- the Hugoniot is neither, because shock compression is irreversible and generates entropy at each point.",
+        "Thinking all points on the Hugoniot are reached simultaneously -- each point corresponds to a separate experiment with a different shock strength.",
+        "Assuming the Hugoniot temperature equals the isothermal compression temperature -- shock heating raises T far above the isotherm, especially at high compression."
+      ]
+    },
+    {
+      "concept": "Rankine-Hugoniot jump conditions",
+      "definition": "Three conservation equations (mass, momentum, energy) that relate the thermodynamic state ahead of and behind a steady shock front. They constrain the relationship between shock velocity Us, particle velocity Up, pressure P, density rho, and internal energy E.",
+      "physical_intuition": "The Rankine-Hugoniot conditions are simply Newton's laws and energy conservation applied to the control volume surrounding the shock front. In the shock's reference frame, material flows in at velocity Us and exits at Us - Up. The mass flux must be equal on both sides (continuity), the force equals the rate of momentum change (momentum conservation), and the work done on the material equals its energy gain (energy conservation). These three equations, combined with an equation of state, fully determine the shocked state.",
+      "common_misconceptions": [
+        "Thinking the jump conditions assume any particular equation of state -- they are purely kinematic/thermodynamic constraints, independent of the material's EOS.",
+        "Assuming steady-state shock conditions always apply -- real shocks can have finite rise times and may not reach steady state in thin samples.",
+        "Forgetting that the energy equation includes the PdV work term -- the 0.5*(P_H + P_0)*(V_0 - V_H) term is the area under the Rayleigh line, not the isentropic compression work."
+      ]
+    },
+    {
+      "concept": "Hugoniot temperature",
+      "definition": "The temperature reached by shock compression to a given volume. It is determined by solving the Rankine-Hugoniot energy balance using the equation of state to relate T to E at each volume.",
+      "physical_intuition": "A shock wave does irreversible work on the material, converting kinetic energy to internal (thermal) energy. The more the material is compressed, the more entropy is generated and the higher the temperature rises above the isentrope. At moderate compressions (V/V0 ~ 0.85), the Hugoniot temperature is only slightly above ambient for most silicates. But at strong compressions (V/V0 ~ 0.65), the temperature can reach thousands of Kelvin. This makes shock data complementary to static compression (DAC), where temperatures can be controlled independently.",
+      "common_misconceptions": [
+        "Assuming Hugoniot temperature can be measured directly -- in most shock experiments, only Us and Up are measured; temperature must be inferred from pyrometry or calculated from the EOS.",
+        "Thinking shock temperature is always very high -- at modest compressions, it may be only a few hundred K above ambient.",
+        "Ignoring that phase transitions absorb latent heat and reduce the Hugoniot temperature -- transitions like melting or polymorphic changes create kinks in the Hugoniot."
+      ]
+    },
+    {
+      "concept": "Us-Up linear relation and its significance",
+      "definition": "The empirical observation that shock velocity Us and particle velocity Up are linearly related (Us = c0 + s*Up) for most materials over a wide range of compression.",
+      "physical_intuition": "The linearity of Us-Up implies that the bulk modulus increases linearly with pressure along the Hugoniot. The intercept c0 is the bulk sound speed at zero pressure (measurable ultrasonically), providing an independent check. The slope s is related to the pressure derivative of the bulk modulus: for a BM3 EOS, s ~ (K' + 1)/4. Deviations from linearity signal phase transitions (melting, polymorphic transformations) or changes in the compression mechanism. This makes the Us-Up plot a sensitive diagnostic tool.",
+      "common_misconceptions": [
+        "Thinking the linearity is exact -- it is empirical and breaks down at very high or very low compressions, and at phase transitions.",
+        "Confusing c0 with the longitudinal wave velocity -- c0 is the bulk sound speed Vphi = sqrt(K/rho), not the P-wave velocity Vp.",
+        "Assuming s is constant for all phases of a material -- each crystallographic phase has its own Us-Up line, and transitions appear as kinks or offsets."
+      ]
+    },
+    {
+      "concept": "Isomeke and residual inclusion pressure",
+      "definition": "An isomeke is a surface in P-T space along which two coexisting phases experience equal volumetric strain. In elastic geobarometry, the isomeke condition determines the residual pressure in a mineral inclusion trapped within a host crystal.",
+      "physical_intuition": "When a mineral inclusion is trapped inside a host crystal at high P-T, both are at the same pressure. Upon exhumation to surface conditions, the host decompresses freely but the rigid host constrains the inclusion, preventing it from expanding to its free-volume value. The inclusion retains a residual pressure that depends on the difference in elastic properties between host and inclusion. The isomeke condition finds this residual pressure by requiring that both phases undergo the same fractional volume change -- if they did not, the inclusion would either detach from or fracture the host.",
+      "common_misconceptions": [
+        "Assuming the inclusion returns to ambient pressure upon exhumation -- it retains residual stress because the host acts as a pressure vessel.",
+        "Ignoring the difference between isotropic and anisotropic stress states -- the isomeke formulation assumes hydrostatic stress, which is a simplification for non-cubic inclusions.",
+        "Thinking the residual pressure depends only on the inclusion's properties -- it depends critically on the host's EOS as well, because the host controls how much the inclusion can expand."
+      ]
+    },
+    {
+      "concept": "Rayleigh line",
+      "definition": "The straight line connecting the initial state (P_0, V_0) to the final shocked state (P_H, V_H) in P-V space. Its slope is -rho_0^2 * Us^2.",
+      "physical_intuition": "The Rayleigh line represents the constraint imposed by momentum conservation. The shock wave can only access final states that lie on this line (for a given shock velocity). The intersection of the Rayleigh line with the Hugoniot curve gives the actual shocked state. The area under the Rayleigh line (the triangle in P-V space) equals the kinetic energy deposited, while the area under the Hugoniot curve to the same volume represents recoverable (PdV) work. The difference is the irreversible heating.",
+      "common_misconceptions": [
+        "Confusing the Rayleigh line with the actual compression path -- the material jumps discontinuously from initial to final state; the Rayleigh line is a geometric construction.",
+        "Thinking the Rayleigh line and Hugoniot are the same -- the Rayleigh line is straight; the Hugoniot is curved. They intersect at the initial and final states."
+      ]
+    }
+  ],
+
+  "key_references": [
+    {
+      "author": "McQueen, R.G., Marsh, S.P., Taylor, J.W., Fritz, J.N., and Carter, W.J.",
+      "year": 1970,
+      "title": "The equation of state of solids from shock wave studies",
+      "journal": "In: High-Velocity Impact Phenomena, Academic Press, 293-417",
+      "why_essential": "Classic comprehensive review of shock wave equation of state methods. Establishes the Us-Up framework, Hugoniot reduction procedures, and the Mie-Gruneisen approach to extracting isothermal EOS from Hugoniot data. The foundational reference for shock compression of geophysical materials."
+    },
+    {
+      "author": "Duffy, T.S. and Ahrens, T.J.",
+      "year": 1995,
+      "title": "Compressional sound velocity, equation of state, and constitutive response of shock-compressed magnesium oxide",
+      "journal": "Journal of Geophysical Research, 100, 529-542",
+      "why_essential": "Definitive shock compression study of MgO (periclase), a key lower mantle mineral. Provides Hugoniot data up to ~227 GPa and demonstrates the extraction of high-pressure elastic moduli from shock wave measurements."
+    },
+    {
+      "author": "Mosenfelder, J.L., Asimow, P.D., Frost, D.J., Rubie, D.C., and Ahrens, T.J.",
+      "year": 2009,
+      "title": "The MgSiO3 system at high pressure: Thermodynamic properties of perovskite, postperovskite, and melt from global inversion of shock and static compression data",
+      "journal": "Journal of Geophysical Research, 114, B01203",
+      "why_essential": "Combines shock and static compression data for MgSiO3 phases in a self-consistent thermodynamic framework. Demonstrates how Hugoniot data constrain EOS parameters for bridgmanite and post-perovskite, directly relevant to lower mantle mineralogy."
+    },
+    {
+      "author": "Akins, J.A., Luo, S.-N., Asimow, P.D., and Ahrens, T.J.",
+      "year": 2004,
+      "title": "Shock-induced melting of MgSiO3 perovskite and implications for melts in Earth's lowermost mantle",
+      "journal": "Geophysical Research Letters, 31, L14612",
+      "why_essential": "Demonstrates how shock temperature measurements constrain the melting curve of bridgmanite at core-mantle boundary pressures. Illustrates the power of combining Hugoniot temperature calculations with experimental data."
+    },
+    {
+      "author": "Anderson, O.L.",
+      "year": 1995,
+      "title": "Equations of State of Solids for Geophysics and Ceramic Science",
+      "journal": "Oxford University Press",
+      "why_essential": "Comprehensive textbook treatment of the Hugoniot and its relation to the Mie-Gruneisen EOS. Derives the Hugoniot-to-isotherm reduction procedure and discusses the role of the Gruneisen parameter in converting shock data to static EOS."
+    },
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2005,
+      "title": "Thermodynamics of mantle minerals - I. Physical properties",
+      "journal": "Geophysical Journal International, 162, 610-632",
+      "why_essential": "Provides the SLB2011 thermodynamic framework used by HugoniotCalculator. The Mie-Gruneisen-Debye EOS, including finite-strain-dependent Gruneisen parameter and Debye temperature, is the underlying model from which Hugoniot curves are computed."
+    }
+  ],
+
+  "worked_examples": [
+    {
+      "problem": "Compute the Hugoniot pressure and temperature for MgO periclase at V/V0 = 0.75 (25% compression). Use SLB2011 parameters: V0 = 11.24 cm^3/mol, K0 = 161 GPa, K0' = 3.8, theta0 = 767 K, gamma0 = 1.52, q0 = 1.5, n = 2, M = 40.30 g/mol. Initial conditions: T0 = 300 K, P0 = 0.0001 GPa.",
+      "solution_approach": "Step 1: Compute the Eulerian finite strain at V_H = 0.75 * 11.24 = 8.43 cm^3/mol. f = ((V0/VH)^(2/3) - 1)/2 = ((11.24/8.43)^(2/3) - 1)/2 ~ 0.086. Step 2: At T = 300 K, compute the cold pressure P_ref(f) using BM3. This gives approximately 85-95 GPa. The internal energy E_actual at 300 K is primarily cold compression energy. Step 3: Compute the Hugoniot energy required: E_H = E_0 + 0.5*(P_H + P_0)*(V_0 - V_H). Since P_H depends on T through thermal pressure, we need to iterate. Step 4: Use bisection on temperature. At T = 300 K, E_actual < E_Hugoniot (shock heating hasn't been accounted for). Increase T to add thermal energy. Bisect between 300 K and 20000 K. After ~30 iterations, converge to T_H ~ 1200-1600 K. Step 5: At the converged temperature, P_H ~ 95-105 GPa (cold pressure plus thermal pressure of ~5-10 GPa). Step 6: Compute shock velocities: Up = sqrt(dP * dv_specific) ~ 2.5-3.0 km/s, Us = v0 * dP / Up ~ 8-9 km/s.",
+      "numerical_values": {
+        "V_V0": 0.75,
+        "V_H_cm3_mol": 8.43,
+        "f_strain": 0.086,
+        "P_H_GPa": "~95-105",
+        "T_H_K": "~1200-1600",
+        "Us_km_s": "~8.5",
+        "Up_km_s": "~2.8",
+        "density_g_cm3": 4.78
+      },
+      "interpretation": "At 25% compression, MgO reaches approximately 100 GPa on the Hugoniot, which corresponds to mid-lower-mantle pressures. The Hugoniot temperature (~1400 K) is significantly above ambient but below typical mantle geotherm temperatures at this depth (~2500 K), illustrating that moderate shock compression does not produce extreme heating. The shock velocity (~8.5 km/s) exceeds the bulk sound speed of MgO at ambient conditions (~6.7 km/s), confirming supersonic propagation."
+    },
+    {
+      "problem": "Fit the linear Us-Up relation for MgO periclase from a computed Hugoniot curve with 20 points spanning V/V0 = 1.0 to 0.70. Determine c0 and s, and compare c0 with the known bulk sound speed of MgO.",
+      "solution_approach": "Step 1: Compute 20 Hugoniot points using HugoniotCalculator.ComputeHugoniot(nPoints=20, maxCompression=0.70). Step 2: For each point with Up > 0.1 km/s (filtering out the near-zero-compression points), record the (Up, Us) pair. Step 3: Apply linear least-squares regression: Us = c0 + s*Up. The FitUsUp method computes the slope s = (n*sum(Up*Us) - sum(Up)*sum(Us)) / (n*sum(Up^2) - sum(Up)^2) and intercept c0 = (sum(Us) - s*sum(Up)) / n. Step 4: Compare c0 with the ambient bulk sound speed Vphi = sqrt(K0/rho0) = sqrt(161e9 / 3585) ~ 6.7 km/s.",
+      "numerical_values": {
+        "c0_km_s": "~6.5-7.5",
+        "s_slope": "~1.3-1.8",
+        "Vphi_ambient_km_s": 6.7,
+        "n_points_used": "~15-18",
+        "K0_GPa": 161,
+        "rho0_kg_m3": 3585
+      },
+      "interpretation": "The fitted intercept c0 should be close to the ambient bulk sound speed of ~6.7 km/s, providing a consistency check between static (ultrasonic) and dynamic (shock) measurements. The slope s ~ 1.5 is related to the pressure derivative of the bulk modulus: s ~ (K' + 1)/4 = (3.8 + 1)/4 = 1.2, though the empirical s from the Hugoniot is typically somewhat larger due to thermal effects. The linear fit quality confirms that MgO does not undergo phase transitions in this compression range."
+    },
+    {
+      "problem": "Compute the residual inclusion pressure for quartz trapped in garnet (forsterite as proxy for host) at entrapment conditions of P = 3.0 GPa, T = 1000 K, measured at P_obs = 0.001 GPa, T_obs = 300 K.",
+      "solution_approach": "Step 1: Compute host volume at entrapment: use MieGruneisenEOSOptimizer for forsterite at (3.0 GPa, 1000 K) to get V_host_entrap. Step 2: Compute inclusion volume at entrapment: use optimizer for quartz at (3.0 GPa, 1000 K) to get V_inc_entrap. Step 3: Compute host volume at observation: optimizer for forsterite at (0.001 GPa, 300 K) gives V_host_obs. Step 4: Compute host volumetric strain: eps_host = (V_host_obs - V_host_entrap) / V_host_entrap. Since the host relaxes from 3 GPa to ambient, eps_host is positive (volume expansion). Step 5: Bisect on inclusion pressure P_inc at (P_inc, 300 K) to find the P_inc where eps_inc = eps_host. The inclusion cannot expand as much as the host because it is constrained, so P_inc > P_obs. Typical residual pressures for quartz-in-garnet are 0.3-1.0 GPa.",
+      "numerical_values": {
+        "P_entrap_GPa": 3.0,
+        "T_entrap_K": 1000,
+        "P_obs_GPa": 0.001,
+        "T_obs_K": 300,
+        "P_residual_GPa": "~0.3-0.8",
+        "bisection_tolerance_GPa": 1e-6,
+        "max_iterations": 200
+      },
+      "interpretation": "The residual inclusion pressure of ~0.5 GPa is measurable by Raman spectroscopy (the quartz 464 cm^-1 mode shifts by ~35 cm^-1/GPa). This residual pressure provides a direct constraint on the entrapment P-T conditions, which in turn records the metamorphic history of the rock. The connection to shock compression is that both methods rely on accurate EOS (constrained partly by shock data) to compute volumes at extreme conditions."
+    }
+  ],
+
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch01 Thermodynamics of Solids at High Pressure",
+      "connection_type": "prerequisite",
+      "explanation": "The BM3 equation of state and finite strain theory from Chapter 1 underpin the cold compression energy F_cold and the pressure computation P(f) that enter the Hugoniot energy balance. The VolumeToFinite conversion is used directly in HugoniotCalculator."
+    },
+    {
+      "related_chapter": "Ch02 Debye Model and Thermal Properties",
+      "connection_type": "prerequisite",
+      "explanation": "The Debye model provides the thermal internal energy E_Debye(T) that is essential for computing the total internal energy at each Hugoniot point. The temperature iteration in HugoniotCalculator adjusts T until the Debye thermal energy plus cold energy satisfies the Rankine-Hugoniot balance."
+    },
+    {
+      "related_chapter": "Ch03 Gruneisen Parameter and Anharmonicity",
+      "connection_type": "prerequisite",
+      "explanation": "The Gruneisen parameter gamma(V) determines how thermal energy converts to thermal pressure along the Hugoniot. Its volume dependence through q = dln(gamma)/dln(V) is critical for accurately computing Hugoniot temperatures at high compression."
+    },
+    {
+      "related_chapter": "Ch04 Elastic Moduli and Seismic Velocities",
+      "connection_type": "extension",
+      "explanation": "The bulk sound velocity c0 in the Us-Up relation connects shock data to the elastic moduli K and G measured by ultrasonic or Brillouin scattering methods. Shock-derived bulk moduli and their pressure derivatives complement static elasticity measurements."
+    },
+    {
+      "related_chapter": "Ch06 Mie-Gruneisen Equation of State Solver",
+      "connection_type": "prerequisite",
+      "explanation": "The MieGruneisenEOSOptimizer is used by IsomekeCalculator to compute volumes at arbitrary P-T conditions. The self-consistent pressure solver provides the thermodynamic states needed for the isomeke strain-matching calculation."
+    },
+    {
+      "related_chapter": "Ch15 PREM and Radial Earth Models",
+      "connection_type": "application",
+      "explanation": "Hugoniot-derived equations of state are compared with PREM density and velocity profiles to test proposed mantle compositions. Shock data at >100 GPa constrain lower mantle and core properties that overlap with PREM pressure range."
+    },
+    {
+      "related_chapter": "Ch28 Nonlinear Least Squares and Parameter Fitting",
+      "connection_type": "extension",
+      "explanation": "EOS parameters (K0, K', gamma0, q0) can be fitted to Hugoniot data using Levenberg-Marquardt optimization. The HugoniotCalculator forward model is called repeatedly in the fitting inner loop to match computed Hugoniot curves to experimental shock data."
+    },
+    {
+      "related_chapter": "Ch30 Geobarometry and Geothermometry",
+      "connection_type": "application",
+      "explanation": "The IsomekeCalculator is shared between shock compression analysis and elastic geobarometry. Accurate EOS parameters constrained by shock data improve the reliability of geobarometric pressure estimates from mineral inclusions."
+    }
+  ],
+
+  "computational_methods": "The HugoniotCalculator implements a two-step computational procedure for each point on the Hugoniot curve. The outer structure sweeps through compressed volumes from V0 down to V0 * maxCompression (default 0.6, i.e., 40% compression), generating nPoints (default 20) equally spaced volume steps.\n\nFor each volume V_H, the algorithm solves for the Hugoniot temperature using bisection root-finding on the Rankine-Hugoniot energy residual. The residual function is: R(T) = E_actual(V_H, T) - [E_0 + 0.5*(P_H(V_H,T) + P_0)*(V_0 - V_H)], where E_actual is the total internal energy from the SLB2011 EOS (cold compression energy F_cold plus Debye thermal energy Delta_E/1000), and the right-hand side is the energy required by the Hugoniot relation. The bisection bracket is [300 K, 20000 K], with convergence declared when |R| < 0.01 kJ/mol, and a maximum of 100 iterations. The best-residual tracking ensures that even if convergence is slow, the closest solution found is returned.\n\nAt each trial temperature within the bisection, a ThermoMineralParams object is constructed from the Eulerian finite strain f = ((V0/V_H)^(2/3) - 1)/2 and the trial temperature. This provides both the pressure P_H and the internal energy components (F_cold, Delta_E) needed for the residual evaluation. The construction of ThermoMineralParams internally evaluates the Debye function, Gruneisen parameter, and all strain-dependent quantities.\n\nShock velocities Us and Up are computed from the Rankine-Hugoniot jump conditions using specific volumes (per unit mass). The conversion chain is: molar volume (cm^3/mol) -> specific volume (cm^3/g) -> SI (m^3/kg), with pressure converted from GPa to Pa. Up = sqrt(dP * dv_specific) and Us = v0_specific * dP / Up, both converted to km/s.\n\nThe FitUsUp static method performs linear least-squares regression on points with Up > 0.1 km/s (filtering near-zero compression). Standard formulas for slope and intercept are used without weighting.\n\nThe IsomekeCalculator uses a different approach: it calls MieGruneisenEOSOptimizer at four P-T conditions (host at entrapment, inclusion at entrapment, host at observation, and iteratively inclusion at observation). The residual inclusion pressure is found by bisection on the inclusion pressure at observation conditions, matching the inclusion volumetric strain to the host volumetric strain. The bracket is [-1 GPa, 5 GPa] with tolerance 1e-6 GPa and maximum 200 iterations.\n\nPerformance: A full 20-point Hugoniot curve requires ~20 * 30 (bisection iterations) * 1 (ThermoMineralParams construction) evaluations, totaling roughly 600 EOS evaluations. This completes in milliseconds on modern hardware. The IsomekeCalculator requires ~200 * 1 MieGruneisenEOSOptimizer calls for the bisection, plus 3 fixed evaluations, also completing rapidly.",
+
+  "open_questions": [
+    "How accurately can SLB2011-derived Hugoniot curves reproduce experimental shock data for key mantle minerals, and what systematic biases arise from the 3rd-order BM truncation at extreme compressions (V/V0 < 0.6)?",
+    "Can phase transitions (e.g., melting, polymorphic changes) along the Hugoniot be detected and modeled within the current framework, or does the single-phase assumption of HugoniotCalculator limit its applicability?",
+    "What is the quantitative effect of the Gruneisen parameter's volume dependence (q parameter) on Hugoniot temperatures, and how do uncertainties in q propagate to temperature estimates?",
+    "How should the Hugoniot calculation be modified for porous starting materials (as used in some shock experiments), where the initial density is less than the crystal density?",
+    "Can the isomeke formulation be extended to handle anisotropic stress states in non-cubic inclusion-host systems, and what additional elastic information would be required?",
+    "How do preheated Hugoniot experiments (starting at elevated T0) constrain the thermal EOS differently from room-temperature Hugoniots, and can the HugoniotCalculator framework accommodate arbitrary initial temperatures?",
+    "What is the role of electronic contributions to the EOS (relevant above ~5000 K) that are not captured by the Debye model, and how do they affect Hugoniot temperature predictions at extreme compression?"
+  ],
+
+  "exercise_suggestions": [
+    "Compute the Hugoniot curve for MgO periclase from V/V0 = 1.0 to 0.65 using HugoniotCalculator. Plot P vs V/V0 and compare with the 300 K isotherm. At what compression does the Hugoniot diverge significantly from the isotherm?",
+    "Using the Hugoniot data for MgO, plot temperature vs pressure along the Hugoniot. Compare this with an estimated mantle geotherm. At what pressure do the Hugoniot temperature and geotherm temperature become comparable?",
+    "Fit the Us-Up relation for three minerals (periclase, forsterite, bridgmanite) and compare the c0 values with their ambient bulk sound speeds Vphi = sqrt(K0/rho0). Discuss any discrepancies.",
+    "Demonstrate that the Hugoniot pressure exceeds the isothermal pressure at the same volume for all compressed states. Explain physically why this must be true by considering the entropy generated by shock compression.",
+    "Compute the residual inclusion pressure for a quartz inclusion in forsterite for entrapment pressures ranging from 1 to 5 GPa at T = 800 K. Plot P_residual vs P_entrapment and discuss the sensitivity.",
+    "Modify the HugoniotCalculator to accept a non-standard initial temperature (e.g., T0 = 1500 K) and recompute the Hugoniot for periclase. How does the preheated Hugoniot differ from the room-temperature Hugoniot in P-V and T-V space?",
+    "Derive the relationship between the Us-Up slope s and the BM3 pressure derivative K'. Start from the linear Us-Up assumption, substitute into the Rankine-Hugoniot relations, and show that P(V) along the Hugoniot has a specific functional form. Compare with the BM3 EOS.",
+    "Compute the entropy generation along the MgO Hugoniot by comparing the Hugoniot energy E_H with the isentropic energy at each volume. Plot Delta_S vs compression and discuss why shock compression becomes increasingly irreversible at higher pressures."
+  ],
+
+  "figure_suggestions": [
+    {
+      "description": "Hugoniot curve P(V/V0) for MgO compared with the 300 K isotherm and an isentrope",
+      "axes": {
+        "x": "V/V0 (compression ratio, range 0.65-1.0)",
+        "y": "Pressure (GPa, range 0-200)"
+      },
+      "key_features": "Show three curves: the Hugoniot (highest P at each V), the isentrope (intermediate), and the 300 K isotherm (lowest). Label the thermal pressure offset between isotherm and Hugoniot. Shade the region between Hugoniot and isotherm to represent irreversible heating. Include experimental Hugoniot data points from Duffy & Ahrens (1995) if available."
+    },
+    {
+      "description": "Hugoniot temperature T_H vs pressure for MgO and forsterite",
+      "axes": {
+        "x": "Pressure (GPa, range 0-200)",
+        "y": "Temperature (K, range 300-8000)"
+      },
+      "key_features": "Two curves showing how different minerals heat at different rates under shock compression. Include a mantle geotherm for comparison. Mark the pressure range of the lower mantle (24-136 GPa). Highlight the crossover point where Hugoniot temperature exceeds the geotherm."
+    },
+    {
+      "description": "Us-Up plot for MgO with linear fit",
+      "axes": {
+        "x": "Particle velocity Up (km/s, range 0-5)",
+        "y": "Shock velocity Us (km/s, range 6-14)"
+      },
+      "key_features": "Data points from computed Hugoniot, with the linear fit Us = c0 + s*Up overlaid. Mark c0 on the y-axis and compare with ambient Vphi. Annotate the slope s. Add experimental data points if available to validate the computed curve."
+    },
+    {
+      "description": "Rayleigh line and Hugoniot in P-V space illustrating the energy balance",
+      "axes": {
+        "x": "Volume V (cm^3/mol)",
+        "y": "Pressure P (GPa)"
+      },
+      "key_features": "Show the Hugoniot curve with a specific Rayleigh line connecting (V0, P0) to one shocked state. Shade the triangle under the Rayleigh line (total energy from shock) and the area under the Hugoniot curve to the same volume (recoverable work). The difference (cross-hatched) represents irreversible heating. Label E_0, E_H, and the 0.5*(P_H+P_0)*(V0-VH) area."
+    },
+    {
+      "description": "Isomeke diagram showing residual inclusion pressure vs entrapment pressure",
+      "axes": {
+        "x": "Entrapment pressure (GPa, range 0-5)",
+        "y": "Residual inclusion pressure (GPa, range 0-1.5)"
+      },
+      "key_features": "Curve showing how residual pressure increases with entrapment pressure for quartz-in-forsterite at fixed T_entrap = 1000 K. Include a second curve for a different entrapment temperature (e.g., 500 K) to show temperature sensitivity. Mark the Raman-detectable pressure threshold (~0.05 GPa)."
+    },
+    {
+      "description": "Hugoniot reduction: schematic showing conversion from shock data to isothermal EOS",
+      "axes": {
+        "x": "Volume (cm^3/mol)",
+        "y": "Pressure (GPa)"
+      },
+      "key_features": "Flowchart-style diagram showing: measured (Us, Up) -> Hugoniot P-V via jump conditions -> subtract thermal pressure using Mie-Gruneisen correction -> obtain 300 K isotherm. Show arrows indicating the thermal pressure subtraction at several volume points. Emphasize the role of gamma(V) in the correction."
+    }
+  ],
+
+  "historical_context": "The study of shock waves in condensed matter has its origins in military and engineering research during and after World War II. The Rankine-Hugoniot jump conditions, derived independently by William Rankine (1870) and Pierre-Henri Hugoniot (1887-1889) for gas dynamics, were extended to solids in the 1940s and 1950s at Los Alamos National Laboratory by researchers including Robert McQueen, Stanley Marsh, and John Fritz. Their systematic measurements of shock velocities and particle velocities for hundreds of materials created the foundational database of Hugoniot data that geophysicists would later exploit.\n\nThe application of shock compression to Earth science began in earnest in the 1960s, led by Thomas Ahrens at Caltech and collaborators. Ahrens recognized that shock experiments could reach the pressures and temperatures of Earth's deep interior, providing equation-of-state data at conditions inaccessible to contemporary static techniques. The landmark compilations by McQueen et al. (1967, 1970) and the systematic program at Caltech established the Us-Up framework and demonstrated that most minerals follow remarkably linear Us-Up relationships, enabling straightforward extraction of bulk moduli and their pressure derivatives.\n\nA major conceptual advance was the Hugoniot-to-isotherm reduction procedure, which uses the Mie-Gruneisen equation of state to convert Hugoniot data (which lie along a high-temperature curve) to room-temperature isotherms that can be compared directly with static compression data. This procedure, developed and refined throughout the 1970s-1990s, requires knowledge of the Gruneisen parameter gamma(V), creating a connection between shock compression studies and the thermal equation of state. The work of Duffy and Ahrens (1995) on MgO and Mosenfelder et al. (2009) on MgSiO3 exemplifies the modern approach of combining shock and static data in global thermodynamic inversions.\n\nThe concept of isomekes in elastic geobarometry was developed more recently, with the formalization by Angel et al. (2014, 2017) of the volume-strain matching approach for calculating residual inclusion pressures. The implementation in the ThermoElasticCalculator connects these petrological applications to the EOS framework, completing the chain from shock laboratory to field geology.",
+
+  "uncertain": [
+    "worked_examples"
+  ]
+}

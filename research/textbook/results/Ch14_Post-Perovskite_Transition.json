@@ -1,0 +1,253 @@
+{
+  "chapter_summary": "The post-perovskite (pPv) transition is a structural phase transformation of MgSiO3 bridgmanite (perovskite, Pv) to a CaIrO3-type post-perovskite structure that occurs at conditions corresponding to Earth's D'' layer, approximately 120-135 GPa and 2500-3000 K. This transition, independently discovered by Murakami et al. (2004) and Oganov & Ono (2004) using laser-heated diamond anvil cell experiments combined with ab initio calculations, provided a mineral physics explanation for the long-enigmatic seismic discontinuity observed at the base of the mantle. The transformation involves a change from the corner-sharing octahedral framework of perovskite to a layered structure with edge-sharing octahedral sheets, resulting in measurable changes in density, elastic moduli, and seismic velocities.\n\nThe phase boundary is characterized by a positive Clapeyron slope of approximately +8 to +10 MPa/K, meaning the transition pressure increases with temperature. This positive slope has profound implications for D'' structure: in regions where the core-mantle boundary (CMB) temperature varies laterally, the depth of the pPv transition will also vary. Furthermore, the positive Clapeyron slope combined with the steep geotherm near the CMB gives rise to the double-crossing hypothesis -- the possibility that pPv transforms back to Pv in a hot thermal boundary layer just above the CMB, creating paired seismic discontinuities.\n\nFrom a computational standpoint, detecting the pPv phase boundary requires comparing the Gibbs free energies of the Pv and pPv phases as a function of pressure at a given temperature. The boundary is located where G_Pv = G_pPv, which is solved numerically using bisection on the Gibbs energy difference. The Clapeyron slope is computed from the Clausius-Clapeyron relation dP/dT = Delta_S / Delta_V, where Delta_S and Delta_V are the entropy and volume changes across the transition, obtained from the Mie-Gruneisen equation of state for each phase. The PostPerovskiteCalculator class in this codebase implements these calculations using the SLB2011 mineral database parameters for mg_perovskite (mpv), fe_perovskite (fpv), mg_post_perovskite (mppv), fe_post_perovskite (fppv), and their aluminum-bearing counterparts.\n\nThe velocity contrasts across the transition are critical for interpreting seismic observations. Post-perovskite is denser than perovskite at the same P-T conditions, and exhibits distinct shear and compressional wave velocity changes. The shear velocity contrast is typically larger than the compressional velocity contrast, consistent with seismic observations of a sharp Vs discontinuity in D'' without a proportionate Vp jump. These velocity and density contrasts, computed via CompareAcrossTransition, provide direct links between mineral physics predictions and seismological observables at the base of the mantle.",
+
+  "prerequisite_knowledge": [
+    "Gibbs free energy minimization and phase equilibria (Chapter 12)",
+    "Mie-Gruneisen equation of state and its numerical solution (Chapter 6)",
+    "Elastic moduli and seismic velocity computation at high P-T (Chapter 4)",
+    "SLB2011 mineral database parameters for perovskite and post-perovskite endmembers (Chapter 7)",
+    "Clausius-Clapeyron relation and its derivation from thermodynamic potentials",
+    "Crystal structure basics: perovskite versus CaIrO3-type layered structures",
+    "Seismology fundamentals: D'' layer, core-mantle boundary, seismic discontinuities"
+  ],
+
+  "key_equations": [
+    {
+      "equation": "\\frac{dP}{dT} = \\frac{\\Delta S}{\\Delta V}",
+      "name": "Clausius-Clapeyron equation for the pPv phase boundary",
+      "variables": {
+        "dP/dT": "Clapeyron slope of the phase boundary (GPa/K)",
+        "\\Delta S": "Entropy change across the transition S_pPv - S_Pv (J/mol/K)",
+        "\\Delta V": "Volume change across the transition V_pPv - V_Pv (cm^3/mol)"
+      },
+      "interpretation": "Gives the slope of the phase boundary in P-T space. A positive slope (~+8-10 MPa/K) means higher temperatures require higher pressures to stabilize post-perovskite. Implemented in PhaseDiagramCalculator.ComputeClapeyronSlope using Mie-Gruneisen EOS results for each phase."
+    },
+    {
+      "equation": "G_{\\text{Pv}}(P, T) = G_{\\text{pPv}}(P, T)",
+      "name": "Phase boundary condition (Gibbs energy equality)",
+      "variables": {
+        "G_{Pv}": "Gibbs free energy of bridgmanite perovskite (kJ/mol)",
+        "G_{pPv}": "Gibbs free energy of post-perovskite (kJ/mol)",
+        "P": "Pressure (GPa)",
+        "T": "Temperature (K)"
+      },
+      "interpretation": "The phase boundary is defined by equal Gibbs energies. At pressures below the boundary, Pv is stable (lower G); above it, pPv is stable. The code solves this by bisection on delta_G = G_Pv - G_pPv over the pressure range [pMin, pMax] at fixed T."
+    },
+    {
+      "equation": "\\delta V_s = \\frac{V_s^{\\text{pPv}} - V_s^{\\text{Pv}}}{V_s^{\\text{Pv}}} \\times 100\\%",
+      "name": "Shear velocity contrast across the transition",
+      "variables": {
+        "\\delta V_s": "Percentage change in shear velocity (%)",
+        "V_s^{pPv}": "Shear velocity of post-perovskite (m/s)",
+        "V_s^{Pv}": "Shear velocity of bridgmanite (m/s)"
+      },
+      "interpretation": "Quantifies the seismic signature of the pPv transition. A sharp Vs jump of a few percent is consistent with seismic observations of D'' discontinuities. Computed by CompareAcrossTransition in PostPerovskiteCalculator."
+    },
+    {
+      "equation": "\\delta \\rho = \\frac{\\rho_{\\text{pPv}} - \\rho_{\\text{Pv}}}{\\rho_{\\text{Pv}}} \\times 100\\%",
+      "name": "Density contrast across the transition",
+      "variables": {
+        "\\delta \\rho": "Percentage change in density (%)",
+        "\\rho_{pPv}": "Density of post-perovskite (g/cm^3)",
+        "\\rho_{Pv}": "Density of bridgmanite (g/cm^3)"
+      },
+      "interpretation": "Post-perovskite is denser than perovskite (~1-2% density increase), consistent with the higher coordination and more compact layered structure. This density increase contributes to the gravitational stability of pPv-bearing assemblages at the base of the mantle."
+    }
+  ],
+
+  "physical_concepts": [
+    {
+      "concept": "Post-perovskite crystal structure",
+      "definition": "A CaIrO3-type layered crystal structure with edge-sharing SiO6 octahedral sheets separated by Mg layers, distinct from the corner-sharing 3D framework of bridgmanite perovskite.",
+      "physical_intuition": "Under extreme pressure at the base of the mantle, the perovskite structure becomes less favorable than a more compact layered arrangement. The edge-sharing in pPv allows tighter packing, reducing volume and increasing density.",
+      "common_misconceptions": "Post-perovskite is not a modified perovskite with minor distortions -- it is a fundamentally different crystal structure with different symmetry (Cmcm vs Pbnm) and bonding topology."
+    },
+    {
+      "concept": "Clapeyron slope and its sign",
+      "definition": "The slope dP/dT of a phase boundary in pressure-temperature space, determined by the Clausius-Clapeyron relation from the entropy and volume changes of the transition.",
+      "physical_intuition": "For the pPv transition, both Delta_S and Delta_V are negative (pPv has lower entropy and lower volume than Pv), giving a positive Clapeyron slope. This means hotter regions require higher pressure (greater depth) to reach the transition, causing lateral variations in the transition depth that mirror CMB temperature heterogeneity.",
+      "common_misconceptions": "A positive Clapeyron slope does not mean the transition is always stabilizing for mantle convection. Unlike the 660-km discontinuity (negative slope, resists flow), the pPv transition with a positive slope can enhance or reduce flow depending on geometry."
+    },
+    {
+      "concept": "Double-crossing hypothesis",
+      "definition": "The scenario in which the pPv phase boundary is crossed twice along a mantle geotherm near the CMB: once going into the pPv stability field, and once returning to the Pv stability field in the hot thermal boundary layer just above the core.",
+      "physical_intuition": "Because the Clapeyron slope is positive and the geotherm steepens dramatically in the thermal boundary layer above the CMB, the temperature can increase faster than the pressure. If the geotherm re-enters the Pv stability field before reaching the CMB, a lens of pPv exists between two Pv regions, producing paired seismic reflectors.",
+      "common_misconceptions": "The double-crossing is not guaranteed everywhere -- it depends on the local CMB heat flux, the exact Clapeyron slope, and the iron content of the lower mantle assemblage. It may occur only in regions of moderate CMB temperature."
+    },
+    {
+      "concept": "D'' seismic discontinuity",
+      "definition": "A seismically observed discontinuity approximately 200-300 km above the core-mantle boundary, characterized by an increase in seismic velocities (especially Vs) with depth.",
+      "physical_intuition": "The D'' discontinuity was long unexplained because no phase transition was known at those conditions. The discovery of the pPv transition provided a natural explanation: the abrupt structural change from Pv to pPv produces a sharp velocity and density jump at the predicted depth.",
+      "common_misconceptions": "D'' is not a single globally uniform layer. Its properties vary laterally, reflecting variations in temperature, composition (iron content, aluminum), and the presence or absence of the pPv transition. Not all D'' features are necessarily caused by the pPv transition."
+    },
+    {
+      "concept": "Gibbs energy bisection for boundary detection",
+      "definition": "A numerical method that locates the phase boundary by bisecting the pressure interval to find where the Gibbs energy difference between two phases changes sign.",
+      "physical_intuition": "At low pressures, Pv has lower Gibbs energy (stable); at high pressures, pPv has lower Gibbs energy. The boundary is where the energies are equal. Bisection efficiently narrows the interval by evaluating the sign of delta_G at the midpoint.",
+      "common_misconceptions": "The bisection method assumes a single crossing in the search interval. If the Gibbs energy curves cross more than once (as might happen with compositional effects), the method may miss additional crossings. The search interval [pMin, pMax] must bracket the boundary."
+    }
+  ],
+
+  "key_references": [
+    {
+      "author": "Murakami, M., Hirose, K., Kawamura, K., Sata, N., Ohishi, Y.",
+      "year": 2004,
+      "title": "Post-perovskite phase transition in MgSiO3",
+      "journal": "Science, 304, 855-858",
+      "why_essential": "The landmark experimental discovery of the post-perovskite phase transition using laser-heated diamond anvil cell at pressures exceeding 125 GPa. Established the existence of the pPv phase at D'' conditions."
+    },
+    {
+      "author": "Oganov, A.R., Ono, S.",
+      "year": 2004,
+      "title": "Theoretical and experimental evidence for a post-perovskite phase of MgSiO3 in Earth's D'' layer",
+      "journal": "Nature, 430, 445-448",
+      "why_essential": "Independent ab initio prediction and experimental confirmation of the pPv transition, published simultaneously with Murakami et al. Provided complementary computational evidence and thermodynamic characterization."
+    },
+    {
+      "author": "Hernlund, J.W., Thomas, C., Tackley, P.J.",
+      "year": 2005,
+      "title": "A doubling of the post-perovskite phase boundary and structure of Earth's lowermost mantle",
+      "journal": "Nature, 434, 882-886",
+      "why_essential": "Proposed the double-crossing hypothesis, demonstrating that the pPv phase boundary could be crossed twice near the CMB, explaining paired seismic reflectors in D''. A foundational paper for interpreting D'' seismic complexity."
+    },
+    {
+      "author": "Tsuchiya, T., Tsuchiya, J., Umemoto, K., Wentzcovitch, R.M.",
+      "year": 2004,
+      "title": "Phase transition in MgSiO3 perovskite in the earth's lower mantle",
+      "journal": "Earth and Planetary Science Letters, 224, 241-248",
+      "why_essential": "First-principles computation of the pPv transition pressure, Clapeyron slope, and elastic properties from density functional theory. Provided key constraints on the Clapeyron slope (~+7.5 MPa/K) used widely in geodynamic modeling."
+    },
+    {
+      "author": "Stixrude, L., Lithgow-Bertelloni, C.",
+      "year": 2011,
+      "title": "Thermodynamics of mantle minerals - II. Phase equilibria",
+      "journal": "Geophysical Journal International, 184, 1180-1213",
+      "why_essential": "The SLB2011 database that provides the thermodynamic parameters for perovskite and post-perovskite endmembers (mpv, fpv, apv, mppv, fppv, appv) used in the PostPerovskiteCalculator implementation."
+    },
+    {
+      "author": "Hirose, K.",
+      "year": 2006,
+      "title": "Postperovskite phase transition and its geophysical implications",
+      "journal": "Reviews of Geophysics, 44, RG3001",
+      "why_essential": "Comprehensive review of the pPv transition covering experimental constraints, theoretical predictions, and geophysical implications. Excellent overview for readers new to the topic."
+    }
+  ],
+
+  "worked_examples": [
+    {
+      "problem": "Find the Pv-pPv phase boundary pressure for MgSiO3 at T = 2500 K and compute the Clapeyron slope.",
+      "approach": "Use PostPerovskiteCalculator.FindBoundary with mpv and mppv endmembers from SLB2011 database, searching the pressure range 100-140 GPa. The method computes Gibbs energies for both phases at each candidate pressure and uses bisection to find where G_Pv = G_pPv. Then use GetClapeyronSlope to evaluate dP/dT = Delta_S / Delta_V at the boundary.",
+      "numerical_values": "Input: mpv and mppv from SLB2011, T = 2500 K, pMin = 100 GPa, pMax = 140 GPa. Expected output: boundary pressure ~120-130 GPa [uncertain], Clapeyron slope ~0.008-0.010 GPa/K (8-10 MPa/K) [uncertain].",
+      "interpretation": "The boundary pressure at 2500 K places the transition approximately 200-300 km above the CMB (radius ~3480 km, pressure ~136 GPa at CMB). The positive Clapeyron slope means the transition occurs deeper in hotter regions and shallower in colder regions, correlating with seismically fast (cold) and slow (hot) anomalies in D''."
+    },
+    {
+      "problem": "Compare seismic velocities and density across the Pv-pPv transition at 125 GPa and 2500 K.",
+      "approach": "Use PostPerovskiteCalculator.CompareAcrossTransition, which runs the Mie-Gruneisen EOS solver for both mpv and mppv at the specified P-T conditions and returns the percentage differences in Vs, Vp, and density.",
+      "numerical_values": "Input: mpv and mppv, P = 125 GPa, T = 2500 K. Expected output: density increase dRho ~ +1-2%, shear velocity change dVs ~ few percent, compressional velocity change dVp typically smaller than dVs [uncertain].",
+      "interpretation": "The larger Vs contrast compared to Vp is consistent with seismic observations that D'' discontinuities are more prominently detected in S-wave studies. The density increase confirms pPv is the denser (high-pressure) phase, validating its stability at greater depth."
+    },
+    {
+      "problem": "Assess whether a double-crossing of the pPv boundary occurs for a geotherm reaching T_CMB = 3800 K.",
+      "approach": "Compute the pPv boundary pressure at multiple temperatures from 2500 K to 3800 K using FindBoundary. Compare these boundary pressures against a model geotherm (e.g., an adiabat with a thermal boundary layer). If the geotherm re-enters the Pv stability field before reaching CMB pressure (~136 GPa), a double-crossing occurs.",
+      "numerical_values": "Evaluate boundary at T = 2500, 3000, 3500, 3800 K. With a Clapeyron slope of ~+9 MPa/K, the boundary pressure increases by ~9 GPa per 1000 K increase. At 2500 K the boundary might be ~125 GPa; at 3500 K it might be ~134 GPa [uncertain]. If the CMB is at 136 GPa and T_CMB = 3800 K pushes the boundary above 136 GPa, pPv becomes unstable at the CMB and a double-crossing exists.",
+      "interpretation": "The double-crossing creates a lens of pPv sandwiched between Pv above and Pv below, producing two seismic discontinuities. The thickness of this lens depends sensitively on the Clapeyron slope and CMB temperature, making it a diagnostic of thermal conditions at the base of the mantle."
+    }
+  ],
+
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch01 - Thermodynamics of Solids at High Pressure",
+      "nature": "prerequisite",
+      "explanation": "The Birch-Murnaghan EOS and finite strain theory provide the cold compression energy for both Pv and pPv phases. The phase boundary is determined by comparing Gibbs energies built on this thermodynamic framework."
+    },
+    {
+      "related_chapter": "Ch04 - Elastic Moduli and Seismic Velocities",
+      "nature": "application",
+      "explanation": "The seismic velocity contrasts (dVs, dVp) across the pPv transition are computed using the elastic moduli framework. These contrasts are the primary observable linking mineral physics to seismology."
+    },
+    {
+      "related_chapter": "Ch06 - Mie-Gruneisen Equation of State Solver",
+      "nature": "prerequisite",
+      "explanation": "The MieGruneisenEOSOptimizer is used to compute thermodynamic properties (entropy, volume, density, velocities) for both Pv and pPv at the conditions of the transition."
+    },
+    {
+      "related_chapter": "Ch07 - SLB2011 Mineral Database",
+      "nature": "prerequisite",
+      "explanation": "The mineral parameters for mpv, fpv, apv, mppv, fppv, and appv endmembers come from the SLB2011 database. Accurate parameterization of these endmembers is essential for reliable boundary predictions."
+    },
+    {
+      "related_chapter": "Ch08 - Landau Phase Transitions",
+      "nature": "extension",
+      "explanation": "While the pPv transition is first-order (discontinuous volume and entropy changes), some phase transitions are continuous. Landau theory (Ch08) handles continuous transitions; the pPv transition uses the Gibbs equality approach instead."
+    },
+    {
+      "related_chapter": "Ch10 - Elastic Mixing Models",
+      "nature": "extension",
+      "explanation": "In realistic lower mantle compositions, Pv and pPv form solid solutions with Fe and Al. Elastic mixing models are needed to compute the properties of (Mg,Fe)(Si,Al)O3 perovskite and post-perovskite solid solutions."
+    },
+    {
+      "related_chapter": "Ch12 - Gibbs Free Energy and Phase Stability",
+      "nature": "prerequisite",
+      "explanation": "The fundamental framework for determining phase stability via Gibbs energy comparison and minimization. The PhaseDiagramCalculator used by PostPerovskiteCalculator relies on the GibbsMinimizer infrastructure."
+    }
+  ],
+
+  "computational_methods": "The PostPerovskiteCalculator class provides three main computational workflows: (1) FindBoundary locates the pPv phase boundary at a given temperature by delegating to PhaseDiagramCalculator.FindPhaseBoundary, which uses bisection on the Gibbs energy difference delta_G = G_Pv - G_pPv over a pressure interval [pMin, pMax] (default 100-140 GPa). The bisection converges when |delta_G| < tolerance (default 0.01 kJ/mol) or after 50 iterations, achieving pressure resolution better than ~0.01 GPa. Each Gibbs energy evaluation requires a full Mie-Gruneisen EOS solve for the respective phase. (2) GetClapeyronSlope computes the Clausius-Clapeyron slope dP/dT = delta_S / delta_V by running the EOS solver for both phases at the boundary P-T and extracting the entropy and volume differences. The conversion factor of 0.001 converts from J/(mol*cm^3) to GPa/K. (3) CompareAcrossTransition runs both EOS solvers and returns the full ThermoMineralParams for each phase along with percentage changes in Vs, Vp, and density. Performance is dominated by the number of EOS solves: FindBoundary requires ~30-50 EOS evaluations (2 per bisection step), while GetClapeyronSlope and CompareAcrossTransition each require 2 evaluations. The PhaseDiagramCalculator also provides TracePhaseBoundary for generating full phase boundary curves across a temperature range, and FindBoundaryTemperature for the inverse problem. The algorithm assumes a single phase crossing in the search interval; multi-crossing scenarios (e.g., re-entrant phase boundaries due to compositional effects) require manual interval selection.",
+
+  "open_questions": [
+    "What is the precise Clapeyron slope of the pPv transition? Experimental and computational estimates range from +5 to +13 MPa/K, and the value strongly affects double-crossing predictions and D'' topography.",
+    "How does iron partitioning between Pv and pPv affect the transition pressure and width? Fe incorporation shifts the boundary and may broaden the transition from a sharp discontinuity to a gradual transformation.",
+    "Does the double-crossing actually occur in Earth's mantle, and if so, how widespread is it? Seismic evidence is suggestive but not conclusive, and the answer depends on poorly constrained CMB temperatures.",
+    "What role does aluminum play in stabilizing or destabilizing the pPv phase? Aluminum substitution may raise the transition pressure and could inhibit pPv formation in Al-rich compositions.",
+    "How does the pPv transition interact with partial melting in ultralow velocity zones (ULVZs) near the CMB? The presence of melt could modify the transition behavior and seismic signature.",
+    "Can anisotropic properties of the pPv layered structure explain the strong seismic anisotropy observed in D''? The CaIrO3-type structure has highly anisotropic elastic constants, and lattice-preferred orientation during deformation could produce the observed polarization patterns.",
+    "What is the effect of spin transitions in iron on the pPv stability field? Iron spin crossover occurs at similar pressures and could couple with the structural transition."
+  ],
+
+  "exercise_suggestions": [
+    "Use PostPerovskiteCalculator.FindBoundary to compute the pPv boundary pressure at T = 2000, 2500, 3000, and 3500 K. Plot the phase boundary in P-T space and determine the Clapeyron slope from the slope of the line.",
+    "Compare the Clapeyron slope obtained from the finite-difference of the boundary curve (Exercise 1) with the value from GetClapeyronSlope using the Clausius-Clapeyron relation. Discuss sources of discrepancy.",
+    "Use CompareAcrossTransition to tabulate dVs, dVp, and dRho at the boundary for T = 2000 to 3500 K in 250 K steps. How do the velocity contrasts change with temperature?",
+    "Construct a simple linear geotherm for the lowermost 300 km of the mantle (from an adiabatic temperature of 2500 K at 300 km above CMB to 3800 K at the CMB). Determine whether a double-crossing occurs by comparing the geotherm with the pPv boundary curve.",
+    "Replace mpv/mppv with fpv/fppv (iron endmembers) and repeat the boundary calculation. How does iron content shift the transition pressure? Discuss implications for iron-rich regions near the CMB.",
+    "Compute the full phase diagram on a P-T grid (100-140 GPa, 2000-4000 K) using PhaseDiagramCalculator.CalculateDiagram with Pv and pPv as candidate phases. Visualize the stability fields.",
+    "Using the Clapeyron slope and a model of lateral temperature variations in D'' (e.g., +/- 500 K), estimate the topographic relief on the pPv phase boundary. How many kilometers of topography does this correspond to?",
+    "Investigate the sensitivity of the boundary pressure to the reference parameters (V0, K0, K0') of the pPv endmember by varying each parameter by +/-5% and recomputing FindBoundary. Which parameter has the largest effect?"
+  ],
+
+  "figure_suggestions": [
+    {
+      "description": "P-T phase diagram showing the Pv-pPv boundary",
+      "axes": "x-axis: Temperature (K, 2000-4000), y-axis: Pressure (GPa, 100-140)",
+      "key_features": "Phase boundary line with positive slope; Pv stability field labeled below/left, pPv field above/right; CMB pressure (~136 GPa) shown as horizontal dashed line; representative geotherm overlaid showing single or double crossing; shaded region indicating experimental uncertainty in boundary location"
+    },
+    {
+      "description": "Seismic velocity and density contrasts across the transition as a function of temperature",
+      "axes": "x-axis: Temperature (K, 2000-3500), y-axis: Percentage change (%)",
+      "key_features": "Three curves for dVs, dVp, and dRho; dVs typically larger than dVp; all evaluated at the phase boundary pressure for each temperature; annotate with seismological detection thresholds"
+    },
+    {
+      "description": "Schematic cross-section of the D'' layer illustrating the double-crossing",
+      "axes": "x-axis: horizontal distance (schematic), y-axis: depth above CMB (km, 0-300)",
+      "key_features": "CMB at bottom; geotherm profile showing thermal boundary layer; pPv lens between two Pv regions; arrows indicating positions of seismic reflectors; cold downwelling region with single crossing versus hot region with double crossing"
+    },
+    {
+      "description": "Gibbs energy difference (G_Pv - G_pPv) as a function of pressure at fixed T = 2500 K",
+      "axes": "x-axis: Pressure (GPa, 100-140), y-axis: delta_G (kJ/mol)",
+      "key_features": "Curve crossing zero at the boundary pressure; positive values (Pv stable) at low P; negative values (pPv stable) at high P; mark the zero crossing; illustrate the bisection convergence with a few intermediate points"
+    },
+    {
+      "description": "Crystal structure comparison: bridgmanite Pv versus post-perovskite pPv",
+      "axes": "Ball-and-stick or polyhedral representation (no numerical axes)",
+      "key_features": "Side-by-side structures showing corner-sharing octahedra in Pv (Pbnm) versus edge-sharing octahedral sheets in pPv (Cmcm); highlight the layered nature of pPv; label Mg, Si, O positions; indicate the volume reduction"
+    }
+  ],
+
+  "historical_context": "The D'' discontinuity at the base of the mantle was first identified by Bullen in 1949 as a seismically distinct region, but its origin remained one of the great mysteries in deep Earth science for over five decades. Various hypotheses were proposed, including chemical layering, partial melting, and core-mantle reaction products, but none fully explained the seismic observations. The breakthrough came in 2004 when two groups independently discovered the post-perovskite phase transition. Murakami et al. (2004, Science) used synchrotron X-ray diffraction in a laser-heated diamond anvil cell at pressures above 125 GPa to identify a new CaIrO3-type structure for MgSiO3. Simultaneously, Oganov and Ono (2004, Nature) predicted the same transition using ab initio evolutionary crystal structure prediction and confirmed it experimentally. The transition pressure and positive Clapeyron slope matched the depth and properties of D'' remarkably well. Within a year, Tsuchiya et al. (2004) provided detailed first-principles thermodynamic and elastic properties, and Hernlund, Thomas, and Tackley (2005) proposed the double-crossing hypothesis that elegantly explained paired seismic reflectors. The discovery transformed D'' research from a descriptive seismological endeavor into a quantitative mineral physics problem, enabling predictions of D'' structure from temperature models and vice versa. It remains one of the most significant discoveries in mineral physics of the 21st century, comparable in impact to the earlier identification of the perovskite transition at 660 km depth.",
+
+  "uncertain": [
+    "key_equations",
+    "worked_examples",
+    "open_questions"
+  ]
+}

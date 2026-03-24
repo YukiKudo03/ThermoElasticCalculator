@@ -1,0 +1,332 @@
+{
+  "chapter_summary": "The Gibbs free energy G is the central thermodynamic potential for determining phase stability at given pressure and temperature conditions, which are the natural variables of geophysical interest. Starting from the Helmholtz free energy F(V,T) computed via the Stixrude-Lithgow-Bertelloni framework (combining cold compression energy, Debye thermal energy, Landau, and magnetic contributions), the Gibbs free energy is obtained through the Legendre transform G = F + PV. Since F is formulated as a function of volume and temperature, while geological problems specify pressure and temperature, this transform bridges the computational framework (volume-based EOS) with the physically relevant independent variables (P,T). In the ThermoElasticCalculator codebase, the ThermoMineralParams class computes HelmholtzF as F0 + FCold + FThermal + LandauFreeEnergy + MagneticFreeEnergy, and then GibbsG = HelmholtzF + Pressure * Volume, where the MieGruneisenEOSOptimizer has already found the volume (finite strain) consistent with the target pressure.\n\nEntropy is obtained as the negative temperature derivative of the Helmholtz free energy: S = -dF/dT at constant volume. Because the Helmholtz free energy includes multiple contributions (cold, thermal-Debye, Landau, magnetic), computing the analytical derivative is complex. The ThermoElasticCalculator therefore implements entropy via numerical central differences: S = -(F(T+dT) - F(T-dT)) / (2*dT), using dT = 0.5 K and holding finite strain fixed. This numerical differentiation approach automatically captures all contributions to entropy, including the Debye vibrational part, Landau excess entropy, and magnetic entropy, without requiring separate analytical derivatives for each term. The entropy is always positive at temperatures above absolute zero, consistent with the third law of thermodynamics.\n\nPhase stability is determined by the fundamental thermodynamic principle that at given P and T, the stable phase is the one with the lowest Gibbs free energy. When two phases (e.g., forsterite and wadsleyite) have equal Gibbs energies, they coexist along a phase boundary. The GibbsMinimizer class implements this by computing G for each candidate phase and selecting the one with the minimum value for pure endmember comparisons, or using projected gradient descent in the null space of the stoichiometry matrix for multi-phase assemblages involving solid solutions. The PhaseDiagramCalculator extends this to trace phase boundaries across P-T space using bisection to find where G1 = G2, producing phase diagram curves.\n\nThe Clapeyron equation dP/dT = Delta_S / Delta_V (equivalently dT/dP = Delta_V / Delta_S) governs the slope of phase boundaries in P-T space. Here Delta_S and Delta_V are the entropy and volume differences between the two phases at the boundary. The PhaseDiagramCalculator.ComputeClapeyronSlope method implements this directly, computing the entropy and volume of both phases at the boundary point and taking their ratio. The sign and magnitude of the Clapeyron slope carry important geophysical information: a positive slope means the high-pressure phase has lower entropy (typical for most mantle transitions), while a negative slope (as for the post-spinel transition at 660 km depth) implies the high-pressure phase has higher entropy. The magnitude controls how the boundary pressure shifts with temperature along a mantle geotherm.\n\nThe full workflow for phase equilibrium calculation in the codebase proceeds as follows: (1) for each candidate mineral, solve the Mie-Gruneisen EOS to find the equilibrium volume at target P,T; (2) compute F = F0 + FCold + FThermal + corrections; (3) compute G = F + PV; (4) compare G across candidate phases to identify the stable assemblage. This framework enables calculation of mantle mineralogy as a function of depth, prediction of seismic discontinuities at phase boundaries, and computation of density and velocity profiles for comparison with seismological observations.",
+
+  "prerequisite_knowledge": [
+    "Helmholtz free energy F(V,T) and its decomposition into cold, thermal, and correction terms (Ch05)",
+    "Mie-Gruneisen equation of state and the EOS optimizer that finds volume at target pressure (Ch06)",
+    "Debye model for thermal energy, heat capacity, and thermal free energy (Ch02)",
+    "Eulerian finite strain theory and Birch-Murnaghan compression energy (Ch01)",
+    "Legendre transforms between thermodynamic potentials (F to G via PV term)",
+    "Landau theory for displacive phase transitions and its contribution to free energy (Ch08)",
+    "Numerical differentiation: central difference approximation for derivatives",
+    "Basic optimization: bisection method, gradient descent for minimization"
+  ],
+
+  "key_equations": [
+    {
+      "equation": "G = F + PV = F_0 + F_{\\text{cold}} + F_{\\text{thermal}} + F_{\\text{Landau}} + F_{\\text{mag}} + PV",
+      "name": "Gibbs Free Energy from Helmholtz",
+      "variables": {
+        "G": "Gibbs free energy [kJ/mol]",
+        "F": "Total Helmholtz free energy [kJ/mol]",
+        "P": "Pressure [GPa]",
+        "V": "Molar volume [cm^3/mol] (1 GPa*cm^3/mol = 1 kJ/mol)",
+        "F_0": "Reference Helmholtz energy at standard state [kJ/mol]",
+        "F_{\\text{cold}}": "Cold compression energy from Birch-Murnaghan EOS [kJ/mol]",
+        "F_{\\text{thermal}}": "Debye thermal free energy [kJ/mol]",
+        "F_{\\text{Landau}}": "Landau phase transition free energy [kJ/mol]",
+        "F_{\\text{mag}}": "Magnetic free energy contribution [kJ/mol]"
+      },
+      "interpretation": "The Gibbs free energy is the natural potential for processes at constant P and T. It is computed in ThermoMineralParams.GibbsG as HelmholtzF + Pressure * Volume. The Legendre transform F + PV switches the natural variable from V to P, making G the appropriate potential for comparing phase stability under geophysical conditions."
+    },
+    {
+      "equation": "S = -\\left(\\frac{\\partial F}{\\partial T}\\right)_V \\approx -\\frac{F(T+\\delta T) - F(T-\\delta T)}{2\\,\\delta T}",
+      "name": "Entropy from Numerical Differentiation of Helmholtz Free Energy",
+      "variables": {
+        "S": "Entropy [J/mol/K]",
+        "F": "Helmholtz free energy [kJ/mol] (multiplied by 1000 for J units)",
+        "T": "Temperature [K]",
+        "\\delta T": "Step size for numerical differentiation (0.5 K in the code)"
+      },
+      "interpretation": "Entropy is computed as the negative temperature derivative of F at constant finite strain. The ThermoMineralParams.Entropy property creates two ThermoMineralParams objects at T+0.5 K and T-0.5 K with the same finite strain, computes their HelmholtzF values, and takes the central difference. This automatically includes all entropy contributions (vibrational, Landau, magnetic)."
+    },
+    {
+      "equation": "\\frac{dP}{dT} = \\frac{\\Delta S}{\\Delta V}",
+      "name": "Clapeyron Equation (Clausius-Clapeyron)",
+      "variables": {
+        "dP/dT": "Slope of the phase boundary in P-T space [GPa/K]",
+        "\\Delta S": "Entropy difference between phases S_2 - S_1 [J/mol/K]",
+        "\\Delta V": "Volume difference between phases V_2 - V_1 [cm^3/mol]"
+      },
+      "interpretation": "At a phase boundary where G_1 = G_2, the Clapeyron equation relates the slope of the boundary to the jumps in entropy and volume across the transition. Implemented in PhaseDiagramCalculator.ComputeClapeyronSlope with unit conversion: dP/dT [GPa/K] = (Delta_S [J/mol/K]) / (Delta_V [cm^3/mol]) * 0.001, since 1 J/(cm^3) = 0.001 GPa. The inverse form dT/dP = Delta_V / Delta_S * 1000 [K/GPa] is also implemented in GibbsMinimizer.ClapeyronSlope."
+    },
+    {
+      "equation": "G_1(P,T) = G_2(P,T)",
+      "name": "Phase Equilibrium Condition",
+      "variables": {
+        "G_1": "Gibbs free energy of phase 1 [kJ/mol]",
+        "G_2": "Gibbs free energy of phase 2 [kJ/mol]",
+        "P": "Equilibrium pressure [GPa]",
+        "T": "Equilibrium temperature [K]"
+      },
+      "interpretation": "Two phases coexist when their Gibbs free energies are equal. The PhaseDiagramCalculator.FindPhaseBoundary method uses bisection to locate the pressure where G_1 - G_2 changes sign, converging to the equilibrium boundary within a tolerance of 0.01 kJ/mol. The GibbsMinimizer generalizes this to multi-phase systems."
+    },
+    {
+      "equation": "F_{\\text{cold}} = 9 K_0 V_0 \\left(\\frac{f^2}{2} + \\frac{K'_0 - 4}{6} f^3\\right)",
+      "name": "Cold Compression Energy",
+      "variables": {
+        "K_0": "Reference isothermal bulk modulus [GPa]",
+        "V_0": "Reference molar volume [cm^3/mol]",
+        "f": "Eulerian finite strain",
+        "K'_0": "Pressure derivative of bulk modulus at zero pressure"
+      },
+      "interpretation": "The elastic strain energy stored during isothermal compression. Implemented in ThermoMineralParams.FCold. This is the volume integral of pressure from the third-order Birch-Murnaghan EOS and is one of the major contributions to the total Helmholtz free energy at high pressures."
+    },
+    {
+      "equation": "F_{\\text{thermal}} = n \\left[ k_B T \\left(3\\ln(1-e^{-\\theta/T}) - D_3(\\theta/T)\\right) - k_B T_{\\text{ref}} \\left(3\\ln(1-e^{-\\theta_0/T_{\\text{ref}}}) - D_3(\\theta_0/T_{\\text{ref}})\\right) \\right] N_A / 1000",
+      "name": "Debye Thermal Free Energy",
+      "variables": {
+        "n": "Number of atoms per formula unit",
+        "k_B": "Boltzmann constant [J/K]",
+        "T": "Temperature [K]",
+        "T_{\\text{ref}}": "Reference temperature (300 K)",
+        "\\theta": "Debye temperature at current finite strain [K]",
+        "\\theta_0": "Reference Debye temperature [K]",
+        "D_3": "Third-order Debye function",
+        "N_A": "Avogadro number"
+      },
+      "interpretation": "The thermal contribution to Helmholtz free energy from lattice vibrations within the Debye model. Computed in ThermoMineralParams.FThermal. The reference subtraction ensures F_thermal = 0 at standard conditions (f=0, T=T_ref), maintaining consistency with the reference state definition."
+    }
+  ],
+
+  "physical_concepts": [
+    {
+      "name": "Gibbs Free Energy as Phase Stability Criterion",
+      "definition": "At constant pressure and temperature, the thermodynamically stable phase is the one with the lowest molar Gibbs free energy G = F + PV = H - TS.",
+      "physical_intuition": "G represents the competition between enthalpy (which favors dense, tightly-bonded phases at high pressure) and entropy (which favors disordered, expanded phases at high temperature). A phase transition occurs when increasing P or T tips this balance. At high pressure, the PV term penalizes large volumes, stabilizing denser polymorphs. At high temperature, the -TS term rewards high entropy, stabilizing phases with more vibrational freedom.",
+      "common_misconceptions": [
+        "Confusing F and G stability criteria: F determines stability at constant V,T while G determines stability at constant P,T. Geological processes occur at approximately constant P,T, so G is the relevant potential.",
+        "Assuming the phase with the lowest energy (U or H) is always stable. Entropy contributions can override enthalpic stability, especially at high temperatures.",
+        "Forgetting that G must be compared on a per-mole basis (or per formula unit with consistent normalization) for the comparison to be meaningful."
+      ]
+    },
+    {
+      "name": "Legendre Transform from Helmholtz to Gibbs",
+      "definition": "The Gibbs free energy G(P,T) is obtained from the Helmholtz free energy F(V,T) by the Legendre transform G = F + PV, which replaces the natural variable V with its conjugate P.",
+      "physical_intuition": "The SLB formulation computes everything from F(V,T) because the Debye model and finite strain expressions are naturally functions of volume. But experimentally and geophysically, we control pressure, not volume. The Legendre transform G = F + PV packages the same information into a function of the controllable variables (P,T). In the code, the EOS optimizer first finds the V that gives the target P, then simply adds PV to F.",
+      "common_misconceptions": [
+        "Thinking that F and G contain different physical information. They are equivalent descriptions of the same system; the transform merely changes which variable is independent.",
+        "Neglecting that in the code, P*V uses GPa*cm^3/mol = kJ/mol directly, which is a convenient unit identity that simplifies the calculation."
+      ]
+    },
+    {
+      "name": "Entropy via Numerical Differentiation",
+      "definition": "Entropy S = -dF/dT is computed by evaluating the Helmholtz free energy at T+dT and T-dT with the same finite strain, then taking the central difference.",
+      "physical_intuition": "Rather than deriving and implementing separate analytical expressions for the temperature derivative of each free energy component (Debye thermal, Landau, magnetic), the code takes a pragmatic numerical approach. By perturbing temperature by only 0.5 K, the central difference gives an accurate approximation with truncation error of order (dT)^2. This approach is robust because it automatically captures all entropy contributions, including those from Landau transitions and magnetic disorder.",
+      "common_misconceptions": [
+        "Assuming numerical differentiation is always less accurate than analytical. Here, the 0.5 K step with the smooth Debye function gives results accurate to better than 0.1%, which is well within experimental uncertainty.",
+        "Confusing the entropy computed at constant finite strain (as in ThermoMineralParams.Entropy) with entropy at constant pressure. The difference arises because volume changes slightly with temperature at constant P, and the test GibbsFreeEnergyTests.Entropy_NumericalDerivativeCheck verifies consistency between the two approaches within 5%."
+      ]
+    },
+    {
+      "name": "Clapeyron Slope and Phase Boundary Geometry",
+      "definition": "The Clapeyron equation dP/dT = Delta_S / Delta_V gives the slope of a univariant phase boundary in P-T space, derived from the condition dG_1 = dG_2 along the boundary.",
+      "physical_intuition": "Since dG = VdP - SdT for each phase, setting dG_1 = dG_2 along the coexistence curve gives (V_2 - V_1)dP = (S_2 - S_1)dT. The sign tells us the physics: for the olivine-wadsleyite transition, the high-pressure phase (wadsleyite) is denser (Delta_V < 0) and more ordered (Delta_S < 0), giving a positive Clapeyron slope (boundary pressure increases with temperature). For the post-spinel transition, the negative Clapeyron slope has profound geodynamic implications, potentially causing stagnation of subducting slabs at the 660 km discontinuity.",
+      "common_misconceptions": [
+        "Confusing dP/dT with dT/dP. The code implements both: PhaseDiagramCalculator.ComputeClapeyronSlope returns dP/dT [GPa/K], while GibbsMinimizer.ClapeyronSlope returns dT/dP [K/GPa].",
+        "Assuming the Clapeyron slope is constant along the entire boundary. Both Delta_S and Delta_V change with P and T, so the slope must be evaluated locally."
+      ]
+    },
+    {
+      "name": "Reference State and F0 Convention",
+      "definition": "The reference Helmholtz energy F0 sets the absolute scale for free energy calculations, enabling meaningful comparison of G between different mineral phases.",
+      "physical_intuition": "Without F0, only free energy differences within a single phase are meaningful. To compare G between forsterite and wadsleyite, both must be referenced to the same energy scale. F0 values in the SLB2011 database are determined from experimental phase equilibrium data and calorimetric measurements. In the code, F0 is simply added to the computed FCold + FThermal; if F0 = 0 (the default), the code still gives correct elastic properties and seismic velocities, but cannot determine phase stability.",
+      "common_misconceptions": [
+        "Thinking F0 affects elastic moduli or seismic velocities. Since K, G, and V are derivatives of F with respect to volume or strain, the constant F0 cancels out. It only matters for G comparisons between phases.",
+        "Assuming F0 can be computed from first principles easily. In practice, F0 values come from fitting to experimental phase diagrams and calorimetric data."
+      ]
+    }
+  ],
+
+  "key_references": [
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2011,
+      "title": "Thermodynamics of mantle minerals - II. Phase equilibria",
+      "journal": "Geophysical Journal International, 184(3), 1180-1213",
+      "why_essential": "Defines the complete SLB framework for computing Gibbs free energy from Helmholtz free energy, including the F0 reference energies for all endmember minerals. The phase equilibrium methodology (Gibbs minimization) used in the codebase directly follows this paper."
+    },
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2005,
+      "title": "Thermodynamics of mantle minerals - I. Physical properties",
+      "journal": "Geophysical Journal International, 162(2), 610-632",
+      "why_essential": "Establishes the Helmholtz free energy formulation F(V,T) that underlies the Gibbs energy calculation. Defines the decomposition into cold, thermal, and anharmonic contributions and derives all thermodynamic properties as derivatives of F."
+    },
+    {
+      "author": "Anderson, O. L.",
+      "year": 1995,
+      "title": "Equations of State of Solids for Geophysics and Ceramic Science",
+      "journal": "Oxford University Press",
+      "why_essential": "Comprehensive treatment of thermodynamic potentials (F, G, H) for solids at high pressure, including the Legendre transform relationships and the role of each potential in different experimental situations. Provides the physical context for why G(P,T) is the appropriate potential for phase stability."
+    },
+    {
+      "author": "Ita, J. and Stixrude, L.",
+      "year": 1992,
+      "title": "Petrology, elasticity, and composition of the mantle transition zone",
+      "journal": "Journal of Geophysical Research, 97(B5), 6849-6866",
+      "why_essential": "Early application of Gibbs free energy minimization to compute mantle mineralogy along geotherms. Demonstrates the connection between phase equilibria computed from G and seismologically observable velocity discontinuities."
+    },
+    {
+      "author": "Katsura, T. et al.",
+      "year": 2004,
+      "title": "Olivine-wadsleyite transition in the system (Mg,Fe)2SiO4",
+      "journal": "Journal of Geophysical Research, 109(B2), B02209",
+      "why_essential": "Provides experimental constraints on the olivine-wadsleyite Clapeyron slope (~3.6 MPa/K) that can be compared with predictions from the Gibbs free energy calculations implemented in the codebase."
+    }
+  ],
+
+  "worked_examples": [
+    {
+      "problem_statement": "Compute the Gibbs free energy of forsterite (Mg2SiO4) at P = 10 GPa and T = 1500 K, and verify that G = F + PV.",
+      "solution_approach": "Use MieGruneisenEOSOptimizer to find the equilibrium volume at 10 GPa, 1500 K. Then compute F = F0 + FCold + FThermal and G = F + PV. Verify that ThermoMineralParams.GibbsG matches the manual calculation.",
+      "numerical_values": {
+        "mineral": "Forsterite (fo)",
+        "P": "10 GPa",
+        "T": "1500 K",
+        "F0": "-2055.403 kJ/mol (from SLB2011 database)",
+        "V0": "43.6 cm^3/mol",
+        "K0": "128.0 GPa",
+        "K_prime": "4.2",
+        "step1": "EOS optimizer finds finite strain f and corresponding V at P=10 GPa, T=1500 K",
+        "step2": "FCold = 9 * 128.0 * 43.6 * (f^2/2 + 0.2*f^3/6) kJ/mol",
+        "step3": "FThermal computed from Debye function at theta(f) and T=1500 K",
+        "step4": "F = F0 + FCold + FThermal",
+        "step5": "G = F + P*V = F + 10*V kJ/mol (since GPa*cm^3/mol = kJ/mol)",
+        "verification": "GibbsFreeEnergyTests.GibbsG_EqualsF_Plus_PV confirms this identity to 6 decimal places"
+      },
+      "interpretation": "The Gibbs free energy at mantle transition zone conditions is significantly different from the ambient F0 value due to the large PV contribution (~400 kJ/mol at 10 GPa). This PV term is what drives the stabilization of denser polymorphs at depth."
+    },
+    {
+      "problem_statement": "Compute the entropy of forsterite at P = 5 GPa, T = 1000 K using numerical differentiation of the Helmholtz free energy.",
+      "solution_approach": "Following the implementation in ThermoMineralParams.Entropy: at a given finite strain, compute F(T+0.5) and F(T-0.5), then S = -(F(T+0.5) - F(T-0.5)) / (2*0.5) * 1000 J/mol/K. Compare with an independent numerical check using the full EOS optimizer at T+dT and T-dT.",
+      "numerical_values": {
+        "P": "5 GPa",
+        "T": "1000 K",
+        "dT_internal": "0.5 K (used in ThermoMineralParams.Entropy)",
+        "dT_check": "1.0 K (used in GibbsFreeEnergyTests.Entropy_NumericalDerivativeCheck)",
+        "expected_behavior": "S > 0 at T > 0 K (third law of thermodynamics)",
+        "tolerance": "Internal and external numerical derivatives agree within 5% (accounts for finite strain difference at different P-T points)"
+      },
+      "interpretation": "The entropy at mantle conditions is dominated by the Debye vibrational contribution. The numerical differentiation approach gives consistent results whether the finite strain is held fixed (constant V derivative) or re-optimized at each temperature (constant P derivative), validating the thermodynamic consistency of the implementation."
+    },
+    {
+      "problem_statement": "Find the olivine-wadsleyite phase boundary at T = 1600 K and compute the Clapeyron slope dP/dT.",
+      "solution_approach": "Use PhaseDiagramCalculator.FindPhaseBoundary with forsterite and wadsleyite as the two phases, searching over P = 10-20 GPa at T = 1600 K. At the boundary pressure, compute the Clapeyron slope using ComputeClapeyronSlope, which evaluates Delta_S / Delta_V.",
+      "numerical_values": {
+        "phase1": "Forsterite (fo): V0 = 43.6 cm^3/mol, F0 = -2055.403 kJ/mol",
+        "phase2": "Wadsleyite (wa): V0 = 40.52 cm^3/mol, F0 = -2028.226 kJ/mol [uncertain]",
+        "T": "1600 K",
+        "search_range": "P = 10-20 GPa",
+        "expected_boundary": "~13-14 GPa (410 km depth equivalent)",
+        "clapeyron_slope": "~3-4 MPa/K (positive, consistent with experimental data)",
+        "computation": "dP/dT = Delta_S [J/mol/K] / Delta_V [cm^3/mol] * 0.001 [GPa*cm^3/J]"
+      },
+      "interpretation": "The positive Clapeyron slope means the transition pressure increases with temperature. Along a mantle geotherm (~0.3 K/km), this corresponds to the 410 km seismic discontinuity. The Clapeyron slope constrains how the discontinuity depth varies with lateral temperature variations, which is observable in seismic studies."
+    }
+  ],
+
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch01: Thermodynamics of Solids at High Pressure",
+      "nature_of_connection": "prerequisite",
+      "explanation": "Ch01 introduces the Birch-Murnaghan EOS and finite strain theory that provide the FCold contribution to the Helmholtz free energy. The cold compression energy is the dominant contribution to G at high pressures."
+    },
+    {
+      "related_chapter": "Ch02: Debye Model and Thermal Properties",
+      "nature_of_connection": "prerequisite",
+      "explanation": "The Debye model provides the FThermal contribution to F, and hence to G. The Debye function D3(theta/T) and its derivatives determine the thermal free energy and entropy that govern temperature dependence of phase stability."
+    },
+    {
+      "related_chapter": "Ch03: Gruneisen Parameter and Anharmonicity",
+      "nature_of_connection": "prerequisite",
+      "explanation": "The Gruneisen parameter controls how the Debye temperature changes with compression, affecting both thermal pressure and thermal free energy. It directly enters the entropy calculation through its influence on FThermal."
+    },
+    {
+      "related_chapter": "Ch05: The Stixrude-Lithgow-Bertelloni Formulation",
+      "nature_of_connection": "prerequisite",
+      "explanation": "Ch05 provides the complete F(V,T) formulation that Ch12 uses as input. All the machinery for computing HelmholtzF, including the decomposition into FCold and FThermal and the finite-strain-dependent Gruneisen parameter, is established in Ch05."
+    },
+    {
+      "related_chapter": "Ch06: Mie-Gruneisen Equation of State Solver",
+      "nature_of_connection": "prerequisite",
+      "explanation": "The EOS optimizer that finds volume at target P,T is essential for computing G. Without the converged volume, neither PV nor any of the volume-dependent free energy terms can be evaluated correctly."
+    },
+    {
+      "related_chapter": "Ch07: SLB2011 Mineral Database",
+      "nature_of_connection": "application",
+      "explanation": "The mineral database provides the F0 reference energies needed for inter-phase G comparisons. Without F0, only intra-phase property calculations are possible. The database also provides all 11+ parameters for each endmember."
+    },
+    {
+      "related_chapter": "Ch08: Landau Phase Transitions",
+      "nature_of_connection": "prerequisite",
+      "explanation": "Landau free energy, entropy, and volume corrections modify G for minerals undergoing displacive phase transitions (e.g., quartz alpha-beta). These are additive contributions included in HelmholtzF and Volume."
+    },
+    {
+      "related_chapter": "Ch04: Elastic Moduli and Seismic Velocities",
+      "nature_of_connection": "extension",
+      "explanation": "Once phase stability is determined via G minimization, the elastic moduli and seismic velocities of the stable assemblage can be computed. Phase transitions cause discontinuities in velocity profiles that are the primary seismological observables."
+    }
+  ],
+
+  "computational_methods": "The computation of Gibbs free energy and phase stability in ThermoElasticCalculator involves several numerical methods working together.\n\n**Helmholtz and Gibbs Computation**: After the MieGruneisenEOSOptimizer converges to the finite strain f at target (P,T), the ThermoMineralParams constructor computes all state variables in a single pass. FCold uses the analytical Birch-Murnaghan strain energy formula (9*K0*V0*(f^2/2 + (K'-4)*f^3/6)). FThermal calls DebyeFunctionCalculator.GetThermalFreeEnergyPerAtom, which evaluates 3*ln(1-exp(-x)) - D3(x) where D3 is computed by composite Simpson's rule numerical integration. HelmholtzF sums F0 + FCold + FThermal + Landau + magnetic contributions. GibbsG adds P*V.\n\n**Entropy via Numerical Differentiation**: The Entropy property uses central differences with dT = 0.5 K. It creates two new ThermoMineralParams objects at (f, T+0.5) and (f, T-0.5) -- importantly, keeping the same finite strain, not re-solving the EOS. This gives S = -(F_plus - F_minus) / 1.0 * 1000 J/mol/K. The guard condition T < dT + 1 returns 0 for very low temperatures to avoid division issues.\n\n**Phase Boundary Search**: PhaseDiagramCalculator.FindPhaseBoundary uses bisection over pressure (or temperature) to find where G1 - G2 = 0. Up to 50 iterations are performed, converging to within 0.01 kJ/mol tolerance. The method first checks that the sign of G1-G2 differs at the endpoints; if not, it returns NaN (no boundary in range). FindMultiPhaseBoundary generalizes this to multi-phase reactions with stoichiometric coefficients.\n\n**Gibbs Minimization**: For multi-phase assemblages, GibbsMinimizer uses projected gradient descent. Chemical potentials mu_i = G_i (plus mixing contributions for solid solutions) are computed, the mean is subtracted to form a direction vector, and phase amounts are updated with a line search. Phases with amounts below epsilon = 1e-10 are eliminated. Convergence is declared when |sum(direction * mu)| < 1e-8. For the common two-phase pure-endmember case, a simple direct comparison of G values is used instead.\n\n**Phase Diagram Grid**: PhaseDiagramCalculator.CalculateDiagram evaluates the minimizer on a full P-T grid, returning a 2D array of PhaseAssemblage objects. TracePhaseBoundary creates a sequence of (P,T) boundary points by calling FindPhaseBoundary at each temperature step.\n\n**Performance**: Each G evaluation requires one full EOS solve (~10-30 iterations of the optimizer). A phase boundary search requires ~15-20 G evaluations (bisection). A phase diagram on a 50x50 grid requires 2500 EOS solves per phase. The numerical entropy adds 2 extra ThermoMineralParams constructions per evaluation but avoids the EOS optimizer since it holds finite strain fixed.",
+
+  "open_questions": [
+    "How well do the numerically differentiated entropy values compare with fully analytical derivatives of F, especially near Landau transition temperatures where F has kinks?",
+    "What is the accuracy of the bisection-based phase boundary finder compared to more sophisticated methods (e.g., Newton-Raphson using the Clapeyron slope as the Jacobian)?",
+    "How should the GibbsMinimizer handle multi-component solid solutions where the chemical potential depends on composition, requiring simultaneous optimization of both phase amounts and compositions?",
+    "Can the F0 reference energies be systematically improved using density functional theory calculations, reducing dependence on experimental phase equilibrium data?",
+    "What is the effect of anharmonic corrections beyond the quasi-harmonic Debye model on phase boundary positions at very high temperatures (>3000 K)?",
+    "How should kinetic barriers to phase transformation be incorporated alongside the thermodynamic equilibrium predictions from G minimization, particularly for metastable phases in subducting slabs?"
+  ],
+
+  "exercise_suggestions": [
+    "Verify the identity G = F + PV for three different minerals (forsterite, wadsleyite, perovskite) at P = 25 GPa, T = 2000 K using ThermoMineralParams. Explain why the PV term dominates at high pressure.",
+    "Compute the entropy of forsterite at P = 0.0001 GPa and T = 300, 500, 1000, 1500, 2000 K. Plot S vs T and compare the shape with the Debye model prediction for heat capacity Cv. Explain the relationship S = integral(Cv/T dT).",
+    "Using PhaseDiagramCalculator, trace the forsterite-wadsleyite phase boundary from T = 1000 K to T = 2500 K with 20 points. Plot the boundary in P-T space and determine whether the Clapeyron slope is constant or varies with temperature.",
+    "Compute the Clapeyron slope dP/dT for the olivine-wadsleyite transition at T = 1500 K using ComputeClapeyronSlope. Convert to MPa/K and compare with the experimental value of ~3.6 MPa/K from Katsura et al. (2004). Discuss sources of discrepancy.",
+    "Investigate the effect of F0 on phase stability: set F0 = 0 for both forsterite and wadsleyite and attempt to find a phase boundary. Then use the correct F0 values and repeat. Explain why F0 is essential for phase equilibrium but irrelevant for elastic properties.",
+    "Compute G for stishovite and the CaCl2-type SiO2 phase across P = 40-80 GPa at T = 300 K. Identify the transition pressure and compute the Clapeyron slope. How does the Landau contribution to stishovite's G affect the boundary location?",
+    "Write a numerical experiment comparing the ThermoMineralParams.Entropy (dT = 0.5 K) with manual numerical derivatives using dT = 0.1, 1.0, and 5.0 K. Plot the error versus step size and verify second-order convergence of the central difference method.",
+    "For a mantle geotherm T(P) = 1600 + 10*P (K, GPa), compute G for forsterite and wadsleyite at each point and find where the transition occurs. Compare this 'geotherm-based' transition depth with the result from FindPhaseBoundary at fixed T."
+  ],
+
+  "figure_suggestions": [
+    {
+      "description": "G vs P for forsterite and wadsleyite at T = 1600 K, showing the crossover point where the stable phase changes",
+      "axes": "x: Pressure [GPa] (range 5-25), y: Gibbs Free Energy G [kJ/mol]",
+      "key_features": "Two curves crossing at the phase boundary (~13-14 GPa). Label the stable phase on each side. Shade the region where each phase has lower G. Mark the crossover point with Delta_G = 0."
+    },
+    {
+      "description": "Phase boundary (P vs T) for the olivine-wadsleyite transition, with Clapeyron slope indicated",
+      "axes": "x: Temperature [K] (range 1000-2500), y: Pressure [GPa] (range 10-18)",
+      "key_features": "A roughly linear phase boundary with positive slope. Label the low-P side as 'olivine stable' and high-P side as 'wadsleyite stable'. Annotate the Clapeyron slope dP/dT in MPa/K. Overlay a representative mantle geotherm to show the intersection depth."
+    },
+    {
+      "description": "Components of Helmholtz free energy (FCold, FThermal, F0) and the PV term as functions of pressure at T = 1500 K for forsterite",
+      "axes": "x: Pressure [GPa] (range 0-30), y: Energy [kJ/mol]",
+      "key_features": "Stacked or overlaid curves showing the relative magnitudes of each contribution. FCold grows quadratically with compression. FThermal is relatively small. PV grows linearly. The total G = F0 + FCold + FThermal + PV shows the combined effect."
+    },
+    {
+      "description": "Entropy S vs temperature for forsterite at P = 0 and P = 10 GPa, illustrating the pressure effect",
+      "axes": "x: Temperature [K] (range 100-3000), y: Entropy [J/mol/K]",
+      "key_features": "Both curves rise from 0 at T=0 and approach the Dulong-Petit limit (3nR) at high T. The high-pressure curve is shifted to lower S because the compressed Debye temperature is higher. Show the Debye temperature values for each pressure."
+    },
+    {
+      "description": "Multi-phase P-T phase diagram for the MgSiO3 system showing stability fields of enstatite, wadsleyite/ringwoodite, perovskite, and post-perovskite",
+      "axes": "x: Temperature [K] (range 1000-3000), y: Pressure [GPa] (range 0-130)",
+      "key_features": "Colored stability fields with labeled phase boundaries. Indicate the Clapeyron slope sign for each boundary (positive for 410 km, negative for 660 km). Overlay a mantle geotherm. This is the key output of the full G minimization framework."
+    },
+    {
+      "description": "Convergence of numerical entropy with step size dT, comparing central difference with forward difference",
+      "axes": "x: Step size dT [K] (log scale, range 0.01-10), y: Relative error in S [%]",
+      "key_features": "Central difference error decreases as dT^2 (slope -2 on log-log). Forward difference error decreases as dT (slope -1). Mark the dT = 0.5 K value used in the code and its corresponding error level. This validates the numerical differentiation approach."
+    }
+  ],
+
+  "historical_context": "The use of Gibbs free energy for phase stability analysis has its roots in J. Willard Gibbs' foundational work 'On the Equilibrium of Heterogeneous Substances' (1876-1878), which established that the phase with the minimum chemical potential (molar Gibbs energy) is stable at given P and T. The Clapeyron equation predates even this, having been derived by Benoit Paul Emile Clapeyron in 1834 to describe the vapor-liquid equilibrium of water, and later generalized by Rudolf Clausius.\n\nIn mineral physics, the application of Gibbs free energy to predict mantle phase assemblages began in earnest in the 1960s-1970s with the pioneering high-pressure experiments of Ringwood, Akimoto, and others who determined phase diagrams of mantle-relevant compositions. The computational approach was advanced significantly by Ita and Stixrude (1992), who demonstrated that a self-consistent thermodynamic formulation could predict mantle mineralogy and seismic velocities from a single set of parameters. The SLB2005/2011 papers brought this to maturity by providing a comprehensive database of F0 reference energies and a rigorous framework for computing G from F(V,T).\n\nThe numerical differentiation approach for entropy, while seemingly unsophisticated, reflects a practical philosophy in computational mineral physics: when the free energy function includes multiple complex contributions (Debye thermal, Landau, magnetic, solid solution mixing), numerical derivatives are often more reliable than maintaining separate analytical derivative code for each term. This approach is widely used in modern thermodynamic software packages including BurnMan, Perple_X, and HeFESTo.",
+
+  "uncertain": [
+    "worked_examples[2].numerical_values.phase2"
+  ]
+}
