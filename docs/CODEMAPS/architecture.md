@@ -248,7 +248,17 @@ dotnet test --filter "Category=E2E"  # E2E only
 | Anelasticity Tiers | 4 (Simple, Parametric, Extended Burgers, Andrade) |
 | NuGet Direct Dependencies | 8 |
 | Supported Platforms | 3 (Win/Mac/Linux) |
+| Textbook Chapters | 31 (8 parts, 20.3K lines) |
+| Research Data Files | 43 JSON (31 textbook + 12 anelasticity topics) |
+
+## Educational Materials
+
+This project includes comprehensive graduate-level textbook content:
+- **31 chapters** covering all project features (Foundations → Advanced Methods)
+- **8-part curriculum** (Parts I-VIII, ~20,300 lines total)
+- **Research data** with structured topic outlines and code mappings
+- See [textbook-research.md](./textbook-research.md) for complete details
 
 ---
 
-**Next:** See [core-engine.md](./core-engine.md) for detailed calculator descriptions.
+**Next:** See [core-engine.md](./core-engine.md) for detailed calculator descriptions, or [textbook-research.md](./textbook-research.md) for educational materials overview.

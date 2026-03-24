@@ -1,0 +1,300 @@
+{
+  "chapter_summary": "Landau theory provides a powerful phenomenological framework for modeling displacive (structural) phase transitions in minerals, where the crystal structure changes continuously through small atomic displacements rather than through reconstructive bond-breaking. The central quantity is the order parameter Q, which measures the degree of structural distortion from a high-symmetry parent phase: Q=1 in the fully ordered low-temperature phase and Q=0 in the disordered high-temperature phase. For tricritical transitions, the equilibrium order parameter follows Q(T) = (1 - T/Tc)^(1/4) below the critical temperature Tc, and vanishes above it. The Landau free energy contribution takes the form G_Landau = S_D * [(T - Tc)*Q^2 + Tc*Q^6/3], where S_D is the maximum excess entropy associated with the transition. This expression, derived from a sixth-order expansion of the free energy in Q (appropriate for tricritical behavior), governs how the phase transition modifies the thermodynamic properties of the mineral.\n\nThe critical temperature Tc is pressure-dependent through the Clausius-Clapeyron-like relation Tc(P) = Tc0 + V_D * P / S_D, where Tc0 is the zero-pressure critical temperature, V_D is the maximum excess volume, and S_D is the maximum excess entropy. This linear pressure dependence reflects the thermodynamic requirement that the transition boundary in P-T space has a slope dTc/dP = V_D/S_D, analogous to the Clapeyron slope for first-order transitions. For quartz, with Tc0 = 847 K, V_D = 1.222 cm^3/mol, and S_D = 5.164 J/mol/K, the alpha-beta transition temperature increases by approximately 2.4 K per GPa of pressure. For stishovite, the situation is different: Tc0 = -4250 K indicates that the CaCl2-type distortion is not stable at ambient pressure and only becomes relevant at very high pressures where the V_D*P/S_D term raises Tc above zero.\n\nThe Landau contribution modifies three key thermodynamic properties: the excess volume V_Landau = V_D * Q^2, the excess entropy S_Landau = -S_D * Q^2, and the excess free energy G_Landau. These corrections are additive to the baseline equation of state properties computed from the Birch-Murnaghan and Mie-Gruneisen-Debye framework. In the ThermoElasticCalculator codebase, the LandauCalculator class computes these corrections, and they are integrated into ThermoMineralParams where the Landau volume is added to the EOS volume, and the Landau free energy is included in the total Helmholtz energy. This ensures that the phase transition effects are self-consistently propagated to all derived properties such as density, elastic moduli, and seismic velocities.\n\nThe practical importance of Landau theory in mineral physics lies in its ability to capture the thermodynamic consequences of phase transitions with just three parameters (Tc0, V_D, S_D) per mineral. This is far more economical than attempting to treat each polymorph as an independent phase with a full set of EOS parameters. The SLB2011 database uses Landau parameters for quartz (alpha-beta transition at 847 K) and stishovite (rutile to CaCl2-type structure), both of which are important SiO2 polymorphs in Earth's mantle. The framework naturally handles the case where no transition occurs (Tc0 = 0 disables the Landau contribution) and where the transition is only accessible at extreme conditions (negative Tc0).",
+  "prerequisite_knowledge": [
+    "Thermodynamic potentials: Helmholtz free energy F, Gibbs free energy G, and their natural variables",
+    "Phase transitions: first-order vs. continuous (second-order/tricritical), latent heat, Clapeyron equation",
+    "The SLB2011 equation of state framework: Birch-Murnaghan EOS, Mie-Gruneisen-Debye thermal model (Chapters 1-6)",
+    "Crystal symmetry concepts: space groups, symmetry-breaking distortions, displacive vs. reconstructive transitions",
+    "Basic statistical mechanics: entropy as a measure of disorder, free energy minimization at equilibrium"
+  ],
+  "key_equations": [
+    {
+      "equation": "Q(T) = \\left(1 - \\frac{T}{T_c}\\right)^{1/4} \\quad (T < T_c), \\quad Q = 0 \\quad (T \\geq T_c)",
+      "name": "Equilibrium order parameter for tricritical transition",
+      "variables": {
+        "Q": "Order parameter (dimensionless, 0 to 1)",
+        "T": "Temperature (K)",
+        "T_c": "Critical temperature at current pressure (K)"
+      },
+      "interpretation": "The order parameter measures the degree of structural distortion. The exponent 1/4 is characteristic of a tricritical point (sixth-order Landau expansion), contrasting with the exponent 1/2 for a standard second-order transition (fourth-order expansion). Q drops continuously to zero at Tc, meaning there is no latent heat but the heat capacity shows a discontinuity."
+    },
+    {
+      "equation": "T_c(P) = T_{c0} + \\frac{V_D \\cdot P}{S_D}",
+      "name": "Pressure-dependent critical temperature",
+      "variables": {
+        "T_c": "Critical temperature at pressure P (K)",
+        "T_{c0}": "Critical temperature at zero pressure (K)",
+        "P": "Pressure (GPa)",
+        "V_D": "Maximum excess volume of the transition (cm^3/mol)",
+        "S_D": "Maximum excess entropy of the transition (J/mol/K)"
+      },
+      "interpretation": "The transition temperature shifts linearly with pressure, with slope dTc/dP = V_D/S_D. This is the Landau-theory analog of the Clapeyron slope. For quartz, dTc/dP ~ 0.237 K/GPa * 1000 = 237 K/GPa. A negative Tc0 (as for stishovite) means the ordered phase is not stable at ambient pressure and requires high pressure to stabilize."
+    },
+    {
+      "equation": "G_{\\text{Landau}} = S_D \\left[(T - T_c) Q^2 + \\frac{T_c Q^6}{3}\\right]",
+      "name": "Landau free energy for tricritical transition (SLB2011 Eq. 28)",
+      "variables": {
+        "G_{\\text{Landau}}": "Excess Gibbs free energy from the phase transition (J/mol)",
+        "S_D": "Maximum excess entropy (J/mol/K)",
+        "T": "Temperature (K)",
+        "T_c": "Critical temperature at current pressure (K)",
+        "Q": "Equilibrium order parameter"
+      },
+      "interpretation": "This is the excess free energy arising from the structural phase transition, evaluated at the equilibrium value of Q. Below Tc, G_Landau is negative, indicating that the ordered phase is stabilized relative to the disordered phase. The Q^6 term arises from the tricritical nature of the transition. At equilibrium, this expression combines the energetic cost of ordering with the entropy gained by disordering."
+    },
+    {
+      "equation": "S_{\\text{Landau}} = -S_D \\cdot Q^2",
+      "name": "Landau excess entropy",
+      "variables": {
+        "S_{\\text{Landau}}": "Excess entropy from the phase transition (J/mol/K)",
+        "S_D": "Maximum excess entropy (J/mol/K)",
+        "Q": "Equilibrium order parameter"
+      },
+      "interpretation": "The ordered phase has lower entropy than the disordered phase (S_Landau is negative when Q > 0). At T = 0, the maximum entropy reduction is -S_D. As T approaches Tc, Q vanishes and the entropy correction disappears. This is the analytic derivative -dG_Landau/dT evaluated at equilibrium Q."
+    },
+    {
+      "equation": "V_{\\text{Landau}} = V_D \\cdot Q^2",
+      "name": "Landau excess volume",
+      "variables": {
+        "V_{\\text{Landau}}": "Excess molar volume from the phase transition (cm^3/mol)",
+        "V_D": "Maximum excess volume (cm^3/mol)",
+        "Q": "Equilibrium order parameter"
+      },
+      "interpretation": "The ordered (low-symmetry) phase typically has a slightly different volume than the disordered phase. For quartz, V_D = 1.222 cm^3/mol means the alpha phase is about 1.2 cm^3/mol larger than beta quartz. This excess volume is added to the EOS-derived volume in ThermoMineralParams to obtain the total molar volume."
+    }
+  ],
+  "physical_concepts": [
+    {
+      "concept": "Order parameter Q",
+      "definition": "A dimensionless quantity (ranging from 0 to 1) that characterizes the degree of structural distortion in a displacive phase transition. Q = 0 corresponds to the high-symmetry (disordered) phase; Q = 1 corresponds to the fully ordered low-temperature phase.",
+      "physical_intuition": "Think of Q as measuring how far the atoms have shifted from their high-symmetry positions. In the alpha-beta quartz transition, Q describes the rotation angle of the SiO4 tetrahedra. As temperature increases toward Tc, thermal fluctuations progressively reduce the distortion until the crystal snaps back to the higher-symmetry structure at Tc.",
+      "common_misconceptions": [
+        "Confusing the order parameter with composition or chemical ordering -- in Landau theory for displacive transitions, Q describes structural distortion, not chemical mixing.",
+        "Assuming Q changes discontinuously at Tc -- for continuous (second-order or tricritical) transitions, Q goes smoothly to zero at Tc.",
+        "Believing Q is directly measurable -- Q is a theoretical construct, though it can be related to observable quantities like unit cell angles, atomic coordinates, or diffraction peak intensities."
+      ]
+    },
+    {
+      "concept": "Tricritical vs. second-order transitions",
+      "definition": "A tricritical point separates first-order from second-order transition behavior. In the Landau expansion, a second-order transition uses terms up to Q^4, while a tricritical transition requires terms up to Q^6. The SLB2011 framework uses the tricritical form with Q = (1 - T/Tc)^(1/4).",
+      "physical_intuition": "The distinction matters because it determines how sharply properties change near Tc. The exponent 1/4 for tricritical behavior means Q decreases more slowly near Tc than the 1/2 exponent for second-order transitions. The alpha-beta quartz transition is experimentally very close to tricritical, which is why SLB2011 adopts this form.",
+      "common_misconceptions": [
+        "Treating all continuous transitions as second-order -- many mineral transitions are tricritical or weakly first-order.",
+        "Thinking the Landau exponent is always exactly 1/4 or 1/2 -- real transitions can have non-classical critical exponents due to fluctuation effects, though Landau theory ignores these."
+      ]
+    },
+    {
+      "concept": "Excess thermodynamic properties from phase transitions",
+      "definition": "The additional contributions to volume (V_D * Q^2), entropy (-S_D * Q^2), and free energy that arise from the structural phase transition, beyond what the baseline equation of state predicts.",
+      "physical_intuition": "A phase transition reorganizes the crystal structure, and this reorganization has thermodynamic consequences. The excess volume reflects the change in packing efficiency, the excess entropy reflects the change in configurational freedom, and the excess free energy determines which phase is stable. These corrections are additive to the Mie-Gruneisen-Debye baseline.",
+      "common_misconceptions": [
+        "Assuming excess properties are always small -- for quartz, V_D = 1.222 cm^3/mol is about 5% of the total molar volume, which is significant.",
+        "Forgetting that the Landau correction affects derived properties -- since volume changes, density, elastic moduli, and seismic velocities are all indirectly affected."
+      ]
+    },
+    {
+      "concept": "Pressure dependence of Tc",
+      "definition": "The critical temperature shifts with pressure according to Tc(P) = Tc0 + V_D * P / S_D, reflecting the thermodynamic relationship between the excess volume and excess entropy of the transition.",
+      "physical_intuition": "If the ordered phase has a larger volume (V_D > 0) and lower entropy (S_D > 0), then increasing pressure favors the smaller-volume disordered phase and lowers Tc. However, the formula Tc(P) = Tc0 + V_D*P/S_D actually increases Tc when V_D and S_D are both positive, because the Clapeyron relation for this type of transition reflects that pressure stabilizes the ordered phase when V_D/S_D > 0. The sign and magnitude of dTc/dP depend on the specific mineral.",
+      "common_misconceptions": [
+        "Assuming Tc always increases with pressure -- the sign of dTc/dP = V_D/S_D depends on the signs and magnitudes of V_D and S_D.",
+        "Extrapolating the linear Tc(P) relation to arbitrarily high pressures -- the linear approximation may break down at very high pressures where higher-order effects become important."
+      ]
+    },
+    {
+      "concept": "Negative Tc0 and high-pressure stabilization",
+      "definition": "A negative zero-pressure critical temperature (Tc0 < 0) indicates that the low-symmetry ordered phase is not stable at ambient conditions. The transition only becomes accessible when pressure raises Tc above the temperature of interest.",
+      "physical_intuition": "Stishovite has Tc0 = -4250 K. This means you would need to cool to -4250 K (physically impossible) to see the CaCl2-type distortion at zero pressure. But at very high pressures in the deep mantle, the V_D*P/S_D term can push Tc above zero, enabling the transition. This is a clever way of encoding a pressure-induced transition within the same Landau framework.",
+      "common_misconceptions": [
+        "Thinking negative Tc0 means the Landau parameters are wrong -- it is a physically meaningful encoding of a pressure-induced transition.",
+        "Assuming Q is always nonzero for any mineral with Landau parameters -- if T > Tc(P), Q = 0 and the Landau contribution vanishes entirely."
+      ]
+    }
+  ],
+  "key_references": [
+    {
+      "author": "Landau, L.D. and Lifshitz, E.M.",
+      "year": 1980,
+      "title": "Statistical Physics, Part 1 (3rd ed.)",
+      "journal": "Pergamon Press (Course of Theoretical Physics, Vol. 5)",
+      "why_essential": "The foundational treatment of Landau theory for phase transitions, introducing the free energy expansion in terms of an order parameter. Essential for understanding the theoretical basis of the approach used in SLB2011."
+    },
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2011,
+      "title": "Thermodynamics of mantle minerals - II. Phase equilibria",
+      "journal": "Geophysical Journal International, 184, 1180-1213",
+      "why_essential": "Presents the specific Landau formulation (Eq. 28) implemented in the codebase, including the tricritical Q^6 expansion and the three Landau parameters (Tc0, V_D, S_D) for quartz and stishovite. The primary source for parameter values."
+    },
+    {
+      "author": "Carpenter, M.A.",
+      "year": 1988,
+      "title": "Thermochemistry of aluminium/silicon ordering in feldspar minerals",
+      "journal": "NATO ASI Series C, Vol. 137, 265-323",
+      "why_essential": "Pioneering application of Landau theory to mineral phase transitions, establishing the methodology of using macroscopic thermodynamic measurements to constrain Landau expansion coefficients for geological materials."
+    },
+    {
+      "author": "Salje, E.K.H.",
+      "year": 1990,
+      "title": "Phase Transitions in Ferroelastic and Co-elastic Crystals",
+      "journal": "Cambridge University Press",
+      "why_essential": "Comprehensive monograph on Landau theory applied to structural phase transitions in crystals, with detailed treatment of the alpha-beta quartz transition and coupling between order parameter and strain."
+    },
+    {
+      "author": "Hemley, R.J.",
+      "year": 1987,
+      "title": "Pressure dependence of Raman spectra of SiO2 polymorphs: alpha-quartz, coesite, and stishovite",
+      "journal": "Geophysical Monograph, 39, 347-359",
+      "why_essential": "Experimental constraints on the pressure dependence of the quartz and stishovite transitions, providing the data that underpin the V_D and S_D parameter values used in SLB2011."
+    },
+    {
+      "author": "Andrault, D., Fiquet, G., Guyot, F., and Hanfland, M.",
+      "year": 1998,
+      "title": "Pressure-induced Landau-type transition in stishovite",
+      "journal": "Science, 282, 720-724",
+      "why_essential": "Key experimental study of the stishovite to CaCl2-type transition under pressure, demonstrating the applicability of Landau theory to this high-pressure mineral system."
+    }
+  ],
+  "worked_examples": [
+    {
+      "problem": "Compute the order parameter Q, excess volume, excess entropy, and Landau free energy for alpha-quartz at T = 300 K and P = 0 GPa. Use the SLB2011 parameters: Tc0 = 847 K, V_D = 1.222 cm^3/mol, S_D = 5.164 J/mol/K.",
+      "solution_approach": "1. Compute Tc at P = 0: Tc(0) = Tc0 + V_D*0/S_D = 847 K. 2. Since T = 300 K < Tc = 847 K, compute Q: Q = (1 - 300/847)^(1/4) = (0.6458)^(0.25) = 0.8963. 3. Excess volume: V_Landau = V_D * Q^2 = 1.222 * 0.8963^2 = 1.222 * 0.8034 = 0.9817 cm^3/mol. 4. Excess entropy: S_Landau = -S_D * Q^2 = -5.164 * 0.8034 = -4.1481 J/mol/K. 5. Landau free energy: G_Landau = S_D * [(T - Tc)*Q^2 + Tc*Q^6/3] = 5.164 * [(300 - 847)*0.8034 + 847*0.8034^3/3] = 5.164 * [-439.5*0.8034 + 847*0.5178/3] = 5.164 * [-353.0 + 146.3] = 5.164 * (-206.7) = -1067.4 J/mol.",
+      "numerical_values": {
+        "Tc_K": 847.0,
+        "T_K": 300.0,
+        "P_GPa": 0.0,
+        "Q": 0.8963,
+        "V_Landau_cm3_mol": 0.9817,
+        "S_Landau_J_mol_K": -4.148,
+        "G_Landau_J_mol": -1067.4
+      },
+      "interpretation": "At ambient conditions, quartz is well below its alpha-beta transition temperature. The order parameter is 0.90 (close to fully ordered), the excess volume is about 1 cm^3/mol (roughly 4% of the total molar volume of quartz ~22.7 cm^3/mol), and the Landau free energy is about -1.07 kJ/mol, stabilizing the alpha phase. The negative excess entropy reflects the greater structural order of the alpha phase."
+    },
+    {
+      "problem": "Determine the pressure at which the stishovite to CaCl2-type transition becomes possible at T = 2000 K. Use Tc0 = -4250 K, V_D = 0.001 cm^3/mol, S_D = 0.012 J/mol/K.",
+      "solution_approach": "The transition occurs when Tc(P) = T, i.e., when the critical temperature reaches the temperature of interest. Set Tc(P) = T: T = Tc0 + V_D*P/S_D. Solve for P: P = (T - Tc0) * S_D / V_D = (2000 - (-4250)) * 0.012 / 0.001 = 6250 * 12 = 75000 GPa. This enormously high pressure indicates that with these parameters, the Landau contribution for stishovite is negligible under normal mantle conditions (P < 140 GPa). The very small V_D and S_D values mean the transition effects are extremely subtle.",
+      "numerical_values": {
+        "Tc0_K": -4250.0,
+        "T_K": 2000.0,
+        "V_D_cm3_mol": 0.001,
+        "S_D_J_mol_K": 0.012,
+        "P_transition_GPa": 75000
+      },
+      "interpretation": "The stishovite Landau parameters in SLB2011 produce an unrealistically high transition pressure, indicating that the CaCl2-type transition is effectively not modeled within normal mantle conditions using these particular parameter values. In reality, the stishovite to CaCl2 transition occurs around 50-70 GPa. The very small V_D and S_D values serve more as placeholders in the database, and the large negative Tc0 ensures Q = 0 throughout the mantle P-T range. [uncertain]"
+    },
+    {
+      "problem": "Calculate the shift in alpha-beta quartz transition temperature from 0 GPa to 5 GPa, and compute Q at T = 800 K and P = 5 GPa.",
+      "solution_approach": "1. Tc at P = 0: Tc(0) = 847 K. 2. Tc at P = 5 GPa: Tc(5) = 847 + 1.222 * 5 / 5.164 = 847 + 1.183 = 848.18 K. 3. At T = 800 K, P = 5 GPa: since T < Tc(5) = 848.18 K, compute Q: Q = (1 - 800/848.18)^(1/4) = (0.0569)^(0.25) = 0.4882. This is significantly reduced compared to Q at 300 K, showing that the order parameter decreases rapidly as T approaches Tc.",
+      "numerical_values": {
+        "Tc_0GPa_K": 847.0,
+        "Tc_5GPa_K": 848.18,
+        "dTc_K": 1.18,
+        "dTc_dP_K_per_GPa": 0.237,
+        "T_K": 800.0,
+        "Q_at_800K_5GPa": 0.4882
+      },
+      "interpretation": "The pressure shift of Tc for quartz is quite small -- only about 0.24 K/GPa. This is because V_D/S_D = 1.222/5.164 = 0.237 K*mol/(J*GPa) is small. At 800 K (just below Tc), the order parameter is only 0.49, meaning the structure is halfway between the ordered alpha and disordered beta forms. The transition is very sensitive to temperature in this near-Tc regime."
+    }
+  ],
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch01 Thermodynamics of Solids at High Pressure",
+      "connection_type": "prerequisite",
+      "explanation": "The Birch-Murnaghan EOS provides the baseline volume and pressure relations. The Landau excess volume is added on top of the EOS-derived volume, so understanding the finite strain framework is essential before adding phase transition corrections."
+    },
+    {
+      "related_chapter": "Ch02 Debye Model and Thermal Properties",
+      "connection_type": "prerequisite",
+      "explanation": "The Debye thermal model provides the baseline thermal free energy and entropy. The Landau entropy and free energy corrections are additive to these thermal contributions in the total Helmholtz free energy."
+    },
+    {
+      "related_chapter": "Ch06 Mie-Gruneisen Equation of State Solver",
+      "connection_type": "application",
+      "explanation": "The MieGruneisenEOSOptimizer solves for equilibrium volume at given P and T. The Landau volume correction is included in ThermoMineralParams.Volume, which feeds back into the self-consistent solution. The Landau free energy enters the total Helmholtz energy used for thermodynamic property calculations."
+    },
+    {
+      "related_chapter": "Ch07 SLB2011 Mineral Database",
+      "connection_type": "prerequisite",
+      "explanation": "The Landau parameters Tc0, V_D, and S_D are stored in the SLB2011Endmembers database as part of MineralParams. Only minerals with non-zero Tc0 (quartz and stishovite) have active Landau contributions."
+    },
+    {
+      "related_chapter": "Ch09 Magnetic Contributions",
+      "connection_type": "extension",
+      "explanation": "Like the Landau contribution, the magnetic contribution is an additive correction to the total free energy. Both are computed in ThermoMineralParams and share the same architectural pattern: small corrections added to the Mie-Gruneisen-Debye baseline."
+    },
+    {
+      "related_chapter": "Ch12 Gibbs Free Energy and Phase Stability",
+      "connection_type": "application",
+      "explanation": "Phase equilibrium calculations compare Gibbs free energies of different mineral phases. The Landau correction to the Helmholtz energy propagates into the Gibbs energy G = F + PV, which is crucial for correctly predicting stability fields of quartz polymorphs."
+    },
+    {
+      "related_chapter": "Ch04 Elastic Moduli and Seismic Velocities",
+      "connection_type": "extension",
+      "explanation": "The Landau volume correction affects the total molar volume, which in turn affects density and hence seismic velocities. Near the phase transition, the rapid change in V_Landau can produce anomalies in seismic velocity profiles."
+    }
+  ],
+  "computational_methods": "The LandauCalculator is implemented as a static class with four pure functions, each requiring O(1) floating-point operations. GetOrderParameter(T, Tc) computes Q = (1 - T/Tc)^(1/4) using Math.Pow, with guard clauses returning 0.0 when Tc <= 0 or T >= Tc. GetTc(P, Tc0, VD, SD) evaluates the linear pressure dependence Tc0 + VD*P/SD, returning 0.0 when Tc0 or SD is zero. GetFreeEnergy(T, Tc, SD) computes the full Landau free energy S_D*[(T-Tc)*Q^2 + Tc*Q^6/3] by first calling GetOrderParameter internally. GetEntropy and GetVolume similarly compute -S_D*Q^2 and V_D*Q^2 respectively.\n\nIntegration with the EOS solver occurs in the ThermoMineralParams constructor, which is called by MieGruneisenEOSOptimizer at each iteration. The Landau contributions are computed once per constructor call: first Tc is determined from the current pressure, then the order parameter, volume correction, entropy correction, and free energy are evaluated. The Landau volume is added to the EOS volume (line: Volume => Mineral.FiniteToVolume(Finite) + _landauVolume), and the Landau free energy is added to the total Helmholtz energy (converted from J to kJ). This means the Landau correction participates in the self-consistent volume optimization through the density calculation.\n\nNo iteration or convergence criteria are needed for the Landau calculation itself -- it is a direct algebraic evaluation. The only numerical subtlety is near T = Tc, where Q approaches zero as (1 - T/Tc)^(1/4). The 1/4 exponent means Q has an infinite slope at Tc (dQ/dT diverges), but Q itself and all the computed excess properties (which depend on Q^2) remain well-behaved. The guard clause T >= Tc ensures a clean transition to Q = 0 without numerical artifacts.",
+  "open_questions": [
+    "Should the SLB2011 Landau formulation be extended to include coupling between the order parameter and elastic strain (Landau-Ginzburg strain coupling), which would allow the phase transition to affect bulk and shear moduli directly rather than only through the volume correction?",
+    "The stishovite Landau parameters (Tc0 = -4250 K, V_D = 0.001, S_D = 0.012) produce an effectively inactive transition under mantle conditions. Can more realistic parameters be determined from recent high-pressure experiments on the stishovite-CaCl2 transition near 50-70 GPa?",
+    "How important are fluctuation corrections beyond mean-field Landau theory for mineral phase transitions at high temperatures, particularly for the alpha-beta quartz transition near Tc where critical fluctuations may be significant?",
+    "Can the tricritical (Q^6) Landau expansion be improved by including Q^8 terms or by using a more general Landau potential that allows the transition character to vary continuously between second-order and first-order?",
+    "How should the Landau correction interact with the EOS solver when the transition produces a large volume discontinuity (near-first-order behavior), potentially causing convergence difficulties in the Mie-Gruneisen optimizer?"
+  ],
+  "exercise_suggestions": [
+    "Verify that the Landau free energy G_Landau is minimized at the equilibrium Q by differentiating the general expression G = S_D*[(T-Tc)*Q^2 + Tc*Q^6/3] with respect to Q and showing that the equilibrium condition yields Q = (1 - T/Tc)^(1/4).",
+    "Plot Q(T) for quartz (Tc0 = 847 K) at P = 0, 5, and 10 GPa. Show how the transition temperature shifts and how Q varies with temperature in each case.",
+    "Compute the heat capacity anomaly C_p(T) near the alpha-beta quartz transition by numerically differentiating the Landau entropy S_Landau = -S_D * Q^2 with respect to temperature. What happens at T = Tc?",
+    "Compare the excess volume of alpha-quartz at 300 K (V_Landau = V_D * Q^2) with the total molar volume. What fraction of the total volume is due to the Landau contribution?",
+    "Derive the Clapeyron slope dTc/dP = V_D/S_D from the condition that the Gibbs free energy difference between the two phases vanishes along the phase boundary. Show that this is consistent with the Tc(P) formula.",
+    "For stishovite with Tc0 = -4250 K, determine the minimum pressure at which the CaCl2-type distortion could appear at T = 300 K, T = 1000 K, and T = 2000 K. Discuss the geological relevance.",
+    "Modify the LandauCalculator to implement a standard second-order transition (Q = (1 - T/Tc)^(1/2) instead of 1/4, with Q^4 instead of Q^6 in the free energy). Compare the thermodynamic properties near Tc for both cases.",
+    "Write a program to compute the total molar volume of quartz as a function of temperature at P = 1 atm, including both the Mie-Gruneisen-Debye EOS volume and the Landau correction. Plot V_total(T) and identify the discontinuity in dV/dT at the transition."
+  ],
+  "figure_suggestions": [
+    {
+      "description": "Order parameter Q as a function of temperature for quartz at several pressures, showing the characteristic (1-T/Tc)^(1/4) shape and the shift in Tc with pressure",
+      "axes": {
+        "x": "Temperature T (K, range 0-1000)",
+        "y": "Order parameter Q (dimensionless, range 0-1)"
+      },
+      "key_features": "Plot curves for P = 0, 5, 10, and 20 GPa. Highlight Tc for each pressure with a vertical marker. Show the steep descent near Tc characteristic of the 1/4 exponent. Compare with a dashed line showing the 1/2 exponent (second-order) for contrast."
+    },
+    {
+      "description": "Landau free energy G_Landau as a function of temperature for quartz at P = 0, showing the stabilization of the alpha phase below Tc",
+      "axes": {
+        "x": "Temperature T (K, range 0-1000)",
+        "y": "Landau free energy G_Landau (J/mol)"
+      },
+      "key_features": "G_Landau is negative below Tc (stabilizing the ordered phase) and zero above Tc. Mark Tc = 847 K. Show the cusp at Tc. Optionally overlay the excess entropy and excess volume on secondary axes."
+    },
+    {
+      "description": "P-T phase diagram for the alpha-beta quartz transition showing the Tc(P) line and the Clapeyron slope",
+      "axes": {
+        "x": "Pressure P (GPa, range 0-10)",
+        "y": "Temperature T (K, range 800-900)"
+      },
+      "key_features": "A straight line with slope dTc/dP = V_D/S_D = 0.237 K/GPa. Label the alpha-quartz and beta-quartz stability fields. Show that the slope is very gentle, reflecting the small V_D/S_D ratio."
+    },
+    {
+      "description": "Comparison of molar volume of quartz with and without the Landau correction as a function of temperature",
+      "axes": {
+        "x": "Temperature T (K, range 200-1000)",
+        "y": "Molar volume V (cm^3/mol)"
+      },
+      "key_features": "Show the EOS baseline volume increasing smoothly with T, and the total volume (EOS + Landau) showing a kink at Tc where V_Landau drops to zero. Highlight the magnitude of the Landau volume correction (about 1 cm^3/mol at 300 K)."
+    },
+    {
+      "description": "Schematic of the Landau free energy landscape G(Q) at several temperatures showing the evolution from a single minimum (T > Tc) to a displaced minimum (T < Tc)",
+      "axes": {
+        "x": "Order parameter Q (range -1.5 to 1.5)",
+        "y": "Free energy G(Q) (arbitrary units)"
+      },
+      "key_features": "At T >> Tc, a single parabolic minimum at Q = 0. At T = Tc, a flat-bottomed well (tricritical). At T < Tc, a double-well potential with minima at Q and -Q. Show how the equilibrium Q shifts as T decreases."
+    }
+  ],
+  "historical_context": "Landau theory of phase transitions was formulated by Lev Davidovich Landau in 1937 as a general symmetry-based approach to continuous phase transitions. The theory postulates that the free energy can be expanded as a power series in an order parameter that measures the degree of symmetry breaking, with the coefficients determined by the symmetry of the system. Originally applied to magnetic and superconducting transitions, the framework was extended to structural phase transitions in crystals during the 1970s and 1980s, notably by Ekhard Salje and Michael Carpenter.\n\nThe application of Landau theory to the alpha-beta quartz transition was particularly influential. The alpha-beta quartz transition at 847 K (573 degrees C) has been studied extensively because quartz is one of the most abundant minerals in Earth's crust and the transition has practical implications for geothermometry and the interpretation of seismic velocities. Experimental work by Hemley (1987) and others constrained the pressure dependence of the transition, providing the V_D and S_D parameters.\n\nThe stishovite to CaCl2-type transition was predicted theoretically and confirmed experimentally by Andrault et al. (1998) and others. This transition is significant because stishovite is the stable SiO2 polymorph in Earth's lower mantle, and the CaCl2 distortion affects its elastic properties and seismic signature. The incorporation of Landau theory into the SLB2011 framework by Stixrude and Lithgow-Bertelloni (2011) represented an elegant solution to the challenge of modeling phase transitions within a self-consistent thermodynamic database: rather than maintaining separate parameter sets for each polymorph, the Landau approach adds just three parameters (Tc0, V_D, S_D) to capture the transition thermodynamics.",
+  "uncertain": [
+    "worked_examples[1].interpretation"
+  ]
+}

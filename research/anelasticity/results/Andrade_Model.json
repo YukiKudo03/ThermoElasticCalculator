@@ -1,0 +1,135 @@
+{
+  "summary": "The Andrade creep model describes transient viscoelastic behavior of mantle minerals through a power-law time-dependent creep function J(t) = J_U + beta * t^n + t/eta, where n (typically ~1/3) is the Andrade exponent. In the frequency domain this produces a power-law frequency dependence of attenuation Q^{-1} proportional to omega^{-alpha} with alpha = n, capturing the broad absorption band observed in seismic and laboratory data for polycrystalline olivine. The Sundberg-Cooper extension adds an additional Debye-type dissipation peak (associated with elastically-accommodated grain-boundary sliding) to the Andrade background, providing improved fits to high-temperature torsional oscillation data on olivine aggregates.",
+
+  "key_papers": [
+    {
+      "author": "Jackson, I. and Faul, U.H.",
+      "year": 2010,
+      "journal": "Physics of the Earth and Planetary Interiors",
+      "title": "Grainsize-sensitive viscoelastic relaxation in olivine: Towards a robust laboratory-based model for seismological application",
+      "doi": "10.1016/j.pepi.2009.09.006"
+    },
+    {
+      "author": "Sundberg, M. and Cooper, R.F.",
+      "year": 2010,
+      "journal": "Philosophical Magazine",
+      "title": "A composite viscoelastic model for incorporating grain boundary sliding and transient diffusion creep; correlating creep and attenuation responses for materials with a fine grain size",
+      "doi": "10.1080/14786431003746656"
+    },
+    {
+      "author": "McCarthy, C., Takei, Y., and Hiraga, T.",
+      "year": 2011,
+      "journal": "Journal of Geophysical Research",
+      "title": "Experimental study of attenuation and dispersion over a broad frequency range: 2. The universal scaling of polycrystalline materials",
+      "doi": "10.1029/2011JB008384"
+    },
+    {
+      "author": "Takei, Y., Karasawa, F., and Yamauchi, H.",
+      "year": 2014,
+      "journal": "Journal of Geophysical Research: Solid Earth",
+      "title": "Temperature, grain size, and chemical controls on polycrystal anelasticity over a broad frequency range extending into the seismic range",
+      "doi": "10.1002/2014JB011146"
+    },
+    {
+      "author": "Faul, U.H. and Jackson, I.",
+      "year": 2015,
+      "journal": "Annual Review of Earth and Planetary Sciences",
+      "title": "Transient creep and strain energy dissipation: An experimental perspective",
+      "doi": "10.1146/annurev-earth-060313-054732"
+    },
+    {
+      "author": "Lau, H.C.P. and Holtzman, B.K.",
+      "year": 2019,
+      "journal": "Geophysical Research Letters",
+      "title": "Measures of dissipation in viscoelastic media extended: Toward continuous characterization across very broad geophysical time scales",
+      "doi": "10.1029/2019GL083529"
+    },
+    {
+      "author": "Richards, F.D., Mojheri, M., Ghelichkhan, S., and Bunge, H.-P.",
+      "year": 2023,
+      "journal": "Geochemistry, Geophysics, Geosystems",
+      "title": "Constraints on mantle viscosity from geodynamic modelling using the Andrade rheology [uncertain]",
+      "doi": "[uncertain]"
+    }
+  ],
+
+  "physical_mechanism": "The Andrade model captures transient (primary) creep arising from the thermally-activated motion of dislocations and diffusion-assisted grain-boundary processes in polycrystalline aggregates. At short timescales (high frequencies), the response is dominated by intragranular dislocation segment bowing and kinking, producing the power-law transient creep (the Andrade beta*t^n term). At long timescales (low frequencies), steady-state Newtonian viscous flow (diffusion creep through the eta term) dominates. The Sundberg-Cooper variant adds an explicit Debye relaxation peak representing elastically-accommodated grain-boundary sliding (GBS), which occurs at an intermediate timescale between the Andrade transient and steady-state flow. In polycrystalline olivine, high-temperature torsional forced-oscillation experiments show that both the broad Andrade background absorption and a superimposed GBS peak are needed to fit the data across the full experimental frequency range (~0.001-1 Hz). The physical picture is thus a combination of intragranular dislocation-related anelasticity (Andrade background) plus intergranular sliding relaxation (Debye peak) plus long-timescale viscous flow.",
+
+  "mathematical_formulation": "Creep compliance in time domain: J(t) = J_U + beta * t^n + t / eta, where J_U is the unrelaxed compliance (= 1/G_U), beta is the Andrade transient creep coefficient, n is the Andrade exponent (typically 0.2-0.5, often ~1/3), and eta is the steady-state viscosity.\n\nIn the frequency domain, the complex compliance is: J*(omega) = J_U - i/(omega * eta) + beta * Gamma(1+n) * (i*omega)^{-n}, where Gamma is the gamma function.\n\nThe quality factor: Q^{-1}(omega) = Im[J*(omega)] / Re[J*(omega)]. For the Andrade term alone, Q^{-1} ~ omega^{-n} (power-law frequency dependence).\n\nSundberg-Cooper extension adds a Debye peak: J*(omega) = J_U + Delta_J / (1 + i*omega*tau_GBS) + beta * Gamma(1+n) * (i*omega)^{-n} - i/(omega*eta), where Delta_J is the relaxation strength and tau_GBS is the grain-boundary sliding relaxation time.\n\nTemperature and pressure dependence enter through: tau ~ tau_0 * exp[(E* + P*V*) / (R*T)] and eta ~ eta_0 * exp[(E* + P*V*) / (R*T)]. Grain-size sensitivity: tau ~ d^m, beta ~ d^{-m_beta} [uncertain].\n\nBurgers model comparison: The Burgers model replaces the power-law Andrade transient with a single exponential (Kelvin-Voigt element), giving J(t) = J_U + Delta_J * (1 - exp(-t/tau_K)) + t/eta. This produces a single Debye-like peak rather than a broad absorption band; the extended Burgers model uses a distribution of relaxation times to mimic the broad Andrade response.",
+
+  "experimental_conditions": "Temperature range: 1000-1350 degrees C (sub-solidus polycrystalline olivine). Pressure: mostly at ambient pressure (0.2 GPa gas-medium apparatus) or moderate confining pressure (0.2-0.3 GPa). Frequency range: 0.001-1 Hz (forced torsional oscillation); some microcreep data extend to longer timescales. Grain size: typically 3-165 micrometers (sol-gel or hot-pressed Fo90 olivine). Composition: primarily Fo90 olivine (some studies use melt-free or melt-bearing samples). Measurement technique: forced torsional oscillation using gas-medium Paterson apparatus (Jackson & Faul, ANU; Sundberg & Cooper, Brown/Wisconsin) measuring shear modulus dispersion and Q^{-1} simultaneously. Some studies use broadband microcreep.",
+
+  "key_parameters": [
+    {
+      "name": "n (Andrade exponent / alpha)",
+      "typical_value": "0.2 - 0.5 (commonly ~0.33)",
+      "units": "dimensionless",
+      "description": "Controls the power-law frequency dependence of Q: Q^{-1} ~ omega^{-n}. Related to the slope of log(Q^{-1}) vs log(frequency)."
+    },
+    {
+      "name": "beta (Andrade transient creep coefficient)",
+      "typical_value": "~1e-12 to 1e-11 Pa^{-1} s^{-n} (strongly temperature-dependent)",
+      "units": "Pa^{-1} s^{-n}",
+      "description": "Amplitude of the transient creep response."
+    },
+    {
+      "name": "E* (activation energy)",
+      "typical_value": "300 - 600 kJ/mol (commonly ~400-505 kJ/mol for melt-free olivine)",
+      "units": "kJ/mol",
+      "description": "Activation energy governing temperature dependence of relaxation times and viscosity."
+    },
+    {
+      "name": "V* (activation volume)",
+      "typical_value": "~6 - 15 cm^3/mol [uncertain]",
+      "units": "cm^3/mol",
+      "description": "Activation volume for pressure dependence. Poorly constrained from attenuation experiments; often assumed from diffusion creep data."
+    },
+    {
+      "name": "eta (steady-state viscosity)",
+      "typical_value": "~1e18 - 1e21 Pa*s (depends on T, d, and stress)",
+      "units": "Pa*s",
+      "description": "Newtonian viscosity controlling the long-timescale (low-frequency) response."
+    },
+    {
+      "name": "Delta_J (GBS relaxation strength, Sundberg-Cooper)",
+      "typical_value": "~0.1 - 0.4 times J_U [uncertain]",
+      "units": "Pa^{-1}",
+      "description": "Magnitude of compliance relaxation associated with grain-boundary sliding peak."
+    },
+    {
+      "name": "tau_GBS (GBS relaxation time)",
+      "typical_value": "thermally activated, order 0.1-10 s at ~1200 C",
+      "units": "s",
+      "description": "Characteristic relaxation time for the grain-boundary sliding Debye peak."
+    },
+    {
+      "name": "m (grain-size exponent)",
+      "typical_value": "~1 - 3 (depends on mechanism; ~1 for Andrade, ~2-3 for diffusion creep/GBS)",
+      "units": "dimensionless",
+      "description": "Exponent for grain-size dependence of relaxation time: tau ~ d^m."
+    },
+    {
+      "name": "G_U (unrelaxed shear modulus)",
+      "typical_value": "~65 - 82 GPa for olivine (T and P dependent, from EoS)",
+      "units": "GPa",
+      "description": "High-frequency (anharmonic) elastic shear modulus, typically obtained from mineral physics EoS."
+    }
+  ],
+
+  "velocity_correction_magnitude": "At seismic frequencies (0.01-1 Hz) and upper-mantle temperatures (1200-1400 C), the Andrade model predicts Vs reductions of approximately 1-5% relative to the unrelaxed (anharmonic) reference at depths of 100-300 km. For Vp, the correction is smaller, roughly 0.3-2%, because bulk attenuation (Q_K^{-1}) is much lower than shear attenuation (Q_mu^{-1}). Near the solidus or in the asthenospheric low-velocity zone (T ~ 1350-1450 C), the corrections can reach 5-8% for Vs. The Sundberg-Cooper variant can produce slightly larger corrections at specific frequencies where the GBS peak contributes. These corrections are comparable in magnitude to those from the extended Burgers model (Jackson & Faul 2010), but the two models can differ by ~0.5-1% in Vs correction at specific P-T-frequency conditions due to the different shapes of their absorption bands.",
+
+  "implications_for_composition": "Neglecting anelastic velocity corrections leads to systematic overestimation of temperature anomalies inferred from seismic tomography, which in turn biases compositional interpretations. If anelasticity is ignored, low seismic velocities in the asthenosphere are interpreted as requiring higher temperatures or partial melt content than actually present. Conversely, applying the Andrade anelastic correction reduces the need for melt or volatile enrichment to explain low-velocity zones. For mantle composition estimation, the Andrade model implies: (1) A 2-5% Vs correction shifts inferred temperature by 100-300 K, profoundly affecting derived Mg# and mineralogy. (2) Choice between Andrade vs. Burgers model introduces ~0.5-1% systematic uncertainty in velocity correction, propagating to ~50-100 K uncertainty in temperature, which alters inferred olivine fraction and garnet content. (3) Grain-size dependence means that assumptions about mantle grain size (mm to cm scale) directly affect the correction magnitude, coupling rheological assumptions to compositional estimates. (4) The Andrade exponent n and its possible dependence on thermodynamic state remain debated, adding further uncertainty to composition inversions.",
+
+  "limitations": "1. Pressure effects: Most experiments are conducted at low confining pressure (<0.3 GPa). The activation volume V* for anelastic relaxation in olivine is poorly constrained, creating large uncertainties when extrapolating to lower-mantle pressures. 2. Grain-size extrapolation: Laboratory samples have grain sizes of micrometers to ~100 micrometers, while mantle grain sizes are mm to cm. Extrapolation over 1-3 orders of magnitude in grain size introduces significant uncertainty, especially since the grain-size exponent m may differ between mechanisms. 3. Frequency gap: A gap of several orders of magnitude exists between the highest laboratory frequencies (~1 Hz) and teleseismic frequencies (~0.01-1 Hz), requiring extrapolation. 4. Composition: Most data are for melt-free Fo90 olivine aggregates; the effects of iron content, water/hydrogen, minor phases (pyroxene, garnet), and partial melt on Andrade parameters are not fully characterized. 5. The Andrade exponent n is empirically determined and its physical basis is debated; it may depend on temperature, stress regime, or microstructure. 6. The Sundberg-Cooper model has more free parameters than the basic Andrade model, making it harder to constrain uniquely from limited experimental data. 7. Comparison with Burgers model: Both models fit existing data reasonably well, but they diverge in extrapolation to seismic conditions, and there is no consensus on which is more physically appropriate for the mantle. 8. Nonlinear (stress-dependent) effects at high deviatoric stress are not captured by the linear Andrade formulation.",
+
+  "implementation_notes": "Implementation in ThermoElasticCalculator would require: INPUTS: (1) Unrelaxed elastic moduli G_U(T,P) and K_U(T,P) from the existing EoS framework; (2) Temperature T, pressure P, seismic frequency f (or angular frequency omega = 2*pi*f); (3) Grain size d (user-specified or default ~1 mm for upper mantle); (4) Model parameter set: {n, beta_ref, E*, V*, eta_ref, tau_ref} for basic Andrade, plus {Delta_J, tau_GBS_ref, E*_GBS, V*_GBS} for Sundberg-Cooper variant. CALCULATION: (1) Compute relaxation times and beta at target T,P using Arrhenius relations. (2) Evaluate complex compliance J*(omega) from the Andrade or Sundberg-Cooper formula. (3) Compute the real (storage) and imaginary (loss) parts to get the relaxed shear modulus G(omega) = 1/Re[J*] and Q^{-1}(omega). (4) Apply bulk attenuation correction if needed (often Q_K >> Q_mu, so bulk correction is minor). (5) Compute corrected Vs = sqrt(G/rho) and Vp from corrected G and K. OUTPUTS: Anelastically corrected Vs, Vp, Q_mu, Q_K at the specified frequency. APPROXIMATIONS: (1) Linear viscoelasticity assumed. (2) Constant n across all conditions is a common simplification. (3) Setting Q_K^{-1} = 0 is acceptable as a first approximation. (4) A lookup table or precomputed Gamma function values speeds evaluation. It would be valuable to implement both the basic Andrade and the Sundberg-Cooper variant, as well as the extended Burgers model (Jackson & Faul 2010) for comparison, allowing users to assess model-dependent uncertainties.",
+
+  "relevance_score": 5,
+
+  "uncertain": [
+    "V* (activation volume)",
+    "Delta_J (GBS relaxation strength, Sundberg-Cooper)",
+    "key_papers[6] (Richards et al. 2023 - title and DOI uncertain)",
+    "m_beta (grain-size exponent for beta)"
+  ]
+}

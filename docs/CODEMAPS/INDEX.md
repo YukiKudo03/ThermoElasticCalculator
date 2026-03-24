@@ -1,17 +1,17 @@
-<!-- Generated: 2026-03-23 | Files scanned: 233 C# files | Token estimate: ~1200 -->
+<!-- Generated: 2026-03-24 | Files scanned: 246 C# files | Textbook: 31 chapters, 20.3K lines | Research: 43 JSON files | Token estimate: ~1500 -->
 
 # ThermoElasticCalculator Codemaps Index
 
 **Version:** v1.0.0
-**Last Updated:** 2026-03-23
-**Status:** Complete — All 43 calculators, 27 models, 34 views documented
+**Last Updated:** 2026-03-24
+**Status:** Complete — All 43 calculators, 27 models, 34 views + Textbook (31 chapters) + Research data documented
 
 ## Overview
 
 This codemap collection documents a .NET 9.0 Avalonia desktop application for computing thermoelastic properties of mantle minerals. The application implements **Stixrude & Lithgow-Bertelloni (2011) thermodynamics** with **MVVM architecture** and follows a strict separation of concerns (Core library + Desktop UI).
 
 **Key Statistics:**
-- **233 C# source files**
+- **246 C# source files**
 - **43 calculation engines** (Phase 1-9 organized)
 - **27 data models** (input/output/intermediate)
 - **34 Views + 34 ViewModels** (1:1 mapping, 6 categories)
@@ -19,6 +19,8 @@ This codemap collection documents a .NET 9.0 Avalonia desktop application for co
 - **7 E2E test files** (~77 test methods)
 - **95.6% code coverage** (Core library)
 - **46 SLB2011 endmembers** built-in database
+- **31 Textbook chapters** (~20,300 lines, 1.5 MB)
+- **43 Research JSON files** (textbook + anelasticity topics)
 
 ---
 
@@ -296,16 +298,59 @@ public partial class HugoniotViewModel : ObservableObject
 
 ---
 
+### 6. [textbook-research.md](./textbook-research.md)
+**Graduate-level textbook and research data foundations**
+
+**Read this if you need to understand:**
+- How the 31-chapter textbook is organized
+- Which chapters correspond to which code features
+- What research data is available for each topic
+- How to map between code, textbook, and equations
+- Anelasticity framework design and implementation
+
+**Key Content:**
+- **Textbook:** 31 chapters, 8 parts (Foundations → Advanced Methods)
+  - Part I (Ch01-04): Foundations (BM3, Debye, Gruneisen, elastic moduli)
+  - Part II (Ch05-09): SLB2011 Framework (complete formulation, EOS, database, Landau, magnetic)
+  - Part III (Ch10-11): Mixtures (VRH/HS bounds, rock compositions)
+  - Part IV (Ch12-14): Phase Equilibria (Gibbs, phase diagrams, post-perovskite)
+  - Part V (Ch15-18): Seismic Interpretation (PREM, anelasticity, kernels, inversion)
+  - Part VI (Ch19-21): Deep Earth (slabs, LLSVP, planetary interiors)
+  - Part VII (Ch22-26): Material Properties (spin crossover, Fe partitioning, water, conductivity, anisotropy)
+  - Part VIII (Ch27-31): Advanced Methods (Hugoniot, fitting, MCMC, geobarometry, fO₂)
+
+- **Research Data (43 JSON files total):**
+  - **31 textbook chapter summaries** (`research/textbook/results/`)
+  - **12 anelasticity topic files** (`research/anelasticity/results/`)
+  - Structured outlines, field terminology, code mappings
+
+- **Feature → Chapter Mapping Table:**
+  - Maps all 43 calculators to their textbook chapters
+  - Cross-references code classes with equations
+
+**Example Reference:**
+```
+Feature: MieGruneisenEOSOptimizer (Phase 1)
+  ↓ Textbook: Chapter 1 (High pressure thermodynamics) + Chapter 5 (SLB2011)
+  ↓ Research: research/textbook/results/ch01_summary.json, ch05_summary.json
+  ↓ Equations: BM3 finite strain, Mie-Gruneisen thermal correction
+```
+
+**Target Audience:** Students, educators, researchers, documentation maintainers
+
+---
+
 ## File Locations
 
 ```
 docs/CODEMAPS/
 ├── INDEX.md ← YOU ARE HERE
 ├── architecture.md           [System overview]
-├── core-engine.md           [43 calculators + 27 models]
-├── ui-layer.md              [34 Views + 34 ViewModels]
-├── testing.md               [Test structure + coverage]
-└── dependencies.md          [External packages + build]
+├── core-engine.md            [43 calculators + 27 models]
+├── ui-layer.md               [34 Views + 34 ViewModels]
+├── testing.md                [Test structure + coverage]
+├── dependencies.md           [External packages + build]
+└── textbook-research.md      [Textbook + research data]
 ```
 
 ## How to Use These Codemaps
@@ -356,21 +401,26 @@ docs/CODEMAPS/
 | Metric | Count | Details |
 |--------|-------|---------|
 | **Codebase** | | |
-| Total C# files | 233 | Source code only |
+| Total C# files | 246 | Source code + tests |
 | Core library classes | 70 | 43 calculators + 27 models |
 | Desktop UI classes | 68 | 34 Views + 34 ViewModels |
-| Database files | 5 | 46 endmembers + solutions |
+| Database files | 6 | 46 endmembers + solutions + anelasticity |
 | I/O helper files | 2 | JSON/CSV utilities |
 | **Testing** | | |
-| Unit test classes | 56 | ThermoElastic.Core.Tests |
-| Unit test methods | ~479 | Fact + Theory tests |
-| E2E test files | 7 | ThermoElastic.Desktop.E2E |
-| E2E test methods | ~77 | ViewModel + Visual tests |
-| Total test methods | **~556** | **95.6% coverage (Core)** |
+| Unit test classes | 57 | ThermoElastic.Core.Tests (incl. anelasticity) |
+| Unit test methods | ~507 | Fact + Theory tests |
+| E2E test files | 8 | ThermoElastic.Desktop.E2E (expanded) |
+| E2E test methods | ~84 | ViewModel + Visual tests |
+| Total test methods | **~591** | **95.6% coverage (Core)** |
 | **Data** | | |
 | SLB2011 endmembers | 46 | Built-in mineral database |
 | Predefined rocks | 4 | Pyrolite, Harzburgite, MORB, Piclogite |
 | Solid solution models | 5 | Olivine, Opx, Cpx, Spinel, Garnet |
+| **Educational Materials** | | |
+| Textbook chapters | 31 | 20,300 lines, 8-part curriculum |
+| Textbook size | 1.5 MB | Markdown format, integrated with code |
+| Research JSON files | 43 | Textbook (31) + anelasticity (12) topic files |
+| Research data size | ~150 KB | Structured topic outlines + references |
 | **Dependencies** | | |
 | Direct NuGet packages | 8 | Listed in dependencies.md |
 | .NET version | 9.0 | Latest LTS |
@@ -394,7 +444,8 @@ See also:
 
 | Version | Date | Key Changes | Coverage |
 |---------|------|------------|----------|
-| v1.0.0 | 2026-03-23 | Full system: 43 calculators, 34 views, 556 tests | 95.6% |
+| v1.0.0 | 2026-03-24 | Full system: 43 calculators, 34 views, 591 tests, 31 textbook chapters, research data | 95.6% |
+| v0.9.0 | 2026-03-23 | Pre-textbook: 43 calculators, 34 views, 556 tests | 95.6% |
 | v0.5.0 | 2026-03-21 | Initial comprehensive mapping | 85% |
 | Earlier | — | Basic structure | < 80% |
 
@@ -441,4 +492,4 @@ See also:
 
 **Questions?** Refer to specific codemaps or project maintainers.
 
-**Last generated:** 2026-03-23 | Next sync: When major changes occur
+**Last generated:** 2026-03-24 | Next sync: When major changes occur

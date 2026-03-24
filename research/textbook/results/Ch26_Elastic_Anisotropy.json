@@ -1,0 +1,286 @@
+{
+  "chapter_summary": "Elastic anisotropy describes the directional dependence of elastic properties in crystalline solids, arising because interatomic bonding stiffness varies with crystallographic direction. In a single crystal, the full elastic response is described by the fourth-rank elastic stiffness tensor C_ijkl, which in the most general (triclinic) case has 21 independent components. Using Voigt notation, this tensor is contracted into a symmetric 6x6 matrix C_IJ. For common mineral symmetries the number of independent constants is greatly reduced: cubic crystals require only 3 (C11, C12, C44), hexagonal crystals 5, and orthorhombic crystals 9. The olivine system (orthorhombic, Pbnm) is particularly important for the upper mantle, with its 9 independent elastic constants exhibiting strong directional variation -- the P-wave velocity along the a-axis can exceed that along the b-axis by more than 20%.\n\nThe Christoffel equation provides the mathematical framework for computing seismic velocities along any propagation direction through a single crystal. For a plane wave propagating in direction n_i, one constructs the 3x3 Christoffel matrix Gamma_ij = C_ijkl n_k n_l, whose three eigenvalues equal rho*V^2 for the quasi-P and two quasi-S waves. The corresponding eigenvectors give the polarization directions. This eigenvalue problem is implemented in ElasticTensorCalculator.SolveChristoffel, which builds the Christoffel matrix from the Voigt-notation elastic constants assuming orthorhombic or higher symmetry, then finds eigenvalues via matrix diagonalization.\n\nFor polycrystalline aggregates where individual grain orientations are random, the Voigt-Reuss-Hill (VRH) averaging scheme provides effective isotropic moduli. The Voigt average assumes uniform strain throughout the aggregate, giving an upper bound on effective moduli. The Reuss average assumes uniform stress, giving a lower bound. Hill demonstrated that the arithmetic mean of the two bounds (the VRH average) gives a practical and often accurate estimate. The implementation in ElasticTensorCalculator.ComputeVRH computes both Voigt and Reuss bounds by inverting the stiffness tensor to obtain the compliance tensor, then takes their average.\n\nIn the real Earth, deformation processes generate lattice preferred orientation (LPO) in olivine, causing the upper mantle to be seismically anisotropic rather than isotropic. Olivine A-type fabric, the dominant LPO in dry conditions, aligns the fast a-axis with the flow direction, producing azimuthal anisotropy observable through shear wave splitting and azimuthal variations in Pn velocities. The magnitude of anisotropy depends on the fabric strength, mineral proportions, and the single-crystal elastic constants at the relevant pressure and temperature. The ComputeMaxAnisotropy method in ElasticTensorCalculator samples many directions on a Fibonacci sphere to estimate the maximum P-wave anisotropy percentage, providing a measure of the intrinsic anisotropic potential of a mineral.\n\nUnderstanding elastic anisotropy is essential for interpreting seismic observations of the upper mantle, including SKS splitting measurements, Rayleigh-Love wave discrepancies (radial anisotropy), and azimuthal variations in surface wave velocities. These observations constrain mantle flow patterns, deformation mechanisms, and the rheological state of the lithosphere and asthenosphere.",
+
+  "prerequisite_knowledge": [
+    "Continuum mechanics: stress and strain tensors, Hooke's law for anisotropic media",
+    "Voigt notation for reducing 4th-rank tensor to 6x6 matrix representation",
+    "Crystal symmetry systems and their effect on tensor properties (Ch04)",
+    "Seismic wave equation and plane wave solutions (basic seismology)",
+    "Linear algebra: eigenvalue problems, matrix inversion",
+    "Elastic moduli for isotropic materials: bulk modulus K and shear modulus G (Ch04)",
+    "Mineral physics of olivine and upper mantle mineralogy (Ch11)",
+    "Basic understanding of mantle convection and plate tectonics"
+  ],
+
+  "key_equations": [
+    {
+      "equation": "\\sigma_{ij} = C_{ijkl} \\epsilon_{kl}",
+      "name": "Generalized Hooke's Law (Anisotropic)",
+      "variables": {
+        "\\sigma_{ij}": "Stress tensor [GPa]",
+        "C_{ijkl}": "Fourth-rank elastic stiffness tensor [GPa]",
+        "\\epsilon_{kl}": "Strain tensor [dimensionless]"
+      },
+      "interpretation": "The most general linear elastic constitutive relation. The 81 components of C_ijkl reduce to 21 independent constants for the most general anisotropic solid due to the symmetry of stress, strain, and the existence of a strain energy function. Further reduction occurs with crystal symmetry: orthorhombic has 9, cubic has 3."
+    },
+    {
+      "equation": "\\Gamma_{ij} = C_{ijkl} n_k n_l",
+      "name": "Christoffel Matrix",
+      "variables": {
+        "\\Gamma_{ij}": "Christoffel matrix (3x3, symmetric) [GPa]",
+        "C_{ijkl}": "Elastic stiffness tensor [GPa]",
+        "n_k": "Unit propagation direction vector [dimensionless]"
+      },
+      "interpretation": "The Christoffel matrix encodes how the elastic tensor projects onto a given propagation direction. Its construction is the first step in computing directional velocities. For orthorhombic symmetry, the diagonal elements combine longitudinal stiffnesses weighted by n_i^2, while off-diagonal elements involve sums of off-diagonal stiffnesses and shear constants."
+    },
+    {
+      "equation": "|\\Gamma_{ij} - \\rho V^2 \\delta_{ij}| = 0",
+      "name": "Christoffel Equation",
+      "variables": {
+        "\\Gamma_{ij}": "Christoffel matrix [GPa]",
+        "\\rho": "Density [g/cm^3]",
+        "V": "Phase velocity [km/s, with appropriate unit conversion]",
+        "\\delta_{ij}": "Kronecker delta"
+      },
+      "interpretation": "This is an eigenvalue problem: the three eigenvalues of Gamma give rho*V^2 for the quasi-P wave and two quasi-S waves. The largest eigenvalue corresponds to the P-wave, and the two smaller ones to the S-waves. The eigenvectors give the polarization directions. Implemented in ElasticTensorCalculator.SolveChristoffel using MathNet.Numerics eigenvalue decomposition."
+    },
+    {
+      "equation": "K_V = \\frac{C_{11} + C_{22} + C_{33} + 2(C_{12} + C_{13} + C_{23})}{9}",
+      "name": "Voigt Bulk Modulus",
+      "variables": {
+        "K_V": "Voigt-average bulk modulus [GPa]",
+        "C_{IJ}": "Voigt-notation elastic stiffnesses [GPa]"
+      },
+      "interpretation": "The Voigt bound assumes uniform strain throughout the polycrystalline aggregate. This provides an upper bound on the effective bulk modulus. It uses only the stiffness constants directly and is straightforward to compute. Implemented both in ElasticTensor.KVoigt property and ElasticTensorCalculator.ComputeVRH."
+    },
+    {
+      "equation": "G_V = \\frac{(C_{11}+C_{22}+C_{33}) - (C_{12}+C_{13}+C_{23}) + 3(C_{44}+C_{55}+C_{66})}{15}",
+      "name": "Voigt Shear Modulus",
+      "variables": {
+        "G_V": "Voigt-average shear modulus [GPa]",
+        "C_{IJ}": "Voigt-notation elastic stiffnesses [GPa]"
+      },
+      "interpretation": "The Voigt shear modulus upper bound involves both the diagonal, off-diagonal, and shear stiffnesses. Implemented in ElasticTensor.GVoigt and ElasticTensorCalculator.ComputeVRH."
+    },
+    {
+      "equation": "K_R = \\frac{1}{S_{11}+S_{22}+S_{33}+2(S_{12}+S_{13}+S_{23})}",
+      "name": "Reuss Bulk Modulus",
+      "variables": {
+        "K_R": "Reuss-average bulk modulus [GPa]",
+        "S_{IJ}": "Voigt-notation elastic compliances [GPa^{-1}]"
+      },
+      "interpretation": "The Reuss bound assumes uniform stress. It requires the compliance tensor S = C^{-1}, providing a lower bound on bulk modulus. The compliance tensor is computed by matrix inversion in ComputeVRH."
+    },
+    {
+      "equation": "K_{VRH} = \\frac{K_V + K_R}{2}, \\quad G_{VRH} = \\frac{G_V + G_R}{2}",
+      "name": "Voigt-Reuss-Hill Average",
+      "variables": {
+        "K_{VRH}": "Hill-average bulk modulus [GPa]",
+        "G_{VRH}": "Hill-average shear modulus [GPa]",
+        "K_V, K_R": "Voigt and Reuss bulk modulus bounds [GPa]",
+        "G_V, G_R": "Voigt and Reuss shear modulus bounds [GPa]"
+      },
+      "interpretation": "Hill (1952) showed that the arithmetic mean of the Voigt upper bound and Reuss lower bound is a practical estimate for polycrystalline elastic moduli. This is the default averaging scheme used in most mineral physics applications and is implemented in ElasticTensorCalculator.ComputeVRH."
+    },
+    {
+      "equation": "A_P = \\frac{V_{P,\\max} - V_{P,\\min}}{V_{P,\\text{mean}}} \\times 100\\%",
+      "name": "P-wave Anisotropy Percentage",
+      "variables": {
+        "A_P": "P-wave anisotropy [%]",
+        "V_{P,\\max}": "Maximum P-wave velocity over all directions [m/s]",
+        "V_{P,\\min}": "Minimum P-wave velocity [m/s]",
+        "V_{P,\\text{mean}}": "Mean P-wave velocity [m/s]"
+      },
+      "interpretation": "A simple scalar measure of the degree of P-wave anisotropy. Forsterite has A_P of approximately 24% at ambient conditions, making olivine one of the most anisotropic upper mantle minerals. Implemented in ElasticTensorCalculator.ComputeMaxAnisotropy using Fibonacci sphere sampling."
+    }
+  ],
+
+  "physical_concepts": [
+    {
+      "concept": "Elastic Stiffness Tensor C_ijkl",
+      "definition": "The fourth-rank tensor relating stress to strain in the most general linear elastic solid, containing all information about directional elastic properties.",
+      "physical_intuition": "Different crystallographic directions have different atomic spacings and bonding configurations. Compressing along a direction with closely packed, strongly bonded atoms requires more force than along a loosely bonded direction. The full tensor captures all these directional variations.",
+      "common_misconceptions": "A common error is confusing the 6x6 Voigt notation matrix C_IJ with the true tensor C_ijkl. While computationally equivalent, the Voigt matrix components must be carefully mapped: C_11=C_1111, C_12=C_1122, C_44=C_2323. The factors of 2 and 4 in the compliance tensor conversion are a frequent source of error."
+    },
+    {
+      "concept": "Christoffel Equation and Directional Velocities",
+      "definition": "An eigenvalue equation derived from the elastic wave equation for plane waves, giving three phase velocities (one quasi-P, two quasi-S) and their polarization directions for any propagation direction in an anisotropic medium.",
+      "physical_intuition": "Imagine sending a seismic wave through a single crystal. Depending on which direction the wave travels, it encounters different effective stiffnesses. The Christoffel equation computes the 3x3 effective stiffness matrix for a given direction; its eigenvalues give the velocities and eigenvectors give the particle motion directions.",
+      "common_misconceptions": "In anisotropic media, the P-wave polarization is generally not exactly parallel to the propagation direction (hence 'quasi-P'), and S-waves are not exactly perpendicular. Only along symmetry axes are the polarizations exactly longitudinal or transverse. Also, phase velocity (normal to wavefront) differs from group velocity (energy propagation direction) in anisotropic media."
+    },
+    {
+      "concept": "Voigt-Reuss-Hill Averaging",
+      "definition": "A method to estimate the effective isotropic elastic moduli of a polycrystalline aggregate from single-crystal elastic constants, by averaging the Voigt (uniform strain) upper bound and Reuss (uniform stress) lower bound.",
+      "physical_intuition": "In a polycrystal, some grains are oriented favorably for deformation (soft direction) and others are oriented to resist it (stiff direction). The Voigt average says all grains deform equally (uniform strain) -- this overestimates stiffness because soft grains are forced to be as stiff as hard ones. The Reuss average says all grains feel the same stress -- this underestimates stiffness because hard grains are forced to be as compliant as soft ones. The truth lies between these bounds, and Hill's arithmetic mean is an excellent practical approximation.",
+      "common_misconceptions": "The VRH average is not a rigorous bound like the Hashin-Shtrikman bounds, which are tighter. For minerals with small anisotropy, the Voigt-Reuss spread is narrow and VRH is very accurate. For highly anisotropic minerals like sheet silicates, the spread can be large and VRH may be less reliable. Also, VRH assumes random grain orientations -- it does not apply to textured rocks with LPO."
+    },
+    {
+      "concept": "Lattice Preferred Orientation (LPO)",
+      "definition": "The statistical alignment of crystallographic axes in a polycrystalline aggregate due to deformation, creating bulk anisotropy even though no single crystal dominates.",
+      "physical_intuition": "When mantle rock deforms by dislocation creep, olivine grains rotate so that their easy slip planes align with the shear plane. In A-type fabric (dominant under dry, moderate stress conditions), the fast [100] axis of olivine aligns with the flow direction. Since olivine's P-wave velocity is fastest along [100], this creates a fast direction in the bulk rock aligned with mantle flow.",
+      "common_misconceptions": "LPO does not mean all crystals point the same way -- it is a statistical preference. Even moderate LPO (e.g., 30-40% alignment) can produce observable seismic anisotropy of 2-4%. Different deformation conditions (water content, stress, temperature) produce different LPO types (A, B, C, D, E fabrics) with different relationships between flow direction and fast axis orientation."
+    },
+    {
+      "concept": "Orthorhombic Crystal Symmetry and Olivine",
+      "definition": "Olivine (the dominant upper mantle mineral) has orthorhombic symmetry (space group Pbnm), requiring 9 independent elastic constants to fully describe its elastic behavior.",
+      "physical_intuition": "Olivine's crystal structure has three mutually perpendicular axes of unequal length (a, b, c). The SiO4 tetrahedra are linked by Mg/Fe cations in chains, and the bonding stiffness varies substantially among the three axes. The a-axis direction has the stiffest response (C11 ~ 328 GPa for forsterite) while the b-axis is softest (C22 ~ 200 GPa), leading to a P-wave velocity variation of over 20%.",
+      "common_misconceptions": "Olivine is not the only source of upper mantle anisotropy -- orthopyroxene also contributes, though with weaker intrinsic anisotropy. In the transition zone, wadsleyite and ringwoodite have different symmetries and anisotropic properties. The assumption that all upper mantle anisotropy is from olivine LPO can be an oversimplification."
+    }
+  ],
+
+  "key_references": [
+    {
+      "author": "Abramson, E.H., Brown, J.M., Slutsky, L.J., and Zaug, J.",
+      "year": 1997,
+      "title": "The elastic constants of San Carlos olivine to 17 GPa",
+      "journal": "Journal of Geophysical Research, 102(B6), 12253-12263",
+      "why_essential": "Provides high-quality single-crystal elastic constants for olivine (forsterite) to high pressure, the primary dataset used in the SingleCrystalElasticConstants database for forsterite."
+    },
+    {
+      "author": "Hill, R.",
+      "year": 1952,
+      "title": "The elastic behaviour of a crystalline aggregate",
+      "journal": "Proceedings of the Physical Society A, 65, 349-354",
+      "why_essential": "The foundational paper establishing that the arithmetic mean of Voigt and Reuss bounds provides a practical estimate for polycrystalline elastic moduli, forming the basis of the VRH averaging implemented in ElasticTensorCalculator."
+    },
+    {
+      "author": "Mainprice, D.",
+      "year": 2007,
+      "title": "Seismic anisotropy of the deep Earth from a mineral and rock physics perspective",
+      "journal": "Treatise on Geophysics, Vol. 2, pp. 437-491",
+      "why_essential": "Comprehensive review connecting single-crystal elastic properties, LPO development, and seismic anisotropy observations. Covers computational methods for predicting aggregate anisotropy from texture measurements."
+    },
+    {
+      "author": "Karato, S., Jung, H., Katayama, I., and Skemer, P.",
+      "year": 2008,
+      "title": "Geodynamic significance of seismic anisotropy of the upper mantle: New insights from laboratory studies",
+      "journal": "Annual Review of Earth and Planetary Sciences, 36, 59-95",
+      "why_essential": "Definitive review of olivine deformation fabrics (A, B, C, D, E types) under varying conditions of water content, stress, and temperature, essential for interpreting anisotropy observations in terms of mantle dynamics."
+    },
+    {
+      "author": "Voigt, W.",
+      "year": 1928,
+      "title": "Lehrbuch der Kristallphysik",
+      "journal": "Teubner, Leipzig (Book)",
+      "why_essential": "The classic reference establishing the Voigt notation for elastic tensors and the uniform-strain averaging scheme for polycrystalline aggregates."
+    },
+    {
+      "author": "Zha, C.S., Mao, H.K., and Hemley, R.J.",
+      "year": 2000,
+      "title": "Elasticity of MgO and a primary pressure scale to 55 GPa",
+      "journal": "Proceedings of the National Academy of Sciences, 97, 13494-13499",
+      "why_essential": "Source of the periclase single-crystal elastic constants used in SingleCrystalElasticConstants, important for lower mantle mineral physics."
+    }
+  ],
+
+  "worked_examples": [
+    {
+      "problem_statement": "Given the single-crystal elastic constants of forsterite (Mg2SiO4) from SingleCrystalElasticConstants: C11=328.1, C22=199.5, C33=235.4, C12=66.2, C13=68.2, C23=73.2, C44=66.7, C55=81.3, C66=79.4 GPa, density=3.222 g/cm^3. Compute the P-wave and S-wave velocities along the [100] crystallographic direction.",
+      "solution_approach": "For propagation along [100], the direction vector is n=(1,0,0). The Christoffel matrix simplifies to diagonal form for orthorhombic symmetry: Gamma_11 = C11*1^2 = 328.1, Gamma_22 = C66*1^2 = 79.4, Gamma_33 = C55*1^2 = 81.3 GPa. The eigenvalues are simply these diagonal values. Velocities: V = sqrt(eigenvalue/rho) * 1000 m/s.",
+      "numerical_values": "Vp = sqrt(328.1/3.222)*1000 = sqrt(101.83)*1000 = 10091 m/s = 10.09 km/s. Vs1 = sqrt(81.3/3.222)*1000 = sqrt(25.23)*1000 = 5023 m/s = 5.02 km/s. Vs2 = sqrt(79.4/3.222)*1000 = sqrt(24.64)*1000 = 4964 m/s = 4.96 km/s.",
+      "interpretation": "The [100] direction in forsterite is the fastest P-wave direction (10.09 km/s), reflecting the strong Si-O bonds along the a-axis. The two S-wave velocities are nearly equal in this direction but would differ more for oblique propagation directions. This fast axis is the one that aligns with mantle flow in A-type LPO."
+    },
+    {
+      "problem_statement": "Compute the Voigt-Reuss-Hill average bulk and shear moduli for forsterite, and the corresponding isotropic P-wave and S-wave velocities.",
+      "solution_approach": "Apply VRH formulas: K_V = (C11+C22+C33+2(C12+C13+C23))/9, G_V = ((C11+C22+C33)-(C12+C13+C23)+3(C44+C55+C66))/15. For Reuss bounds, invert the 6x6 C matrix to get compliance S, then apply analogous formulas. Hill average = (Voigt+Reuss)/2.",
+      "numerical_values": "K_V = (328.1+199.5+235.4+2*(66.2+68.2+73.2))/9 = (763.0+415.2)/9 = 1178.2/9 = 130.9 GPa. G_V = (763.0-207.6+3*(66.7+81.3+79.4))/15 = (555.4+682.2)/15 = 1237.6/15 = 82.5 GPa. With Reuss bounds computed from compliance tensor inversion: K_R ~ 128.7 GPa, G_R ~ 80.6 GPa. VRH: K_VRH ~ 129.8 GPa, G_VRH ~ 81.6 GPa. Vp = sqrt((129.8+4/3*81.6)/3.222)*1000 = sqrt((129.8+108.8)/3.222)*1000 = sqrt(74.1)*1000 = 8607 m/s = 8.61 km/s. Vs = sqrt(81.6/3.222)*1000 = sqrt(25.33)*1000 = 5033 m/s = 5.03 km/s.",
+      "interpretation": "The VRH isotropic velocities (Vp=8.61, Vs=5.03 km/s) are typical of upper mantle olivine at ambient conditions. The Voigt-Reuss spread is about 2 GPa for K and 2 GPa for G, indicating moderate anisotropy. These isotropic averages match well with observed Pn velocities beneath oceanic lithosphere (~8.1-8.2 km/s after temperature correction). [uncertain]"
+    },
+    {
+      "problem_statement": "Estimate the maximum P-wave anisotropy of forsterite and periclase (MgO) using the Fibonacci sphere sampling method.",
+      "solution_approach": "Use ElasticTensorCalculator.ComputeMaxAnisotropy with 100+ sampling directions. For each direction on the Fibonacci sphere, solve the Christoffel equation to find Vp. Record max, min, and mean Vp, then compute A_P = (Vp_max - Vp_min)/Vp_mean * 100%.",
+      "numerical_values": "Forsterite: Vp_max ~ 10.09 km/s (along [100]), Vp_min ~ 7.72 km/s (near [010]), Vp_mean ~ 8.62 km/s, A_P ~ (10.09-7.72)/8.62*100 ~ 27.5%. Periclase (cubic): Vp_max ~ 9.69 km/s (along [111]), Vp_min ~ 9.10 km/s (along [100]), Vp_mean ~ 9.42 km/s, A_P ~ 6.3%. [uncertain]",
+      "interpretation": "Forsterite is one of the most anisotropic common upper mantle minerals, with nearly 25% P-wave anisotropy. Periclase, being cubic with high symmetry, has much lower anisotropy (~6%). This explains why olivine LPO dominates upper mantle anisotropy observations. Even a modest 20% alignment of olivine grains can produce the observed 2-5% azimuthal anisotropy in the upper mantle."
+    }
+  ],
+
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch04 Elastic Moduli and Seismic Velocities",
+      "nature": "prerequisite",
+      "explanation": "Ch04 covers isotropic elastic moduli (K, G) and velocity computation for isotropic aggregates. Ch26 extends this to the anisotropic case with the full elastic tensor and directional velocities."
+    },
+    {
+      "related_chapter": "Ch10 Elastic Mixing Models",
+      "nature": "extension",
+      "explanation": "Ch10 discusses how to combine elastic properties of multiple minerals in a rock. VRH averaging from Ch26 is the foundational step before mixing, and anisotropic mixing requires extending the mixing models to full tensors."
+    },
+    {
+      "related_chapter": "Ch11 Rock Compositions and Assemblages",
+      "nature": "application",
+      "explanation": "Knowledge of upper mantle mineral proportions (olivine, pyroxene, garnet) from Ch11 is essential for predicting the degree of seismic anisotropy in mantle rocks."
+    },
+    {
+      "related_chapter": "Ch05 The Stixrude-Lithgow-Bertelloni Formulation",
+      "nature": "prerequisite",
+      "explanation": "The SLB formulation provides the thermoelastic framework for computing single-crystal elastic constants at high P-T, which are needed as input for the anisotropy calculations."
+    },
+    {
+      "related_chapter": "Ch15 PREM and Radial Earth Models",
+      "nature": "application",
+      "explanation": "Radial Earth models are isotropic (or transversely isotropic in PREM). Elastic anisotropy explains the discrepancy between Love and Rayleigh wave observations that led to including transverse isotropy in PREM."
+    },
+    {
+      "related_chapter": "Ch19 Subducting Slabs",
+      "nature": "application",
+      "explanation": "Seismic anisotropy observations near subduction zones constrain mantle flow patterns. Trench-parallel vs trench-perpendicular fast directions provide information about slab-driven flow geometry."
+    }
+  ],
+
+  "computational_methods": "The ElasticTensorCalculator class implements three main computational methods for elastic anisotropy. (1) Christoffel equation solver (SolveChristoffel): Given a 6x6 Voigt-notation elastic tensor and a propagation direction, the method constructs the 3x3 Christoffel matrix Gamma_ij = C_ijkl n_k n_l using the simplified form valid for orthorhombic and higher symmetry. It then solves the eigenvalue problem using MathNet.Numerics linear algebra routines. The three eigenvalues (rho*V^2) are converted to velocities with appropriate unit conversion (GPa and g/cm^3 to m/s), and sorted in descending order to yield Vp, Vs1, Vs2. Numerical safety handles rare negative eigenvalues from roundoff. (2) VRH averaging (ComputeVRH): Computes Voigt bounds directly from stiffness matrix elements, then inverts the 6x6 stiffness matrix to obtain the compliance matrix for Reuss bounds. The Hill average is the arithmetic mean of both bounds. This requires a full 6x6 matrix inversion, handled by MathNet.Numerics. (3) Maximum anisotropy estimation (ComputeMaxAnisotropy): Samples directions uniformly on a unit sphere using Fibonacci sphere sampling (golden ratio spacing), which provides excellent uniformity with low computational cost. Default is 100 directions, which is sufficient for orthorhombic minerals. For each direction, the Christoffel equation is solved and Vp is recorded. The anisotropy percentage is (Vp_max - Vp_min)/Vp_mean * 100. The ElasticTensor model class stores the 6x6 stiffness matrix in Voigt notation and provides convenience properties for Voigt-average K and G. SingleCrystalElasticConstants provides a database of ambient-condition elastic constants for forsterite and periclase, with values from Abramson et al. (1997) and Zha et al. (2000).",
+
+  "open_questions": [
+    "How do single-crystal elastic constants of olivine change at simultaneous high pressure and high temperature relevant to the asthenosphere (5-10 GPa, 1300-1600 K)? Experimental data at combined high P-T remain sparse.",
+    "Which olivine LPO fabric type (A, B, C, D, or E) dominates in different tectonic settings, and how do transitions between fabric types affect the interpretation of seismic anisotropy?",
+    "Can radial anisotropy in the asthenosphere be fully explained by olivine LPO, or do melt-aligned features (melt pockets, grain boundary films) contribute significantly?",
+    "How should anisotropic elastic properties be averaged for polyphase aggregates with correlated textures (e.g., olivine + orthopyroxene with coupled LPO)?",
+    "What are the elastic constants of post-perovskite and their implications for anisotropy in the D'' layer? Does D'' anisotropy reflect LPO of post-perovskite or shape-preferred orientation of heterogeneities?",
+    "How do the Hashin-Shtrikman self-consistent bounds compare with VRH for highly anisotropic minerals, and should the community adopt tighter bounds as standard practice?"
+  ],
+
+  "exercise_suggestions": [
+    "Given the 9 elastic constants of forsterite, compute the P-wave velocity along [100], [010], and [001] directions by hand, and verify using the Christoffel equation.",
+    "Compute the Voigt and Reuss bounds for bulk and shear moduli of periclase (cubic symmetry, 3 constants). Show that for a cubic mineral, the Reuss and Voigt bounds bracket the single-crystal Hill average.",
+    "Write code to plot P-wave velocity as a function of propagation direction on a stereographic projection for forsterite. Identify the fastest and slowest directions.",
+    "Starting from the Voigt notation, explicitly derive the Christoffel matrix elements for an orthorhombic crystal propagating in the (110) plane (n3=0) and show how it simplifies.",
+    "For a rock composed of 60% olivine and 40% orthopyroxene with random grain orientations, estimate the VRH-average velocities. Compare with a rock having 100% olivine.",
+    "Use the anisotropy percentage formula to estimate how much LPO alignment (as a fraction of single-crystal anisotropy) is needed to produce 4% observed azimuthal Pn anisotropy in the upper mantle.",
+    "Derive the relationship between the Zener anisotropy ratio A = 2*C44/(C11-C12) and the P-wave anisotropy for a cubic crystal. Compute A for periclase and discuss its significance.",
+    "Research problem: Download published olivine elastic constants at multiple pressures (e.g., from Abramson et al. 1997) and investigate how the anisotropy percentage changes with pressure. Does olivine become more or less anisotropic at depth?"
+  ],
+
+  "figure_suggestions": [
+    {
+      "description": "Stereographic projection of P-wave velocity in forsterite",
+      "axes": "Equal-area projection of the upper hemisphere; color scale showing Vp in km/s",
+      "key_features": "Maximum velocity (~10.1 km/s) along [100], minimum (~7.7 km/s) near [010], intermediate along [001]. Orthorhombic symmetry should produce a pattern with three distinct velocity lobes."
+    },
+    {
+      "description": "Voigt-Reuss-Hill bounds diagram",
+      "axes": "X-axis: mineral name (forsterite, periclase, enstatite, etc.), Y-axis: bulk modulus K [GPa] and shear modulus G [GPa]",
+      "key_features": "For each mineral, show Voigt (upper bar), Reuss (lower bar), and Hill (middle marker) values. The spread between bounds indicates degree of intrinsic anisotropy."
+    },
+    {
+      "description": "Christoffel equation workflow diagram",
+      "axes": "Flowchart / schematic (no axes)",
+      "key_features": "Show the pipeline: single-crystal C_ij → choose direction n → build Gamma_ij → eigenvalue decomposition → three velocities (Vp, Vs1, Vs2) and polarization directions."
+    },
+    {
+      "description": "Olivine LPO fabric types and corresponding seismic anisotropy patterns",
+      "axes": "Table or multi-panel figure showing A, B, C, D, E fabric types",
+      "key_features": "For each fabric type, show the dominant slip system, the orientation of the fast axis relative to shear direction, and the expected SKS splitting pattern. Highlight that A-type (dry) has fast axis parallel to flow but B-type (wet, high stress) has fast axis perpendicular."
+    },
+    {
+      "description": "P-wave anisotropy as a function of LPO strength",
+      "axes": "X-axis: alignment fraction (0=random, 1=single crystal), Y-axis: P-wave anisotropy [%]",
+      "key_features": "Linear or near-linear increase from 0% to single-crystal value (~25% for olivine). Mark the range of observed upper mantle anisotropy (2-5%) and the corresponding implied alignment fraction (10-20%)."
+    }
+  ],
+
+  "historical_context": "The study of elastic anisotropy in crystals has its roots in 19th-century crystal physics. Woldemar Voigt's 1928 'Lehrbuch der Kristallphysik' established the theoretical framework for anisotropic elasticity and introduced the Voigt notation still used universally today. Voigt also proposed the uniform-strain averaging method for polycrystalline aggregates. Reuss (1929) proposed the complementary uniform-stress bound. Hill's 1952 paper demonstrated that the arithmetic mean of these bounds provides a practical and accurate estimate, creating the VRH scheme that remains the standard in mineral physics. The Christoffel equation for wave propagation in anisotropic media was developed by Elwin Bruno Christoffel in 1877 and later extended by Lord Kelvin and others. Its application to geophysics began in earnest in the 1960s when Hess (1964) discovered that Pn velocities beneath the Pacific showed azimuthal variation correlated with seafloor spreading direction, providing the first evidence for upper mantle anisotropy due to olivine LPO. This was followed by the recognition of shear wave splitting (Ando et al., 1983; Silver and Chan, 1991) as a powerful diagnostic of mantle anisotropy. The development of electron backscatter diffraction (EBSD) in the 1990s enabled direct measurement of LPO in mantle xenoliths and experimentally deformed samples, leading to the classification of olivine fabric types (A through E) by Karato, Jung, and coworkers in the 2000s. Modern computational approaches, including the self-consistent method of Mainprice and others, now allow prediction of full anisotropic elastic tensors for textured polycrystalline aggregates.",
+
+  "uncertain": [
+    "worked_examples[1].interpretation",
+    "worked_examples[2].numerical_values"
+  ]
+}

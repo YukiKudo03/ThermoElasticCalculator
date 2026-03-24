@@ -1,0 +1,170 @@
+{
+  "summary": "Seismic attenuation (Q) in the transition zone (410-660 km) and lower mantle (660-2890 km) is controlled by the anelastic behavior of wadsleyite, ringwoodite, bridgmanite (Mg-perovskite), and ferropericlase. Experimental Q measurements at the relevant high pressures remain sparse, but seismological models (e.g., PREM, QL6, QM1) indicate that Q_mu increases from ~140-160 in the upper mantle to ~200-350 in the transition zone and ~300-600 in the lower mantle, suggesting that anelastic corrections to velocity become progressively smaller with depth. Whether anelastic effects below 660 km are negligible or still significant (especially for Vs) remains debated and depends critically on the activation volume V* and the local temperature relative to the solidus.",
+
+  "key_papers": [
+    {
+      "author": "Dziewonski, A.M. and Anderson, D.L.",
+      "year": 1981,
+      "journal": "Physics of the Earth and Planetary Interiors",
+      "title": "Preliminary reference Earth model",
+      "doi": "10.1016/0031-9201(81)90046-7"
+    },
+    {
+      "author": "Lawrence, J.F. and Wysession, M.E.",
+      "year": 2006,
+      "journal": "Earth and Planetary Science Letters",
+      "title": "QLM9: A new radial quality factor (Q_mu) model for the lower mantle",
+      "doi": "10.1016/j.epsl.2005.10.030"
+    },
+    {
+      "author": "Matas, J. and Bukowinski, M.S.T.",
+      "year": 2007,
+      "journal": "Earth and Planetary Science Letters",
+      "title": "On the anelastic contribution to the temperature dependence of lower mantle seismic velocities",
+      "doi": "10.1016/j.epsl.2007.04.028"
+    },
+    {
+      "author": "Jackson, I. and Faul, U.H.",
+      "year": 2010,
+      "journal": "Physics of the Earth and Planetary Interiors",
+      "title": "Grainsize-sensitive viscoelastic relaxation in olivine: Towards a robust laboratory-based model for seismological application",
+      "doi": "10.1016/j.pepi.2009.09.006"
+    },
+    {
+      "author": "Durand, S., Matas, J., Ford, S., Ricard, Y., Romanowicz, B., and Montagner, J.-P.",
+      "year": 2013,
+      "journal": "Geophysical Journal International",
+      "title": "Insights from ScS-S measurements on deep mantle attenuation",
+      "doi": "10.1093/gji/ggt127"
+    },
+    {
+      "author": "Karato, S.-i.",
+      "year": 1993,
+      "journal": "Geophysical Research Letters",
+      "title": "Importance of anelasticity in the interpretation of seismic tomography",
+      "doi": "10.1029/93GL01767"
+    },
+    {
+      "author": "Dannberg, J., Eilon, Z., Faul, U.H., Gassmoller, R., Moulik, P., and Myhill, R.",
+      "year": 2017,
+      "journal": "Geochemistry, Geophysics, Geosystems",
+      "title": "The importance of grain size to mantle dynamics and seismological observations",
+      "doi": "10.1002/2017GC006944"
+    },
+    {
+      "author": "Cobden, L., Goes, S., Cammarano, F., and Connolly, J.A.D.",
+      "year": 2008,
+      "journal": "Journal of Geophysical Research: Solid Earth",
+      "title": "Thermochemical interpretation of one-dimensional seismic reference models for the upper mantle: Evidence for bias due to ignoring anelastic effects [uncertain]",
+      "doi": "[uncertain]"
+    },
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2005,
+      "journal": "Geophysical Journal International",
+      "title": "Thermodynamics of mantle minerals - I. Physical properties",
+      "doi": "10.1111/j.1365-246X.2005.02642.x"
+    },
+    {
+      "author": "Webb, S.L. and Jackson, I.",
+      "year": 2003,
+      "journal": "Physics of the Earth and Planetary Interiors",
+      "title": "Anelasticity and microcreep in polycrystalline MgO at high temperature: An exploratory study",
+      "doi": "10.1016/S0031-9201(03)00006-1"
+    }
+  ],
+
+  "physical_mechanism": "In the transition zone, the dominant minerals wadsleyite (410-520 km) and ringwoodite (520-660 km) are expected to exhibit grain-boundary sliding (GBS) and diffusion-assisted viscoelastic relaxation similar to olivine, but with distinct activation energies reflecting their spinel-related crystal structures and different defect chemistry. Water (hydrogen) solubility is much higher in wadsleyite and ringwoodite (up to ~2-3 wt% H2O) than in olivine, and dissolved hydrogen strongly enhances point defect concentrations and diffusion rates, potentially increasing attenuation and lowering Q. In the lower mantle, bridgmanite (MgSiO3 perovskite) dominates the aggregate (~70-80 vol%), with ferropericlase (Mg,Fe)O making up ~20-30%. The physical mechanisms of attenuation in bridgmanite are less well understood but likely involve diffusion-assisted GBS and possibly dislocation damping at elevated temperatures. Ferropericlase (MgO endmember) has been studied at ambient pressure by Webb and Jackson (2003), showing detectable anelastic absorption above ~1100 degrees C via grain-boundary mechanisms. The iron spin crossover in ferropericlase (~40-70 GPa) could modify elastic and anelastic properties in the mid-lower mantle. At high pressures relevant to the lower mantle, the activation enthalpy H* = E* + P*V* increases substantially, shifting relaxation peaks to higher temperatures. This means that for a given geotherm, the mantle operates farther from the relaxation peak, and Q increases (attenuation decreases). The overall picture is one of decreasing anelasticity with depth, but the magnitude depends on V* and whether grain sizes in the lower mantle are significantly larger than in the upper mantle, as larger grains also increase Q.",
+
+  "mathematical_formulation": "Seismological Q models provide radial profiles: PREM gives Q_mu = 143 (upper mantle, 80-670 km) and Q_mu = 312 (lower mantle, 670-2890 km), while more refined models like QL6 and QM1 show a gradual increase through the transition zone. The anelastic velocity correction at each depth uses: V_s(anelastic)/V_s(unrelaxed) = 1 - (1/2) * Q_mu^{-1}(T,P,f) * cot(alpha*pi/2), where alpha is the frequency exponent (~0.2-0.4). For Q >> 1 this simplifies to: delta_V_s/V_s ~ -(1/2) * Q_mu^{-1} * cot(alpha*pi/2).\n\nThe relaxation-time formulation for each mineral phase is: tau(T,P,d) = tau_0 * (d/d_ref)^m * exp[(E* + P*V*)/(R*T)]. For bridgmanite, E* is estimated at 200-400 kJ/mol [uncertain] and V* at 1-4 cm^3/mol [uncertain] based on diffusion data and analogy with perovskite-structured oxides. For ferropericlase, E* ~ 300 kJ/mol and V* ~ 2-6 cm^3/mol [uncertain], constrained by MgO diffusion data.\n\nThe combined Q for a multi-phase aggregate can be estimated via: Q_aggregate^{-1} = sum_i (G_i * phi_i * Q_i^{-1}) / sum_i (G_i * phi_i), where G_i is the shear modulus, phi_i the volume fraction, and Q_i the quality factor of each phase. Alternatively, full viscoelastic (Hashin-Shtrikman) bounding can be applied to the complex moduli of the constituent phases.",
+
+  "experimental_conditions": "Direct Q measurements for transition-zone and lower-mantle minerals at relevant P-T conditions are extremely limited. For wadsleyite and ringwoodite: A few multi-anvil forced-oscillation experiments at 14-20 GPa and 900-1400 degrees C, frequency range 0.001-1 Hz, using Deformation-DIA apparatus. Grain sizes ~1-20 micrometers. These are among the most difficult experiments in mineral physics due to the need for simultaneous high P, high T, and low frequency. For ferropericlase (MgO analogue): Webb and Jackson (2003) measured Q at ambient pressure and 20 MHz up to 1400 degrees C in polycrystalline MgO, finding detectable anelastic absorption for T > 1100 degrees C. No direct forced-oscillation Q measurements exist at lower-mantle pressures (>23 GPa) for MgO or (Mg,Fe)O. For bridgmanite: No direct Q measurements at relevant conditions exist. Attenuation is inferred indirectly from (1) silicon and oxygen self-diffusion rates measured in bridgmanite at 25 GPa, 1700-2300 degrees C [uncertain], which constrain the timescale of diffusion-assisted relaxation; (2) deformation experiments (Girard et al. 2016) at 25 GPa that provide rheological parameters; and (3) seismological Q models. Brillouin scattering and IXS measurements at lower-mantle P-T give unrelaxed elastic moduli but operate at GHz-THz frequencies, too high to probe seismic-band anelasticity directly.",
+
+  "key_parameters": [
+    {
+      "name": "Q_mu (transition zone, global average)",
+      "typical_value": "200 - 350 at ~0.01-1 Hz for depths 410-660 km",
+      "units": "dimensionless",
+      "description": "Shear quality factor in the transition zone from seismological models. Higher than the asthenospheric low-Q zone (~80-140) but lower than the bulk lower mantle."
+    },
+    {
+      "name": "Q_mu (lower mantle, global average)",
+      "typical_value": "300 - 600 at ~0.01-1 Hz for depths 660-2600 km",
+      "units": "dimensionless",
+      "description": "Shear quality factor in the lower mantle from PREM (312) and more recent models. Tends to increase with depth (decreasing attenuation). PREM uses a constant value, but laterally varying models show significant heterogeneity."
+    },
+    {
+      "name": "Q_mu (D'' region)",
+      "typical_value": "100 - 300 [uncertain]",
+      "units": "dimensionless",
+      "description": "The D'' layer (~2600-2890 km) may have reduced Q due to proximity to the core-mantle boundary thermal boundary layer, partial melt, or chemical heterogeneity."
+    },
+    {
+      "name": "E* for bridgmanite attenuation",
+      "typical_value": "200 - 400 kJ/mol [uncertain]",
+      "units": "kJ/mol",
+      "description": "Activation energy for viscoelastic relaxation in bridgmanite. Estimated from Si self-diffusion data and analogy with perovskite-structured ceramics."
+    },
+    {
+      "name": "V* for bridgmanite attenuation",
+      "typical_value": "1 - 4 cm^3/mol [uncertain]",
+      "units": "cm^3/mol",
+      "description": "Activation volume for bridgmanite. Expected to be relatively small given the dense perovskite structure, meaning pressure only weakly suppresses attenuation in bridgmanite."
+    },
+    {
+      "name": "E* for ferropericlase attenuation",
+      "typical_value": "250 - 350 kJ/mol [uncertain]",
+      "units": "kJ/mol",
+      "description": "Activation energy based on MgO ambient-pressure attenuation data and diffusion measurements."
+    },
+    {
+      "name": "V* for ferropericlase attenuation",
+      "typical_value": "2 - 6 cm^3/mol [uncertain]",
+      "units": "cm^3/mol",
+      "description": "Activation volume for (Mg,Fe)O. MgO diffusion data suggest moderate V*, but Fe content and the spin transition add uncertainty."
+    },
+    {
+      "name": "alpha (frequency exponent)",
+      "typical_value": "0.2 - 0.4",
+      "units": "dimensionless",
+      "description": "Frequency exponent in Q^{-1} ~ omega^{-alpha}. Commonly assumed similar to olivine (~0.26-0.33), but not independently measured for transition-zone or lower-mantle minerals [uncertain]."
+    },
+    {
+      "name": "Q_K (bulk attenuation)",
+      "typical_value": "> 1000 (often assumed infinite)",
+      "units": "dimensionless",
+      "description": "Bulk quality factor. Most evidence suggests Q_K >> Q_mu at all mantle depths, so bulk attenuation contributes negligibly to Vp corrections. PREM assigns Q_K = 57823."
+    },
+    {
+      "name": "Grain size in lower mantle",
+      "typical_value": "1 - 100 mm [uncertain]",
+      "units": "mm",
+      "description": "Grain size in the lower mantle is poorly constrained. Larger grains (compared to upper mantle) would further increase Q and reduce anelastic corrections."
+    }
+  ],
+
+  "velocity_correction_magnitude": "The anelastic velocity correction decreases with depth as Q increases. In the transition zone (410-660 km): Using Q_mu ~ 200-350, the Vs correction is approximately 0.5-2.0%, with the larger values applying near 410 km where Q is lower and temperature relative to solidus is higher. The Vp correction is ~0.2-0.8%, given Q_K >> Q_mu. In the bulk lower mantle (660-2600 km): With Q_mu ~ 300-600 along a normal geotherm, the Vs correction is approximately 0.3-1.0% [uncertain]. This is small but not negligible when trying to resolve composition (e.g., Mg/Si ratio, Fe content) from absolute velocity comparisons with mineral physics models. The Vp correction is <0.3-0.5% under normal conditions. In the D'' region (2600-2890 km): Temperature increases sharply toward the CMB, and Q may decrease to ~100-300, yielding Vs corrections of 1-3% [uncertain], comparable to upper mantle values. In hot anomalous regions (plume roots, LLSVP margins): Q can be significantly lower, with Vs corrections potentially reaching 2-5% [uncertain], making anelasticity important for interpreting large low-velocity provinces. The key point is that for average lower-mantle conditions, anelastic Vs corrections are of order ~0.5%, which is comparable to the velocity differences expected from plausible compositional variations (e.g., pyrolite vs. chondritic Mg/Si), so neglecting anelasticity introduces a systematic bias of the same magnitude as the compositional signal.",
+
+  "implications_for_composition": "The question of whether anelastic corrections matter below 660 km has direct consequences for mantle composition models: (1) If anelastic corrections in the lower mantle are small (<0.5% for Vs), then comparisons of seismologically observed velocities with mineral physics predictions of elastic velocities are approximately valid. In this case, the observed velocity-density profiles constrain bulk composition relatively directly, and apparent mismatches (e.g., Vs slightly lower than predicted for pyrolite) may indicate compositional anomalies such as iron enrichment or an elevated Mg/Si ratio. (2) If anelastic corrections are moderate (0.5-1.5% for Vs), neglecting them introduces a systematic positive bias in the mineral physics predictions relative to seismic observations, because seismic waves sample the relaxed (anelastic) modulus while most mineral physics databases report unrelaxed (high-frequency) elastic moduli. This bias preferentially affects Vs and could lead to overestimation of temperature or underestimation of iron content when fitting seismic data. (3) Matas and Bukowinski (2007) showed that incorporating even modest anelastic corrections in the lower mantle changes the best-fitting composition in pyrolite vs. chondrite comparisons, particularly the inferred Si content. Their analysis suggested that the anelastic contribution to dln(Vs)/dT is 20-40% of the total at lower-mantle conditions, which is significant. (4) For the transition zone, water content in wadsleyite and ringwoodite strongly affects Q; a hydrous transition zone would have lower Q and larger anelastic corrections, potentially masking or mimicking the velocity signature of water's direct elastic effect. Disentangling elastic vs. anelastic effects of water is a major challenge. (5) Lateral variations in Q (from seismic attenuation tomography) correlate with velocity anomalies, and properly accounting for anelastic effects is essential for separating thermal from compositional heterogeneity in the deep mantle.",
+
+  "limitations": "1. Near-total lack of direct Q measurements for bridgmanite and ferropericlase at lower-mantle P-T conditions. All attenuation parameterizations for these phases rely on indirect inference from diffusion data, rheological experiments, or seismological Q models. 2. Seismological Q models themselves have large uncertainties, especially in the lower mantle where resolution is limited by sparse body-wave sampling and trade-offs between Q_mu and Q_K. Different studies yield Q_mu values ranging from ~200 to ~600 for the same depth range. 3. The activation volume V* for transition-zone and lower-mantle minerals is essentially unconstrained by direct attenuation experiments. Values used in models are borrowed from diffusion data or olivine analogies, introducing unknown systematic errors. 4. The frequency exponent alpha is assumed constant with depth and composition, but there is no experimental basis for this assumption for bridgmanite or ferropericlase. 5. Grain size in the lower mantle is unknown and could vary by orders of magnitude from the values assumed in models. Since Q scales as d^m (m ~ 1-3), this uncertainty propagates directly to Q estimates. 6. The iron spin crossover in ferropericlase at ~40-70 GPa may affect anelastic behavior through changes in elastic moduli, bonding, and defect energetics, but this effect on attenuation has not been studied. 7. Multi-phase interactions between bridgmanite and ferropericlase (e.g., enhanced grain-boundary sliding at phase boundaries) may increase attenuation relative to single-phase estimates, but this is unexplored experimentally. 8. Post-perovskite phase near the CMB may have different attenuation characteristics than bridgmanite. 9. The effect of aluminum incorporation in bridgmanite on attenuation is unknown but could be significant given that Al enhances vacancy concentrations.",
+
+  "implementation_notes": "For ThermoElasticCalculator, implementing transition-zone and lower-mantle Q requires extending the anelastic correction framework beyond olivine. INPUTS: (1) Mineral phase assemblage at each P-T point (wadsleyite, ringwoodite, bridgmanite, ferropericlase, Ca-perovskite, etc.) from the thermodynamic model; (2) Unrelaxed elastic moduli G_U(T,P) and K_U(T,P) for each phase from the EoS database; (3) Temperature T, pressure P, seismic frequency f, and grain size d. IMPLEMENTATION STEPS: (1) Define attenuation parameters (E*, V*, alpha, tau_0, m) for each mineral phase. For olivine, use well-calibrated Jackson & Faul (2010) parameters. For wadsleyite and ringwoodite, use olivine parameters scaled by the ratio of melting temperatures or activation energies from diffusion data [uncertain approach]. For bridgmanite and ferropericlase, provide default parameters based on available diffusion data and allow user override. (2) Compute Q_mu^{-1}(T,P,f,d) for each phase using the Andrade or extended Burgers model with phase-specific parameters. (3) Combine phase Q values into an aggregate Q using modulus-weighted averaging. (4) Compute anelastic velocity corrections: delta_Vs/Vs = -(1/2) * Q_mu^{-1} * cot(alpha*pi/2); delta_Vp/Vp involves both Q_mu and Q_K (set Q_K^{-1} = 0 as default). (5) Provide an option to use seismological Q profiles (e.g., PREM Q) as a fallback when mineral-physics-based Q is too uncertain. This is especially useful for the lower mantle where experimental constraints are minimal. (6) Output Q_mu, Q_K (if modeled), the anelastic velocity correction magnitude, and corrected Vs, Vp at each depth for comparison with seismic observations. CRITICAL NOTE: Flag all lower-mantle attenuation parameters as uncertain in the user interface, and provide sensitivity analysis capability (e.g., vary V* over its plausible range to show the impact on corrected velocities).",
+
+  "relevance_score": 4,
+
+  "uncertain": [
+    "key_papers[7] (Cobden et al. 2008 - title and DOI uncertain)",
+    "Q_mu (D'' region)",
+    "E* for bridgmanite attenuation",
+    "V* for bridgmanite attenuation",
+    "E* for ferropericlase attenuation",
+    "V* for ferropericlase attenuation",
+    "alpha (frequency exponent) for transition-zone and lower-mantle minerals",
+    "Grain size in lower mantle",
+    "velocity_correction_magnitude for lower mantle bulk",
+    "velocity_correction_magnitude for D'' region",
+    "velocity_correction_magnitude for hot anomalous regions",
+    "implementation_notes - scaling approach for wadsleyite/ringwoodite parameters from olivine"
+  ]
+}

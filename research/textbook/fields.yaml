@@ -1,0 +1,48 @@
+fields:
+  - name: chapter_summary
+    type: string
+    description: "Comprehensive summary of the topic suitable for a graduate-level textbook (3-5 paragraphs). Should explain the physical/mathematical foundations, why it matters for Earth science, and how it connects to other topics."
+
+  - name: prerequisite_knowledge
+    type: array
+    description: "List of prerequisite topics the reader should understand before this chapter (e.g., 'thermodynamics fundamentals', 'elasticity theory', 'seismology basics')."
+
+  - name: key_equations
+    type: array
+    description: "List of key equations with LaTeX notation, variable definitions, and physical interpretation. Each entry should have: equation (LaTeX string), name, variables (dict of symbol→description), and interpretation."
+
+  - name: physical_concepts
+    type: array
+    description: "Core physical concepts explained in plain language. Each entry: concept name, definition, physical intuition, and common misconceptions."
+
+  - name: key_references
+    type: array
+    description: "Definitive references for this topic: author, year, title, journal/book, and why it is essential reading."
+
+  - name: worked_examples
+    type: array
+    description: "2-3 worked examples with problem statement, solution approach, numerical values, and interpretation. Should use realistic mineral physics parameters."
+
+  - name: connections_to_other_chapters
+    type: array
+    description: "How this topic connects to other chapters in the textbook. Each entry: related chapter name, nature of connection (prerequisite/extension/application), brief explanation."
+
+  - name: computational_methods
+    type: string
+    description: "Description of computational/numerical methods used to implement this topic. Algorithm descriptions, convergence criteria, typical performance."
+
+  - name: open_questions
+    type: array
+    description: "Current open research questions and controversies in this area."
+
+  - name: exercise_suggestions
+    type: array
+    description: "5-8 suggested exercises ranging from basic calculations to research-level problems."
+
+  - name: figure_suggestions
+    type: array
+    description: "Suggested figures/diagrams for the chapter: what to plot, axis labels, key features to highlight."
+
+  - name: historical_context
+    type: string
+    description: "Brief history of how this topic developed, key milestones, and seminal contributions."

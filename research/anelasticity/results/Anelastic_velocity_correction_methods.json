@@ -1,0 +1,151 @@
+{
+  "summary": "Anelastic velocity correction methods convert anharmonic (high-frequency, infinite-frequency limit) mineral physics velocities to seismically observable velocities at finite frequencies (typically 0.01-1 Hz) by accounting for viscoelastic relaxation. The foundational approach by Karato (1993) introduced a simple Q-based correction V_seis/V_anh = 1 - (1/(2Q)) * cot(pi*alpha/2), later refined by Cammarano et al. (2003) and Goes et al. (2000) with explicit Q(T,P,f) models. Modern implementations use laboratory-calibrated rheological models (Andrade, extended Burgers) to compute frequency-dependent complex moduli and derive the velocity dispersion correction DeltaV/V as a function of temperature, pressure, frequency, grain size, and composition.",
+
+  "key_papers": [
+    {
+      "author": "Karato, S.",
+      "year": 1993,
+      "journal": "Geophysical Research Letters",
+      "title": "Importance of anelasticity in the interpretation of seismic tomography",
+      "doi": "10.1029/93GL01767"
+    },
+    {
+      "author": "Goes, S., Govers, R., and Vacher, P.",
+      "year": 2000,
+      "journal": "Journal of Geophysical Research",
+      "title": "Shallow mantle temperatures under Europe from P and S wave tomography",
+      "doi": "10.1029/1999JB900300"
+    },
+    {
+      "author": "Cammarano, F., Goes, S., Vacher, P., and Giardini, D.",
+      "year": 2003,
+      "journal": "Physics of the Earth and Planetary Interiors",
+      "title": "Inferring upper-mantle temperatures from seismic velocities",
+      "doi": "10.1016/S0031-9201(03)00156-0"
+    },
+    {
+      "author": "Jackson, I. and Faul, U.H.",
+      "year": 2010,
+      "journal": "Physics of the Earth and Planetary Interiors",
+      "title": "Grainsize-sensitive viscoelastic relaxation in olivine: Towards a robust laboratory-based model for seismological application",
+      "doi": "10.1016/j.pepi.2009.09.006"
+    },
+    {
+      "author": "Cammarano, F. and Romanowicz, B.",
+      "year": 2008,
+      "journal": "Geochemistry, Geophysics, Geosystems",
+      "title": "Radial profiles of seismic attenuation in the upper mantle based on physical models",
+      "doi": "10.1029/2008GC002045"
+    },
+    {
+      "author": "Abers, G.A., Fischer, K.M., Hirth, G., and Wiens, D.A.",
+      "year": 2014,
+      "journal": "Geochemistry, Geophysics, Geosystems",
+      "title": "Reconciling mantle attenuation-temperature relationships from seismology, petrology, and laboratory measurements",
+      "doi": "10.1002/2014GC005444"
+    },
+    {
+      "author": "Yamauchi, H. and Takei, Y.",
+      "year": 2016,
+      "journal": "Journal of Geophysical Research: Solid Earth",
+      "title": "Polycrystal anelasticity at near-solidus temperatures",
+      "doi": "10.1002/2016JB013316"
+    },
+    {
+      "author": "Richards, F.D., Hoggard, M.J., Cowton, L.R., and White, N.J.",
+      "year": 2020,
+      "journal": "Geochemistry, Geophysics, Geosystems",
+      "title": "Reassessing the thermal structure of oceanic lithosphere with revised global inventories of basement depths and heat flow measurements",
+      "doi": "10.1029/2019GC008389"
+    },
+    {
+      "author": "Maguire, R., Ritsema, J., and Goes, S.",
+      "year": 2016,
+      "journal": "Journal of Geophysical Research: Solid Earth",
+      "title": "Signals of 660 km topography and harzburgite enrichment in seismic images of whole-mantle upwellings",
+      "doi": "10.1002/2015JB012601 [uncertain]"
+    },
+    {
+      "author": "Cobden, L., Goes, S., Cammarano, F., and Connolly, J.A.D.",
+      "year": 2008,
+      "journal": "Journal of Geophysical Research",
+      "title": "Thermochemical interpretation of one-dimensional seismic reference models for the upper mantle: Evidence for bias due to heterogeneity",
+      "doi": "10.1029/2007JB005409"
+    }
+  ],
+
+  "physical_mechanism": "The anelastic velocity correction addresses the dispersion (frequency dependence) of seismic velocities arising from viscoelastic relaxation in polycrystalline mantle minerals. At infinite frequency (the anharmonic limit), the elastic moduli reflect purely elastic restoring forces modified only by thermal expansion and bond anharmonicity. At finite seismic frequencies, thermally activated dissipative processes — primarily diffusion-assisted grain-boundary sliding and dislocation-mediated relaxation — allow partial stress relaxation, reducing the effective elastic moduli and hence the wave velocities. The physical mechanism is causal: any energy dissipation (nonzero Q^{-1}) necessarily implies velocity dispersion through the Kramers-Kronig relations. At mantle temperatures above roughly 900-1000 degrees C, these thermally activated relaxation processes become significant at seismic periods (1-100 s), producing measurable velocity reductions relative to the anharmonic reference. The magnitude of the correction increases strongly with temperature (Arrhenius dependence), increases with decreasing frequency, and depends on grain size and water content. Near the solidus, additional mechanisms (pre-melting effects, enhanced grain-boundary mobility) dramatically amplify the correction.",
+
+  "mathematical_formulation": "Karato (1993) formulation: V(omega)/V_inf = 1 - (1/2) * Q^{-1}(omega) * cot(pi*alpha/2), where V_inf is the anharmonic (unrelaxed) velocity, alpha is the frequency exponent (Q^{-1} ~ omega^{-alpha}, typically alpha ~ 0.1-0.4), and Q is the quality factor. This assumes a power-law frequency dependence of Q over the seismic band.\n\nQ(T,P,f) model (Goes et al. 2000, Cammarano et al. 2003): Q(T,P,f) = A * f^alpha * exp(alpha * (E* + P*V*) / (R*T)), where A is a scaling constant, f is frequency, alpha is the frequency exponent, E* is activation energy, V* is activation volume, R is the gas constant, and T is absolute temperature. The velocity correction is then applied separately for shear and bulk: V_s(f) = V_s_anh * [1 - (1/2) * Q_mu^{-1}(T,P,f) * cot(pi*alpha/2)], V_p(f) = V_p_anh * [1 - (1/2) * (L^{-1}) * (4/3 * G/L * Q_mu^{-1} + K/L * Q_K^{-1}) * cot(pi*alpha/2)], where L = K + 4G/3 is the P-wave modulus. Often Q_K^{-1} is set to zero as an approximation.\n\nModern laboratory-based approach (Jackson & Faul 2010, Yamauchi & Takei 2016): Compute the complex compliance J*(omega, T, P, d) from a viscoelastic model (Andrade or extended Burgers), then: G(omega) = 1 / Re[J*(omega)], Q_mu^{-1}(omega) = Im[J*] / Re[J*], V_s(omega) = sqrt(G(omega) / rho). The velocity correction is DeltaV_s/V_s = (V_s_anh - V_s(omega)) / V_s_anh = 1 - sqrt(G_U / G(omega)) where G_U is the unrelaxed modulus.\n\nFor Vp, the correction requires both shear and bulk contributions: DeltaV_p/V_p ~ (2/3) * (G/L) * (DeltaG/G) + (1/3) * (K/L) * (DeltaK/K), where DeltaK/K is typically small (Q_K >> Q_mu).",
+
+  "experimental_conditions": "The velocity correction methods themselves are semi-empirical frameworks rather than direct experiments, but they are calibrated against: (1) Forced torsional oscillation experiments on polycrystalline olivine (Fo90) at T = 1000-1350 C, P = 0.2-0.3 GPa, f = 0.001-1 Hz, grain size 3-165 micrometers (Jackson, Faul, ANU lab). (2) Seismological observations: global and regional attenuation models (PREM Q values, regional Q tomography) at frequencies 0.003-0.3 Hz. (3) Calibration against oceanic lithosphere thermal models where temperature structure is independently constrained (e.g., half-space cooling model for oceanic plates), allowing verification of the correction by comparing predicted vs observed velocities. (4) Karato (1993) and Goes et al. (2000) used creep activation parameters from high-temperature deformation experiments on olivine single crystals and aggregates. The Cammarano et al. (2003) approach was calibrated to match PREM and other 1D reference models using a self-consistent mineral physics + anelasticity framework.",
+
+  "key_parameters": [
+    {
+      "name": "alpha (frequency exponent)",
+      "typical_value": "0.1 - 0.4 (commonly 0.1-0.15 for Karato/Goes formulation, 0.2-0.33 for Andrade-based)",
+      "units": "dimensionless",
+      "description": "Controls the frequency dependence of Q: Q^{-1} ~ omega^{-alpha}. Also sets the magnitude of velocity dispersion through cot(pi*alpha/2)."
+    },
+    {
+      "name": "E* (activation energy)",
+      "typical_value": "400 - 505 kJ/mol (olivine, shear attenuation); 200-300 kJ/mol used in some early models",
+      "units": "kJ/mol",
+      "description": "Governs the temperature sensitivity of Q. Higher E* means steeper temperature dependence of the velocity correction."
+    },
+    {
+      "name": "V* (activation volume)",
+      "typical_value": "6 - 20 cm^3/mol [uncertain]",
+      "units": "cm^3/mol",
+      "description": "Governs the pressure sensitivity of Q. Poorly constrained; typical values from diffusion creep data. Cammarano et al. (2003) used ~10-20 cm^3/mol."
+    },
+    {
+      "name": "A (Q scaling prefactor)",
+      "typical_value": "model-dependent, order 0.1-100 [uncertain]",
+      "units": "s^{-alpha}",
+      "description": "Reference Q prefactor in the parameterized Q(T,P,f) model. Calibrated against seismological observations or laboratory data."
+    },
+    {
+      "name": "Q_mu (shear quality factor)",
+      "typical_value": "50-200 (asthenosphere), 200-600 (lithosphere), >1000 (cold slab)",
+      "units": "dimensionless",
+      "description": "Shear attenuation quality factor at seismic frequencies. Directly determines the Vs correction magnitude."
+    },
+    {
+      "name": "Q_K (bulk quality factor)",
+      "typical_value": ">1000 (commonly assumed infinite or set to 57823 as in PREM)",
+      "units": "dimensionless",
+      "description": "Bulk attenuation quality factor. Usually Q_K >> Q_mu, so bulk contribution to velocity correction is minor."
+    },
+    {
+      "name": "d (grain size)",
+      "typical_value": "1 - 10 mm (upper mantle estimate)",
+      "units": "mm",
+      "description": "Mantle grain size, relevant for laboratory-based Q models. Enters through grain-size-sensitive relaxation times."
+    },
+    {
+      "name": "f (seismic frequency)",
+      "typical_value": "0.01 - 1 Hz (body waves); 0.003 - 0.03 Hz (surface waves/normal modes)",
+      "units": "Hz",
+      "description": "Observation frequency at which the corrected velocity is computed. Lower frequencies yield larger corrections."
+    }
+  ],
+
+  "velocity_correction_magnitude": "The anelastic correction magnitudes depend strongly on temperature and depth: (1) Vs corrections: At typical asthenospheric conditions (T ~ 1300-1400 C, P ~ 3-6 GPa, f ~ 0.03 Hz), DeltaVs/Vs ~ 2-5%. In the lithosphere (T < 1000 C), corrections are negligible (<0.5%). Near the solidus (T > 1350 C at shallow depths), corrections can reach 5-10%, especially with the Yamauchi-Takei (2016) pre-melting parameterization. (2) Vp corrections: Typically 0.3-2% under the same conditions, roughly 1/3 to 1/2 the Vs correction, because Vp depends on both K and G while bulk attenuation is very low. (3) Frequency dependence: At 1 Hz, corrections are ~30-50% smaller than at 0.01 Hz. (4) Using the Karato (1993) formulation with alpha=0.15 and Q_mu=80 (typical asthenosphere), DeltaVs/Vs = 0.5 * (1/80) * cot(pi*0.15/2) ~ 1.3%. With Q_mu=50, this rises to ~2.1%. The Goes/Cammarano approach with self-consistent Q(T,P,f) typically gives 1-4% for Vs and 0.3-1.5% for Vp in the asthenosphere. Modern Andrade/Burgers-based implementations give similar ranges but with different depth profiles.",
+
+  "implications_for_composition": "The anelastic velocity correction is critical for accurate conversion between seismic observables and mantle thermochemical structure: (1) Temperature estimation: Neglecting anelasticity causes systematic overestimation of mantle temperature from low velocities. A 2-4% Vs correction corresponds to ~100-300 K in apparent temperature, comparable to the thermal anomalies being inferred. This means that without correction, hot regions appear hotter than they are, biasing inferred thermal structure. (2) Compositional inference: If excess temperature is invoked to explain low velocities (when anelasticity is the true cause), compositions will be biased toward more fertile, Fe-rich, or melt-bearing compositions. Applying the anelastic correction reduces the need for compositional anomalies and partial melt. (3) Vp/Vs ratio: Because Vs is more strongly affected than Vp, the Vp/Vs ratio changes with the anelastic correction. This affects interpretations that use Vp/Vs to distinguish thermal from compositional anomalies. (4) Systematic biases by method: The Karato (1993) simple formula, Goes et al. (2000) parameterized Q model, and laboratory-based Andrade/Burgers models give somewhat different corrections (up to ~1% difference in Vs), which propagates to ~50-150 K uncertainty in inferred temperature and measurable differences in derived mineralogy (e.g., olivine content, garnet fraction). (5) Depth dependence: The activation volume V* controls how the correction diminishes with pressure; different V* choices lead to different depth profiles of the correction, affecting interpretations of transition zone and lower mantle velocities.",
+
+  "limitations": "1. Activation volume uncertainty: V* is the least constrained parameter. Values ranging from 6 to 20+ cm^3/mol have been used, leading to factor-of-2 or greater uncertainty in the correction at lower mantle pressures. 2. Frequency exponent ambiguity: The choice of alpha (0.1 vs 0.3) profoundly affects the dispersion correction through the cot(pi*alpha/2) factor; cot(pi*0.1/2) ~ 6.3 while cot(pi*0.3/2) ~ 2.1, a factor-of-3 difference. Different studies use different alpha values without consensus. 3. Grain-size uncertainty: Mantle grain size is poorly known (estimates range from 0.1 mm to 10+ mm), and the grain-size exponent compounds this uncertainty in laboratory-based models. The simple Karato/Goes formulations avoid explicit grain-size dependence but absorb it into calibration constants. 4. Extrapolation from laboratory to mantle: Laboratory data cover limited T-P-f-d space; extrapolation to mantle conditions spans orders of magnitude in frequency and grain size. 5. Composition dependence: Most calibrations are for pure olivine; effects of pyroxene, garnet, water content, and minor phases on Q are poorly characterized. The mantle is a polyphase aggregate, and anelastic properties of the assemblage may differ from olivine alone. 6. Non-uniqueness: Multiple Q(T,P,f) parameterizations fit available seismological constraints equally well, yet give different velocity corrections, especially at depth. 7. Bulk attenuation: The assumption Q_K^{-1} ~ 0 is convenient but may break down under certain conditions (near partial melting, in the presence of fluids). 8. Anisotropy of attenuation: Anelastic properties may be anisotropic (especially in sheared regions), but current correction methods assume isotropy. 9. Pre-melting effects: Near-solidus behavior is highly nonlinear and strongly dependent on melt fraction, water content, and grain-boundary chemistry — these effects are captured by Yamauchi-Takei (2016) but with considerable parametric uncertainty.",
+
+  "implementation_notes": "Implementation in ThermoElasticCalculator should proceed in two tiers: TIER 1 (Simple correction, recommended as default): (1) Accept the anharmonic Vs_anh(T,P) and Vp_anh(T,P) from the existing EoS/mineral physics engine. (2) Compute Q_mu(T,P,f) using the parameterized formula: Q_mu = A * f^alpha * exp(alpha * (E* + P*V*) / (R*T)). Default parameters from Cammarano et al. (2003) or Goes et al. (2000). (3) Apply velocity correction: Vs_corrected = Vs_anh * [1 - cot(pi*alpha/2) / (2*Q_mu)]. For Vp: use the composite formula involving Q_mu and Q_K (set Q_K^{-1}=0 as default). (4) INPUTS needed: T(K), P(GPa), f(Hz), plus parameter set {A, alpha, E*, V*}. OUTPUTS: Vs_corrected, Vp_corrected, Q_mu, Q_K. TIER 2 (Laboratory-based rheological model): (1) Compute complex compliance J*(omega) from an Andrade or extended Burgers model (see Andrade_Model.json and Extended_Burgers_Model.json). (2) Derive G(omega) = 1/Re[J*], Q_mu^{-1} = Im[J*]/Re[J*]. (3) Compute Vs = sqrt(G/rho). Additional INPUTS: grain size d, rheological model parameters. This allows comparison between simple and laboratory-based approaches. USER INTERFACE CONSIDERATIONS: (1) Provide a toggle between correction methods (none, Karato-simple, Goes/Cammarano parameterized, Andrade-based, Burgers-based). (2) Allow user to set seismic frequency (default 0.1 Hz for teleseismic body waves). (3) Display both corrected and uncorrected velocities for transparency. (4) Show DeltaV/V (%) as a diagnostic output. COMPUTATIONAL COST: The simple Tier 1 correction adds negligible cost (one exponential + one cotangent per evaluation). Tier 2 adds complex arithmetic but remains fast (no iteration needed for linear viscoelastic models).",
+
+  "relevance_score": 5,
+
+  "uncertain": [
+    "V* (activation volume) typical range",
+    "A (Q scaling prefactor) typical value",
+    "key_papers[8] (Maguire et al. 2016 DOI uncertain)",
+    "key_papers[7] (Richards et al. 2020 - paper may cover broader topic than listed)",
+    "Q_K behavior near partial melting conditions"
+  ]
+}

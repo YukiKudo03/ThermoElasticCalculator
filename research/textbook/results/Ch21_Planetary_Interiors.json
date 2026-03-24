@@ -1,0 +1,336 @@
+{
+  "chapter_summary": "This chapter extends the mineral physics framework developed for Earth to the interiors of other rocky planets and exoplanets. The central problem is to construct self-consistent radial models of planetary structure by integrating the equation of hydrostatic equilibrium dP/dr = -rho*g together with the mass continuity equation dM/dr = 4*pi*r^2*rho. Given a composition model (mineral assemblage or simplified single-mineral representation), the Mie-Gruneisen-Debye equation of state provides density as a function of pressure and temperature at each radial shell, closing the system of equations. An adiabatic temperature profile is assumed for the convecting mantle, while the core is treated with a simplified uniform density. The solver implemented as PlanetaryInteriorSolver uses a two-pass numerical scheme: a first pass estimates density to compute mass and gravitational acceleration, and a second pass integrates pressure inward from the zero-pressure surface boundary condition, calling the EOS at each step to update density self-consistently.\n\nA critical observable that constrains interior models is the dimensionless moment of inertia factor C = I/(MR^2), where I = (8*pi/3) * integral(rho(r)*r^4*dr). For a homogeneous sphere C = 0.4; differentiated bodies with dense cores have C < 0.4. Earth's value is 0.3307, indicating significant core-mantle density contrast. Mars, measured by spacecraft tracking to have C ~ 0.3639 (Konopliv et al., 2020), requires a moderately dense Fe-S core of radius ~1830 km and density ~6.5 g/cm^3. The MarsInteriorModel class encapsulates this configuration, using forsterite as a simplified mantle mineral and producing profiles consistent with InSight seismic data.\n\nFor exoplanets (super-Earths with masses 1-10 M_Earth), only mass and radius are typically known, so interior modeling becomes highly degenerate. The same framework applies, but the EOS must be extrapolated to pressures of hundreds of GPa to TPa, where the Birch-Murnaghan finite strain expansion may become inadequate and ab initio equations of state or Vinet forms are preferred. Key questions include the iron content of the core, the partitioning of light elements (S, Si, O) into the core, and whether post-perovskite or even higher-pressure phases dominate the deep mantle. The mass-radius relation M(R) computed from interior models is compared against transit and radial velocity observations to constrain bulk composition.\n\nThe PlanetaryInteriorSolver outputs complete radial profiles of pressure, temperature, density, gravitational acceleration, and seismic velocities (Vp, Vs) from center to surface. The RadialProfile data class stores these arrays along with the total mass and moment of inertia factor. This chapter bridges the gap between laboratory mineral physics and planetary science, demonstrating that the same thermodynamic framework used for Earth's mantle can be applied -- with appropriate caution about extrapolation -- to understand the diversity of rocky planet interiors in our solar system and beyond.",
+
+  "prerequisite_knowledge": [
+    "Hydrostatic equilibrium and gravitational potential theory (Newtonian gravity, shell theorem)",
+    "Mie-Gruneisen-Debye equation of state and the SLB2011 framework (Chapters 1-6)",
+    "Finite strain theory and the Birch-Murnaghan EOS at high compressions (Chapter 1)",
+    "PREM and radial Earth model concepts (Chapter 15)",
+    "Numerical integration methods (Euler forward/backward stepping, trapezoidal rule)",
+    "Moment of inertia for rigid bodies and its measurement from spacecraft precession data",
+    "Basic planetary science: internal structure of terrestrial planets, core-mantle differentiation"
+  ],
+
+  "key_equations": [
+    {
+      "equation": "\\frac{dP}{dr} = -\\rho(r) \\, g(r)",
+      "name": "Hydrostatic equilibrium",
+      "variables": {
+        "P": "Pressure at radius r (Pa or GPa)",
+        "r": "Radial distance from planetary center (m)",
+        "\\rho": "Density at radius r (kg/m^3)",
+        "g": "Gravitational acceleration at radius r (m/s^2)"
+      },
+      "interpretation": "The fundamental equation governing the pressure distribution inside a planet. Pressure increases inward because the weight of overlying material must be supported. Combined with an EOS relating rho to P and T, this equation can be integrated to yield the full interior profile."
+    },
+    {
+      "equation": "\\frac{dM}{dr} = 4\\pi r^2 \\rho(r)",
+      "name": "Mass continuity (mass enclosed within radius r)",
+      "variables": {
+        "M": "Mass enclosed within radius r (kg)",
+        "r": "Radial distance from center (m)",
+        "\\rho": "Density at radius r (kg/m^3)"
+      },
+      "interpretation": "Each spherical shell of thickness dr contributes a mass 4*pi*r^2*rho*dr to the total. Integrating from center to surface gives the total planetary mass. Implemented in PlanetaryInteriorSolver.ComputeMassAndGravity()."
+    },
+    {
+      "equation": "g(r) = \\frac{G \\, M(r)}{r^2}",
+      "name": "Gravitational acceleration inside a sphere",
+      "variables": {
+        "g": "Gravitational acceleration at radius r (m/s^2)",
+        "G": "Gravitational constant (6.674 x 10^-11 m^3 kg^-1 s^-2)",
+        "M(r)": "Mass enclosed within radius r (kg)",
+        "r": "Radial distance from center (m)"
+      },
+      "interpretation": "By the shell theorem, only the mass interior to radius r contributes to gravity at that point. Gravity is zero at the center and increases outward through the core, reaching a maximum near the core-mantle boundary before decreasing through the mantle to the surface value."
+    },
+    {
+      "equation": "\\frac{I}{MR^2} = \\frac{8\\pi}{3MR^2} \\int_0^R \\rho(r) \\, r^4 \\, dr",
+      "name": "Dimensionless moment of inertia factor",
+      "variables": {
+        "I": "Moment of inertia about the rotation axis (kg m^2)",
+        "M": "Total planetary mass (kg)",
+        "R": "Total planetary radius (m)",
+        "\\rho(r)": "Density at radius r (kg/m^3)"
+      },
+      "interpretation": "The normalized MoI factor C = I/(MR^2) is a key observable constraining radial density distribution. A homogeneous sphere has C = 0.4; concentration of mass toward the center (dense core) reduces C. Earth has C = 0.3307; Mars has C ~ 0.3639. Implemented as PlanetaryInteriorSolver.ComputeMoIFactor()."
+    },
+    {
+      "equation": "T(r) = T_{\\text{pot}} \\left(1 + 0.3 \\times 10^{-3} \\, d\\right)",
+      "name": "Simplified adiabatic temperature profile",
+      "variables": {
+        "T": "Temperature at depth d (K)",
+        "T_{\\text{pot}}": "Potential temperature (K)",
+        "d": "Depth from surface (km)"
+      },
+      "interpretation": "A linearized approximation to the adiabatic geotherm, where the adiabatic gradient is about 0.3 K/km. This is a simplification; the true adiabat depends on the Gruneisen parameter and compressibility, but is adequate for first-order interior models. Used in PlanetaryInteriorSolver for both mantle and core regions."
+    },
+    {
+      "equation": "M(R) \\propto R^{3+\\beta}",
+      "name": "Mass-radius scaling relation for rocky planets",
+      "variables": {
+        "M": "Total planetary mass",
+        "R": "Total planetary radius",
+        "\\beta": "Exponent deviation from cubic scaling (depends on composition and compression)"
+      },
+      "interpretation": "For small planets where compression is negligible, M scales as R^3 (constant density). For larger super-Earths, self-compression increases average density, so the exponent exceeds 3. Valencia et al. (2006) found M ~ R^3.7 for Earth-like compositions up to ~10 M_Earth. This relation is a key diagnostic for exoplanet characterization."
+    }
+  ],
+
+  "physical_concepts": [
+    {
+      "concept": "Hydrostatic equilibrium in planetary interiors",
+      "definition": "The balance between the inward gravitational force and the outward pressure gradient force at every point inside a planet: dP/dr = -rho*g. This condition holds when the planet is not accelerating and viscous stresses are negligible compared to pressure.",
+      "physical_intuition": "Think of stacking layers of rock: each layer must support the weight of everything above it. The deeper you go, the higher the pressure. For Earth, pressure increases from 0 at the surface to ~136 GPa at the core-mantle boundary and ~364 GPa at the center. The rate of pressure increase depends on both the local density and the gravitational acceleration.",
+      "common_misconceptions": [
+        "Assuming hydrostatic equilibrium implies the planet is static -- convection can occur in a hydrostatically balanced planet because lateral pressure variations driving flow are tiny compared to the radial pressure gradient.",
+        "Forgetting that g varies with depth -- it is not constant but depends on the enclosed mass, reaching a maximum near the core-mantle boundary for Earth-like planets."
+      ]
+    },
+    {
+      "concept": "Moment of inertia constraint",
+      "definition": "The dimensionless ratio C = I/(MR^2) quantifies how mass is distributed radially within a planet. It is measurable from the planet's gravitational quadrupole coefficient J2 and spin rate.",
+      "physical_intuition": "A uniform-density sphere has C = 0.4. If you move mass toward the center (creating a dense core), the moment of inertia decreases because I depends on r^4*rho -- mass near the center contributes much less than mass near the surface. Earth's C = 0.3307 tells us the core is substantially denser than the mantle. Mars's C ~ 0.3639 indicates a smaller degree of differentiation.",
+      "common_misconceptions": [
+        "Thinking C uniquely determines the density profile -- many different density profiles can produce the same C, so additional constraints (total mass, seismic data, composition) are needed.",
+        "Confusing the MoI factor with the actual moment of inertia -- C is dimensionless and normalized; the actual I has units of kg*m^2 and differs enormously between planets."
+      ]
+    },
+    {
+      "concept": "Self-consistent interior modeling",
+      "definition": "An iterative approach where pressure, density, temperature, and gravity are all computed simultaneously so that the EOS, hydrostatic equilibrium, and boundary conditions are satisfied at every radial point.",
+      "physical_intuition": "You cannot simply assume a density profile and integrate -- the density itself depends on pressure through the EOS. So you need an iterative or two-pass scheme: first guess densities, compute pressures, then use the EOS to update densities, and repeat until convergence. The PlanetaryInteriorSolver implements a two-pass approach that is sufficient for smooth, monotonic density profiles.",
+      "common_misconceptions": [
+        "Assuming a single pass is sufficient -- because density depends on pressure which depends on density, at least two passes (or full iteration to convergence) are needed for self-consistency.",
+        "Believing that the EOS from lab experiments can be directly applied at all planetary conditions -- extrapolation beyond experimental range introduces significant uncertainty, especially for super-Earths."
+      ]
+    },
+    {
+      "concept": "Core composition and density trade-off",
+      "definition": "For a given total mass and MoI factor, there is a trade-off between core size and core density: a smaller, denser core or a larger, less dense core can both satisfy the constraints.",
+      "physical_intuition": "Mars illustrates this well. InSight seismic data suggest a large (~1830 km) but relatively low-density (~6.5 g/cm^3) core, consistent with a significant fraction of light elements (sulfur, oxygen) alloyed with iron. This contrasts with Earth's smaller (relative to total radius) but denser core. The MarsInteriorModel uses CoreDensity = 6.5 g/cm^3, reflecting an Fe-S alloy.",
+      "common_misconceptions": [
+        "Assuming planetary cores are pure iron -- light element incorporation (S, Si, O, H) significantly reduces core density and alters the solidus.",
+        "Thinking core size and density can both be uniquely determined from MoI alone -- the MoI provides one constraint on a two-parameter family, requiring additional data (seismic, geodetic, or compositional) to break the degeneracy."
+      ]
+    },
+    {
+      "concept": "Mass-radius relation for exoplanets",
+      "definition": "The relationship between a planet's total mass and radius computed from interior models, which depends on bulk composition (iron fraction, silicate content, volatile envelope).",
+      "physical_intuition": "A pure iron planet of a given mass will be smaller than a silicate planet of the same mass, which in turn will be smaller than a water-rich planet. By measuring both mass (from radial velocity or transit timing) and radius (from transit depth), astronomers can constrain the bulk composition by comparing to theoretical mass-radius curves. Self-compression means the relationship is not simply M proportional to R^3.",
+      "common_misconceptions": [
+        "Assuming mass-radius relations uniquely determine composition -- there are strong degeneracies; for example, an iron-rich core with a thin silicate mantle can have the same M-R as a pure silicate planet with a small volatile envelope.",
+        "Ignoring thermal effects -- at the same composition, a hotter planet is slightly larger due to thermal expansion, which can be significant for close-in exoplanets."
+      ]
+    }
+  ],
+
+  "key_references": [
+    {
+      "author": "Valencia, D., O'Connell, R.J., and Sasselov, D.",
+      "year": 2006,
+      "title": "Internal structure of massive terrestrial planets",
+      "journal": "Icarus, 181, 545-554",
+      "why_essential": "Pioneering paper on mass-radius relations for super-Earths, establishing the M ~ R^3.7 scaling and the framework for comparing transit observations to interior models."
+    },
+    {
+      "author": "Stacey, F.D. and Davis, P.M.",
+      "year": 2008,
+      "title": "Physics of the Earth (4th ed.)",
+      "journal": "Cambridge University Press",
+      "why_essential": "Comprehensive textbook covering hydrostatic equilibrium, moment of inertia, and the Adams-Williamson equation for inferring density from seismic data. Essential background for planetary interior modeling."
+    },
+    {
+      "author": "Konopliv, A.S., et al.",
+      "year": 2020,
+      "title": "Detection of the Chandler wobble of Mars from orbiting spacecraft",
+      "journal": "Geophysical Research Letters, 47, e2020GL090568",
+      "why_essential": "Provides the precise measurement of Mars's moment of inertia factor (C/MR^2 = 0.3639 +/- 0.0001) used to constrain Martian interior models."
+    },
+    {
+      "author": "Stixrude, L., Lithgow-Bertelloni, C., Kiefer, B., and Fumagalli, P.",
+      "year": 2007,
+      "title": "Phase transitions and equations of state of alkaline earth fluorides and oxides at ultra-high pressures: implications for super-Earths",
+      "journal": "AGU Fall Meeting Abstracts",
+      "why_essential": "[uncertain] Early work on extending mineral physics EOS to super-Earth interior pressures, addressing the challenge of EOS extrapolation beyond experimental range."
+    },
+    {
+      "author": "Rivoldini, A., Van Hoolst, T., Verhoeven, O., Grott, M., Dehant, V., and Defraigne, P.",
+      "year": 2011,
+      "title": "Geodesy constraints on the interior structure and composition of Mars",
+      "journal": "Icarus, 213, 451-472",
+      "why_essential": "Systematic study of Mars interior models constrained by mass, MoI, and tidal Love number k2. Establishes the trade-off between core size and composition for Mars."
+    },
+    {
+      "author": "Dziewonski, A.M. and Anderson, D.L.",
+      "year": 1981,
+      "title": "Preliminary Reference Earth Model",
+      "journal": "Physics of the Earth and Planetary Interiors, 25, 297-356",
+      "why_essential": "The benchmark radial Earth model (PREM) against which all planetary interior solvers are validated. Provides the reference density, pressure, and velocity profiles for Earth."
+    },
+    {
+      "author": "Seager, S., Kuchner, M., Hier-Majumder, C.A., and Militzer, B.",
+      "year": 2007,
+      "title": "Mass-radius relationships for solid exoplanets",
+      "journal": "Astrophysical Journal, 669, 1279-1297",
+      "why_essential": "Comprehensive computation of mass-radius curves for pure iron, silicate, water, and carbon planets using self-consistent EOS. A foundational reference for exoplanet interior characterization."
+    }
+  ],
+
+  "worked_examples": [
+    {
+      "problem": "Estimate the central pressure of Mars using the simplified two-layer model (core radius 1830 km, core density 6.5 g/cm^3, mantle density ~3.5 g/cm^3, total radius 3389.5 km).",
+      "solution_approach": "1. Compute mass enclosed at various radii using dM/dr = 4*pi*r^2*rho. For the core (0 to 1830 km): M_core = (4/3)*pi*(1.830e6)^3 * 6500 = (4/3)*pi*6.129e18*6500 = 1.67e23 kg. 2. For the mantle (1830 to 3389.5 km): M_mantle ~ (4/3)*pi*[(3.3895e6)^3 - (1.830e6)^3]*3500 = (4/3)*pi*(3.880e19 - 6.129e18)*3500 = (4/3)*pi*3.267e19*3500 = 4.79e23 kg. 3. Total mass M_total ~ 6.46e23 kg (close to observed 6.42e23 kg). 4. Surface gravity g_s = G*M/R^2 = 6.674e-11*6.46e23/(3.3895e6)^2 = 3.75 m/s^2. 5. Central pressure: approximate as P_c ~ (2*pi/3)*G*[rho_core^2*R_core^2 + contributions from mantle weight]. More precisely, integrate dP = -rho*g*dr from surface inward. A rough estimate: P_c ~ rho_avg * g_avg * R / 2 ~ 4000 * 2.5 * 3.39e6 / 2 ~ 17 GPa. The PlanetaryInteriorSolver gives ~20-25 GPa at the center.",
+      "numerical_values": {
+        "R_Mars_km": 3389.5,
+        "R_core_km": 1830,
+        "rho_core_kgm3": 6500,
+        "rho_mantle_kgm3": 3500,
+        "M_core_kg": 1.67e23,
+        "M_total_kg": 6.46e23,
+        "g_surface_ms2": 3.75,
+        "P_center_GPa_approx": 20
+      },
+      "interpretation": "Mars's central pressure (~20-25 GPa) is far lower than Earth's (~364 GPa), reflecting its smaller mass and radius. This means Mars's deep interior does not reach the post-perovskite stability field, and its core is well within the liquid Fe-S regime. The simplified estimate is consistent with the PlanetaryInteriorSolver output and InSight seismic constraints."
+    },
+    {
+      "problem": "Compute the moment of inertia factor for a two-layer Mars model with uniform core density 6.5 g/cm^3 (r < 1830 km) and uniform mantle density 3.5 g/cm^3 (1830 < r < 3389.5 km).",
+      "solution_approach": "1. Use I = (8*pi/15)*[rho_core*R_core^5 + rho_mantle*(R^5 - R_core^5)] for uniform layers. I_core = (8*pi/15)*6500*(1.830e6)^5 = (8*pi/15)*6500*2.053e31 = 2.235e35 kg*m^2. I_mantle = (8*pi/15)*3500*[(3.3895e6)^5 - (1.830e6)^5] = (8*pi/15)*3500*(4.395e32 - 2.053e31) = (8*pi/15)*3500*4.190e32 = 2.456e36 kg*m^2. I_total = 2.235e35 + 2.456e36 = 2.680e36 kg*m^2. 2. MR^2 = 6.46e23 * (3.3895e6)^2 = 6.46e23 * 1.149e13 = 7.42e36 kg*m^2. 3. C = I/(MR^2) = 2.680e36 / 7.42e36 = 0.361.",
+      "numerical_values": {
+        "I_core_kgm2": 2.235e35,
+        "I_mantle_kgm2": 2.456e36,
+        "I_total_kgm2": 2.680e36,
+        "MR2_kgm2": 7.42e36,
+        "C_MoI_factor": 0.361
+      },
+      "interpretation": "The computed C = 0.361 is close to the observed Mars value of 0.3639, validating the two-layer model parameters. The slight discrepancy arises because the real mantle density increases with depth due to self-compression, which the PlanetaryInteriorSolver captures through the EOS but which is absent in this uniform-layer calculation."
+    },
+    {
+      "problem": "For a 5 M_Earth super-Earth with Earth-like composition (32.5% Fe core by mass), estimate the radius using the mass-radius scaling M ~ R^3.7.",
+      "solution_approach": "1. Using the scaling relation from Valencia et al. (2006): M/M_E = (R/R_E)^3.7. 2. Solve for R: R/R_E = (M/M_E)^(1/3.7) = 5^(1/3.7) = 5^0.2703 = 1.56. 3. R = 1.56 * 6371 km = 9939 km. 4. Central pressure estimate: P_c scales roughly as M^2/R^4 relative to Earth. P_c/P_c,E ~ (5)^2/(1.56)^4 = 25/5.93 = 4.22. So P_c ~ 4.22 * 364 GPa ~ 1536 GPa (1.5 TPa). 5. At these pressures, the BM3 EOS may be unreliable and ab initio EOS or Vinet forms should be used.",
+      "numerical_values": {
+        "M_over_M_Earth": 5.0,
+        "scaling_exponent": 3.7,
+        "R_over_R_Earth": 1.56,
+        "R_km": 9939,
+        "P_center_GPa_approx": 1536
+      },
+      "interpretation": "A 5 M_Earth planet with Earth-like composition would have a radius about 56% larger than Earth but a central pressure exceeding 1.5 TPa -- far beyond current static compression experiments (~300 GPa). At these conditions, post-perovskite may dissociate into simple oxides (MgO + SiO2), and the EOS extrapolation becomes a major source of uncertainty. This motivates the development of ab initio mineral physics for super-Earth modeling."
+    }
+  ],
+
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch01 Thermodynamics of Solids at High Pressure",
+      "connection_type": "prerequisite",
+      "explanation": "The Birch-Murnaghan EOS provides the pressure-volume-temperature relationship needed to close the hydrostatic equilibrium equation. At super-Earth pressures (TPa range), the reliability of the BM3 finite strain expansion becomes questionable."
+    },
+    {
+      "related_chapter": "Ch05 The Stixrude-Lithgow-Bertelloni Formulation",
+      "connection_type": "prerequisite",
+      "explanation": "The SLB2011 framework provides the self-consistent thermodynamic model (MieGruneisenEOSOptimizer) called at each radial shell to compute density, Vp, and Vs from the local P-T conditions."
+    },
+    {
+      "related_chapter": "Ch06 Mie-Gruneisen Equation of State Solver",
+      "connection_type": "prerequisite",
+      "explanation": "The MieGruneisenEOSOptimizer is invoked at every radial grid point in the mantle to determine density and seismic velocities from the local pressure and temperature. The solver's convergence and robustness are critical for planetary interior calculations."
+    },
+    {
+      "related_chapter": "Ch15 PREM and Radial Earth Models",
+      "connection_type": "prerequisite",
+      "explanation": "PREM provides the benchmark Earth model against which the PlanetaryInteriorSolver is validated. The same radial integration approach is used, but PREM is empirically constrained by seismic data rather than computed from mineral physics alone."
+    },
+    {
+      "related_chapter": "Ch11 Rock Compositions and Assemblages",
+      "connection_type": "prerequisite",
+      "explanation": "Realistic planetary models require multi-mineral assemblages (pyrolite for Earth's mantle, potentially different compositions for Mars). The current implementation uses single-mineral approximations but could be extended using the rock mixing framework from Chapter 11."
+    },
+    {
+      "related_chapter": "Ch14 Post-Perovskite Transition",
+      "connection_type": "extension",
+      "explanation": "The post-perovskite phase transition occurs in Earth's lowermost mantle and affects the density and velocity profile. For super-Earths, dissociation of post-perovskite at even higher pressures is an active research topic."
+    },
+    {
+      "related_chapter": "Ch18 Composition Inversion",
+      "connection_type": "application",
+      "explanation": "Composition inversion techniques developed for Earth (fitting seismic data to determine mantle composition) can be extended to other planets when seismic data become available, as demonstrated by InSight for Mars."
+    },
+    {
+      "related_chapter": "Ch03 Gruneisen Parameter and Anharmonicity",
+      "connection_type": "prerequisite",
+      "explanation": "The Gruneisen parameter controls the adiabatic temperature gradient dT/dz = gamma*T*g/phi, which determines the temperature profile used in planetary interior models. The simplified linear approximation in PlanetaryInteriorSolver (0.3 K/km) is derived from typical Gruneisen parameter values."
+    }
+  ],
+
+  "computational_methods": "The PlanetaryInteriorSolver implements a two-pass radial integration scheme on a uniform grid of nPoints shells from center (r=0) to surface (r=R). In Pass 1, a preliminary density profile is assumed (uniform core density from PlanetaryConfig.CoreDensity, initial mantle guess of 4.0 g/cm^3), and mass and gravity are computed by forward summation: M(i) = M(i-1) + rho(i)*4*pi*r(i)^2*dr, g(i) = G*M(i)/r(i)^2. In Pass 2, pressure is integrated inward from the surface boundary condition P(surface) = 0 using backward Euler stepping: P(i) = P(i+1) + rho(i)*g(i)*dr. At each mantle grid point, the MieGruneisenEOSOptimizer is called with the current pressure and adiabatic temperature to obtain a self-consistent density and seismic velocities. After Pass 2 updates all densities, mass, gravity, and pressure are recomputed for final self-consistency.\n\nThe moment of inertia factor is computed by numerical quadrature: I = (8*pi/3)*sum(rho(i)*r(i)^4*dr), then normalized as C = I/(M*R^2). The default grid resolution of nPoints=100 provides adequate accuracy for smooth density profiles; tests use nPoints=200 for better precision.\n\nPerformance is dominated by the nPoints calls to MieGruneisenEOSOptimizer, each of which involves an iterative root-finding for the finite strain (typically 10-20 iterations). For nPoints=100, the total computation takes on the order of seconds. The solver handles EOS failures gracefully by catching exceptions and falling back to the previous shell's density, preventing numerical blowup at extreme P-T conditions.\n\nFor super-Earth applications, the grid would need to be extended to higher pressures (hundreds of GPa to TPa), potentially requiring alternative EOS forms (Vinet, Keane, or tabulated ab initio data) rather than the BM3 parameterization. The current architecture supports this through the MineralParams abstraction, but the solver would need modification to accept arbitrary EOS functions.",
+
+  "open_questions": [
+    "What is the composition of Mars's core? InSight seismic data suggest a large, low-density core consistent with significant light element content (S, O), but the exact proportions remain debated.",
+    "How reliable is the Birch-Murnaghan EOS at super-Earth interior pressures (100s of GPa to TPa)? Ab initio calculations suggest significant deviations from finite strain predictions at extreme compression.",
+    "Does post-perovskite dissociate into simple oxides (MgO + SiO2) at super-Earth conditions, and if so, how does this affect interior structure and dynamics?",
+    "Can the mass-radius relation alone distinguish between rocky and water-rich super-Earths, or is the degeneracy too severe without additional constraints (atmospheric spectra, tidal Love number)?",
+    "What is the adiabatic temperature profile in super-Earth mantles? The Gruneisen parameter at extreme compression is poorly constrained, leading to large uncertainties in deep interior temperatures.",
+    "How do phase transitions (olivine-wadsleyite-ringwoodite, bridgmanite, post-perovskite) affect the interior structure of Mars-sized planets where pressures may span multiple phase boundaries?",
+    "Will future Mars seismic networks provide sufficient data to uniquely determine the radial density profile, breaking the core size-density trade-off?"
+  ],
+
+  "exercise_suggestions": [
+    "Using the PlanetaryInteriorSolver, compute the radial pressure profile for Earth (R=6371 km, R_core=3480 km, rho_core=11 g/cm^3) and compare the CMB pressure and surface gravity with PREM values. Discuss sources of discrepancy.",
+    "Compute the MoI factor for a homogeneous sphere (single density) and verify that C = 0.4. Then add a core of density 2*rho_mantle occupying 50% of the radius and show C < 0.4.",
+    "Using the MarsInteriorModel, vary the core radius from 1500 km to 2100 km (adjusting core density to maintain the total mass ~6.42e23 kg) and plot the MoI factor vs core radius. At what core radius does C match the observed value of 0.3639?",
+    "Derive the analytic expression for the central pressure of a uniform-density planet: P_c = (3/8*pi)*G*M^2/(pi*R^4) = (2*pi/3)*G*rho^2*R^2. Evaluate for Earth and Mars and compare with the full numerical solution.",
+    "Compute mass-radius curves for pure iron (rho_0=8.3 g/cm^3, K_0=160 GPa), pure MgSiO3 (rho_0=4.1 g/cm^3, K_0=251 GPa), and pure MgO (rho_0=3.58 g/cm^3, K_0=161 GPa) planets from 0.1 to 10 M_Earth. Plot all three on the same graph.",
+    "Modify the PlanetaryInteriorSolver to use a Vinet EOS instead of Birch-Murnaghan and compare the resulting profiles for a 5 M_Earth super-Earth. At what depth do the two EOS predictions diverge by more than 5% in density?",
+    "Compute the gravitational binding energy E_grav = -integral(G*M(r)*dM/r) for Mars using the radial profile from PlanetaryInteriorSolver. Express the result in Joules and compare with Mars's rotational kinetic energy.",
+    "Investigate the sensitivity of the Mars interior model to the assumed potential temperature by running models with T_pot = 1400, 1600, and 1800 K. How much does the surface gravity and MoI factor change?"
+  ],
+
+  "figure_suggestions": [
+    {
+      "description": "Radial profiles of pressure, density, gravity, and temperature for Mars computed by PlanetaryInteriorSolver, displayed as four vertically stacked panels sharing a common radius axis",
+      "axes": {
+        "x": "Radius (km, range 0 to 3389.5)",
+        "y_panels": "P (GPa), rho (g/cm^3), g (m/s^2), T (K)"
+      },
+      "key_features": "Mark the core-mantle boundary at 1830 km with a vertical dashed line. Show the density jump at the CMB. Highlight that gravity peaks near the CMB. Annotate the MoI factor and total mass on the plot."
+    },
+    {
+      "description": "Comparison of computed Mars MoI factor versus core radius for different core densities, with the observed C = 0.3639 shown as a horizontal line",
+      "axes": {
+        "x": "Core radius (km, range 1400 to 2200)",
+        "y": "MoI factor C = I/(MR^2) (range 0.34 to 0.40)"
+      },
+      "key_features": "Family of curves for core densities 5.5, 6.0, 6.5, 7.0, 7.5 g/cm^3. Show that larger, less dense cores and smaller, denser cores can both match the observed MoI. Mark the InSight-preferred solution region."
+    },
+    {
+      "description": "Mass-radius diagram for rocky exoplanets, showing theoretical curves for pure iron, Earth-like, and pure silicate compositions alongside observed exoplanet data points",
+      "axes": {
+        "x": "Planet radius (R_Earth, range 0.5 to 3.0)",
+        "y": "Planet mass (M_Earth, range 0.1 to 20, log scale)"
+      },
+      "key_features": "Three theoretical curves bounding the rocky planet regime. Shade the region between pure iron and pure silicate as the 'rocky planet zone'. Plot known transiting exoplanets with measured mass and radius. Mark Earth, Venus, Mars, and Mercury."
+    },
+    {
+      "description": "Comparison of Earth and Mars interior pressure profiles on the same axes, illustrating the large difference in central pressure",
+      "axes": {
+        "x": "Normalized radius r/R (range 0 to 1)",
+        "y": "Pressure (GPa, range 0 to 400)"
+      },
+      "key_features": "Two curves clearly showing Earth's central pressure (~360 GPa) vs Mars (~20-25 GPa). Mark the CMB for each planet. Annotate the pressure ranges of key mineral phase transitions (olivine-wadsleyite at 14 GPa, ringwoodite-bridgmanite at 24 GPa, post-perovskite at 125 GPa) to show which transitions are relevant for each planet."
+    },
+    {
+      "description": "Convergence of the two-pass integration scheme: comparison of density profiles from Pass 1 (initial guess) and Pass 2 (EOS-updated) for the Mars model",
+      "axes": {
+        "x": "Radius (km, range 0 to 3389.5)",
+        "y": "Density (g/cm^3, range 3.0 to 7.0)"
+      },
+      "key_features": "Show the flat initial mantle density guess (4.0 g/cm^3) from Pass 1 vs the self-consistent profile from Pass 2 that increases with depth due to self-compression. Illustrate why iteration is necessary for accurate models."
+    }
+  ],
+
+  "historical_context": "The quantitative study of planetary interiors began with calculations of Earth's density distribution in the 19th century by Laplace, Legendre, and later Bullen, who established the seismological framework for inferring radial structure. The extension to other planets became possible with spacecraft missions: Mariner and Viking for Mars, and later the Mars Global Surveyor and InSight missions that provided increasingly precise measurements of Mars's mass, radius, gravity field, and tidal response. The moment of inertia constraint for Mars was first determined from Viking-era tracking data and refined by Mars Global Surveyor to C/MR^2 = 0.3662 +/- 0.0017 (Folkner et al., 1997), later updated to 0.3639 +/- 0.0001 by Konopliv et al. (2020).\n\nThe application of mineral physics EOS to planetary modeling was advanced by the work of Dziewonski and Anderson (1981) for Earth (PREM), and extended to other terrestrial planets by Bertka and Fei (1998) who used high-pressure experiments to constrain the Mars mantle mineralogy. The discovery of exoplanets in the mid-1990s, and particularly the first transiting super-Earths in the 2000s (e.g., CoRoT-7b, Kepler-10b), created urgent demand for interior models beyond our solar system. Valencia et al. (2006) and Seager et al. (2007) established the mass-radius framework that combines mineral physics EOS with hydrostatic equilibrium to predict the structure of rocky exoplanets. The NASA InSight mission (2018-2022) represented a milestone by deploying a seismometer on Mars, providing the first direct seismic constraints on another planet's interior and revealing a surprisingly large, low-density core. Current frontiers include applying self-consistent mineral physics models to the growing catalog of characterized exoplanets and developing EOS reliable to TPa pressures using density functional theory calculations.",
+
+  "uncertain": [
+    "key_references[3]"
+  ]
+}

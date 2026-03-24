@@ -1,0 +1,318 @@
+{
+  "chapter_summary": "This chapter introduces the Bayesian inference framework as applied to inverse problems in Earth science, with particular emphasis on estimating mantle composition and thermoelastic parameters from seismic observations. Unlike classical least-squares fitting (Chapter 28), which produces point estimates and relies on linearization for uncertainty quantification, the Bayesian approach provides a complete posterior probability distribution over model parameters. The framework rests on Bayes' theorem: the posterior distribution is proportional to the product of the likelihood function (encoding how well a parameter set explains the data) and the prior distribution (encoding pre-existing knowledge or physical constraints). This chapter develops both ingredients in the context of mineral physics: the likelihood is constructed from the misfit between predicted and observed seismic velocities (with a noise model), while the prior encodes physically meaningful bounds on quantities such as mineral fractions, temperature, and iron content.\n\nThe computational engine for sampling from the posterior is the Metropolis-Hastings Markov Chain Monte Carlo (MCMC) algorithm. At each iteration, a candidate parameter vector is drawn from a symmetric Gaussian proposal distribution centered on the current state. The log-posterior is evaluated at the candidate, and the Metropolis acceptance criterion determines whether the chain moves to the candidate or remains at the current state. The acceptance probability is min(1, exp(log P_candidate - log P_current)), which is implemented in log-space to avoid numerical overflow. The algorithm is implemented in the MCMCSampler class, which takes a user-supplied log-posterior function, initial parameters, and proposal step sizes, and returns an MCMCChain object containing the full sample history, log-posterior trace, and acceptance statistics.\n\nA critical practical issue is the tuning of proposal step sizes. If step sizes are too small, the chain explores the posterior very slowly (high acceptance rate but poor mixing). If step sizes are too large, most proposals land in low-probability regions and are rejected (low acceptance rate). The optimal acceptance rate for a Gaussian target in d dimensions is approximately 23.4% (the Roberts-Gelman-Gilks result), though in practice rates between 20% and 50% are acceptable. The MCMCChain class provides diagnostics including the acceptance rate, posterior mean and standard deviation computed after discarding an initial burn-in period. The burn-in is necessary because the chain may start far from the high-probability region; samples collected during the transient approach to stationarity are discarded.\n\nThe MCMCChain model stores the full [nSamples x nParams] sample array along with the log-posterior trace, enabling post-processing such as computing marginal distributions, credible intervals, and parameter correlations. For Earth science applications, this means one can jointly estimate, for example, olivine fraction and mantle temperature at a given depth, obtaining not just best-fit values but also their uncertainties and trade-offs. The Bayesian framework naturally handles multi-modal posteriors and non-Gaussian uncertainties that are common in compositional inversions where multiple mineral assemblages can produce similar seismic signatures.",
+  "prerequisite_knowledge": [
+    "Probability theory: random variables, probability density functions, conditional probability, Bayes' theorem",
+    "Statistics: maximum likelihood estimation, Gaussian (normal) distribution, covariance matrices",
+    "Linear algebra: matrix-vector operations for multi-parameter problems",
+    "Chapter 28 material: nonlinear least squares, Levenberg-Marquardt optimization, parameter uncertainties from covariance matrices",
+    "Chapter 18 material: composition inversion, misfit functions comparing calculated vs observed seismic velocities",
+    "Basic thermodynamics and mineral physics: equation of state, seismic velocity computation from thermoelastic parameters"
+  ],
+  "key_equations": [
+    {
+      "equation": "P(\\mathbf{m} | \\mathbf{d}) = \\frac{P(\\mathbf{d} | \\mathbf{m}) \\, P(\\mathbf{m})}{P(\\mathbf{d})}",
+      "name": "Bayes' theorem",
+      "variables": {
+        "P(m|d)": "Posterior probability of model parameters m given data d",
+        "P(d|m)": "Likelihood: probability of observing data d given parameters m",
+        "P(m)": "Prior probability of model parameters m",
+        "P(d)": "Evidence (normalizing constant), often not computed explicitly"
+      },
+      "interpretation": "The foundational equation of Bayesian inference. The posterior combines information from the data (likelihood) with prior knowledge. The evidence P(d) cancels in MCMC sampling because only ratios of posteriors are needed."
+    },
+    {
+      "equation": "\\ln L(\\mathbf{m}) = -\\frac{1}{2} \\sum_{i=1}^{N} \\left(\\frac{d_i - g_i(\\mathbf{m})}{\\sigma_i}\\right)^2",
+      "name": "Gaussian log-likelihood function",
+      "variables": {
+        "L(m)": "Likelihood of model parameters m",
+        "d_i": "i-th observed data point (e.g., seismic velocity at a given depth)",
+        "g_i(m)": "Forward model prediction for parameters m",
+        "sigma_i": "Observational uncertainty on the i-th data point",
+        "N": "Number of data points"
+      },
+      "interpretation": "Assumes independent Gaussian measurement errors. This is the most common likelihood for geophysical inverse problems. The log form is used in the code to avoid numerical underflow with many data points."
+    },
+    {
+      "equation": "\\alpha = \\min\\left(1,\\; \\exp\\left[\\ln P(\\mathbf{m}' | \\mathbf{d}) - \\ln P(\\mathbf{m}_t | \\mathbf{d})\\right]\\right)",
+      "name": "Metropolis-Hastings acceptance probability",
+      "variables": {
+        "alpha": "Acceptance probability",
+        "m'": "Proposed (candidate) parameter vector",
+        "m_t": "Current parameter vector at step t",
+        "P(m|d)": "Posterior probability (unnormalized)"
+      },
+      "interpretation": "The candidate is always accepted if the posterior increases (alpha=1). If the posterior decreases, the candidate is accepted with probability equal to the posterior ratio. This ensures detailed balance and convergence to the target distribution. In the MCMCSampler code, this is implemented as: if logAlpha >= 0 or log(U) < logAlpha, accept."
+    },
+    {
+      "equation": "\\mathbf{m}' = \\mathbf{m}_t + \\boldsymbol{\\sigma}_{\\text{step}} \\odot \\mathbf{z}, \\quad \\mathbf{z} \\sim \\mathcal{N}(\\mathbf{0}, \\mathbf{I})",
+      "name": "Gaussian random-walk proposal",
+      "variables": {
+        "m'": "Proposed parameter vector",
+        "m_t": "Current parameter vector",
+        "sigma_step": "Vector of step sizes (proposal widths) for each parameter",
+        "z": "Vector of independent standard normal random variates",
+        "odot": "Element-wise (Hadamard) product"
+      },
+      "interpretation": "Each parameter is perturbed independently by a Gaussian increment scaled by its step size. The MCMCSampler generates z using the Box-Muller transform. The step sizes control the trade-off between exploration (large steps) and acceptance rate (small steps)."
+    },
+    {
+      "equation": "\\bar{m}_j = \\frac{1}{N - N_{\\text{burn}}} \\sum_{i=N_{\\text{burn}}+1}^{N} m_j^{(i)}",
+      "name": "Posterior mean estimator",
+      "variables": {
+        "bar_m_j": "Estimated posterior mean of parameter j",
+        "m_j^(i)": "Value of parameter j at MCMC sample i",
+        "N": "Total number of MCMC samples",
+        "N_burn": "Number of burn-in samples to discard"
+      },
+      "interpretation": "The posterior mean is estimated by averaging post-burn-in samples. This is implemented in MCMCChain.GetMean(burnIn). As the chain length increases, this converges to the true posterior mean by the ergodic theorem."
+    },
+    {
+      "equation": "\\hat{\\sigma}_j = \\sqrt{\\frac{1}{N - N_{\\text{burn}}} \\sum_{i=N_{\\text{burn}}+1}^{N} \\left(m_j^{(i)} - \\bar{m}_j\\right)^2}",
+      "name": "Posterior standard deviation estimator",
+      "variables": {
+        "hat_sigma_j": "Estimated posterior standard deviation of parameter j",
+        "m_j^(i)": "Value of parameter j at MCMC sample i",
+        "bar_m_j": "Posterior mean of parameter j",
+        "N_burn": "Number of burn-in samples discarded"
+      },
+      "interpretation": "Quantifies the posterior uncertainty of each parameter. Implemented in MCMCChain.GetStdDev(burnIn). Unlike linearized uncertainty (Chapter 28), this correctly captures non-Gaussian posterior shapes."
+    }
+  ],
+  "physical_concepts": [
+    {
+      "concept": "Bayesian inference",
+      "definition": "A probabilistic framework for updating beliefs about model parameters in light of observed data, using Bayes' theorem to combine prior information with the likelihood of the data.",
+      "physical_intuition": "In Earth science, we often have some prior knowledge (e.g., mantle temperature is between 1200-2000 K, olivine fraction is 50-70%) and noisy observations (e.g., seismic velocities with measurement uncertainties). Bayesian inference provides a principled way to combine these two sources of information into a posterior distribution that captures both the best-fit values and their uncertainties.",
+      "common_misconceptions": [
+        "The prior is arbitrary and subjective -- in practice, priors encode well-established physical constraints (e.g., non-negative mineral fractions, temperature bounds).",
+        "Bayesian and frequentist results always differ dramatically -- for well-constrained problems with weak priors, the posterior mean approximates the maximum likelihood estimate."
+      ]
+    },
+    {
+      "concept": "Prior distribution",
+      "definition": "A probability distribution over model parameters that encodes knowledge or constraints available before observing the data. Common choices include uniform priors (within physical bounds), Gaussian priors (centered on expected values), and log-normal priors (for strictly positive quantities).",
+      "physical_intuition": "Think of the prior as a filter that eliminates physically impossible solutions. For mantle composition, a uniform prior on olivine fraction between 0 and 1 ensures the inversion cannot return negative mineral fractions. A Gaussian prior centered on a laboratory measurement encodes the precision of that measurement.",
+      "common_misconceptions": [
+        "Uniform priors are 'non-informative' -- they are informative about the allowed range and can strongly affect results if the range is poorly chosen.",
+        "The prior does not matter if you have enough data -- true asymptotically, but with limited geophysical data the prior often significantly shapes the posterior."
+      ]
+    },
+    {
+      "concept": "Likelihood function",
+      "definition": "A function of the model parameters that gives the probability of the observed data for each parameter value. For Gaussian errors, it is proportional to exp(-chi^2/2) where chi^2 is the weighted sum of squared residuals.",
+      "physical_intuition": "The likelihood answers: if the true mantle had these parameters, how probable is it that we would measure the seismic velocities we actually observed? Models that predict velocities close to observations have high likelihood; models that predict very different velocities have negligible likelihood.",
+      "common_misconceptions": [
+        "The likelihood is a probability distribution over parameters -- it is not; it is a function of parameters for fixed data. Only the posterior (after multiplying by the prior and normalizing) is a proper distribution over parameters.",
+        "Maximizing the likelihood is the same as Bayesian inference -- maximum likelihood gives a point estimate, while the full Bayesian approach provides the entire posterior distribution."
+      ]
+    },
+    {
+      "concept": "Markov Chain Monte Carlo (MCMC)",
+      "definition": "A class of algorithms that generate samples from a target probability distribution (here, the posterior) by constructing a Markov chain whose stationary distribution is the target. The Metropolis-Hastings algorithm is the most widely used variant.",
+      "physical_intuition": "Imagine a random walker exploring parameter space. The walker tends to spend more time in regions of high posterior probability, just as a ball rolling on a landscape spends more time in valleys. After enough steps, the histogram of visited locations approximates the posterior distribution. The Metropolis acceptance criterion ensures the walker visits each region in proportion to its posterior probability.",
+      "common_misconceptions": [
+        "MCMC gives the single best-fit answer -- it gives the full posterior distribution, from which point estimates (mean, median, mode) can be extracted.",
+        "More MCMC samples are always better -- if the chain has not converged (poor mixing), more samples just mean more correlated, unrepresentative draws. Convergence diagnostics are essential."
+      ]
+    },
+    {
+      "concept": "Burn-in period",
+      "definition": "The initial portion of an MCMC chain during which the samples are influenced by the arbitrary starting point rather than representing the stationary (posterior) distribution. Burn-in samples are discarded before computing posterior statistics.",
+      "physical_intuition": "If you start the MCMC chain with an initial guess far from the true posterior mode, the early samples trace the chain's migration toward the high-probability region. These transient samples would bias the posterior mean if included. Discarding the first N_burn samples removes this initialization bias.",
+      "common_misconceptions": [
+        "A fixed burn-in fraction (e.g., 10%) is always sufficient -- the required burn-in depends on how far the initial state is from the posterior mode and on the step sizes. Convergence diagnostics should guide the choice.",
+        "After burn-in the chain is independent -- post-burn-in samples are still auto-correlated. For truly independent samples, one must also thin the chain or use effective sample size calculations."
+      ]
+    },
+    {
+      "concept": "Acceptance rate tuning",
+      "definition": "The process of adjusting MCMC proposal step sizes to achieve an optimal balance between exploration speed and acceptance frequency. For random-walk Metropolis on a d-dimensional Gaussian target, the optimal acceptance rate is approximately 23.4% (Roberts-Gelman-Gilks, 1997).",
+      "physical_intuition": "Too-small steps mean the chain barely moves and takes forever to explore the posterior (high acceptance, slow mixing). Too-large steps mean nearly all proposals are rejected because they land in low-probability regions (low acceptance, wasted computation). The sweet spot around 20-50% acceptance ensures efficient exploration.",
+      "common_misconceptions": [
+        "The optimal acceptance rate is always 23.4% -- this result is asymptotically exact only for Gaussian targets in high dimensions. For low-dimensional or non-Gaussian targets, higher rates (30-50%) can be more efficient.",
+        "Acceptance rate alone determines chain quality -- a chain can have 23% acceptance but still mix poorly if the proposal does not align with the posterior covariance structure."
+      ]
+    }
+  ],
+  "key_references": [
+    {
+      "author": "Metropolis, N., Rosenbluth, A. W., Rosenbluth, M. N., Teller, A. H., Teller, E.",
+      "year": 1953,
+      "title": "Equation of State Calculations by Fast Computing Machines",
+      "journal": "Journal of Chemical Physics, 21(6), 1087-1092",
+      "why_essential": "The original paper introducing the Metropolis algorithm, which is the foundation of all MCMC methods. Essential historical reading for understanding how random sampling can solve high-dimensional integration problems."
+    },
+    {
+      "author": "Hastings, W. K.",
+      "year": 1970,
+      "title": "Monte Carlo Sampling Methods Using Markov Chains and Their Applications",
+      "journal": "Biometrika, 57(1), 97-109",
+      "why_essential": "Generalized the Metropolis algorithm to asymmetric proposal distributions, creating the Metropolis-Hastings algorithm used in virtually all modern MCMC implementations."
+    },
+    {
+      "author": "Mosegaard, K., Tarantola, A.",
+      "year": 1995,
+      "title": "Monte Carlo Sampling of Solutions to Inverse Problems",
+      "journal": "Journal of Geophysical Research, 100(B7), 12431-12447",
+      "why_essential": "Seminal paper applying MCMC to geophysical inverse problems. Established the framework for probabilistic inversion in Earth science, demonstrating how prior information and data uncertainties are naturally incorporated."
+    },
+    {
+      "author": "Tarantola, A.",
+      "year": 2005,
+      "title": "Inverse Problem Theory and Methods for Model Parameter Estimation",
+      "journal": "SIAM (book)",
+      "why_essential": "The definitive textbook on probabilistic inverse problems, covering both the theoretical foundations of Bayesian inference and practical MCMC algorithms. Chapter 1 introduces the general framework; later chapters treat specific geophysical applications."
+    },
+    {
+      "author": "Roberts, G. O., Gelman, A., Gilks, W. R.",
+      "year": 1997,
+      "title": "Weak Convergence and Optimal Scaling of Random Walk Metropolis Algorithms",
+      "journal": "Annals of Applied Probability, 7(1), 110-120",
+      "why_essential": "Proved the optimal acceptance rate of 23.4% for Gaussian random-walk Metropolis in high dimensions. This result guides step-size tuning in all Metropolis-Hastings implementations."
+    },
+    {
+      "author": "Sambridge, M., Mosegaard, K.",
+      "year": 2002,
+      "title": "Monte Carlo Methods in Geophysical Inverse Problems",
+      "journal": "Reviews of Geophysics, 40(3), 1009",
+      "why_essential": "Comprehensive review of Monte Carlo methods in geophysics, covering MCMC, simulated annealing, and genetic algorithms. Excellent overview of practical considerations for Earth science applications."
+    }
+  ],
+  "worked_examples": [
+    {
+      "problem_statement": "Sample from a 1D Gaussian posterior N(mu=3.0, sigma=1.0) using the Metropolis-Hastings algorithm, starting from x=0. Verify that the posterior mean and standard deviation are recovered after discarding burn-in samples.",
+      "solution_approach": "Define the log-posterior as -0.5*((x-3)/1)^2. Initialize the MCMCSampler with seed=42, step size=1.0, and 20000 samples. Discard the first 2000 samples as burn-in. Compute the posterior mean and standard deviation from the remaining 18000 samples.",
+      "numerical_values": {
+        "true_mean": 3.0,
+        "true_std": 1.0,
+        "initial_guess": 0.0,
+        "step_size": 1.0,
+        "n_samples": 20000,
+        "burn_in": 2000,
+        "recovered_mean": "approximately 3.0 (within +/- 0.3)",
+        "recovered_std": "approximately 1.0 (within +/- 0.3)",
+        "acceptance_rate": "approximately 0.44 (typical for 1D Gaussian with well-tuned step size)"
+      },
+      "interpretation": "The MCMC chain successfully recovers the true mean and standard deviation of the target Gaussian. The acceptance rate of ~44% is reasonable for a 1D problem (higher than the 23.4% optimal for high-dimensional problems). This example, implemented in BayesianInversionTests.MetropolisHastings_1DGaussian_RecoversMeanAndStd(), demonstrates that the Metropolis-Hastings algorithm correctly samples from the target distribution."
+    },
+    {
+      "problem_statement": "Estimate two parameters simultaneously from a 2D Gaussian posterior with means [2.0, 5.0] and standard deviations [0.5, 1.0], starting from [0, 0]. This mimics jointly estimating mantle temperature and composition.",
+      "solution_approach": "Define the log-posterior as the sum of two independent Gaussian log-likelihoods. Use step sizes [0.5, 1.0] (matching the target standard deviations for efficient exploration). Run 30000 samples with burn-in of 5000.",
+      "numerical_values": {
+        "true_means": [2.0, 5.0],
+        "true_stds": [0.5, 1.0],
+        "step_sizes": [0.5, 1.0],
+        "n_samples": 30000,
+        "burn_in": 5000,
+        "recovered_mean_x": "approximately 2.0 (within +/- 0.3)",
+        "recovered_mean_y": "approximately 5.0 (within +/- 0.3)",
+        "recovered_std_x": "approximately 0.5 (within +/- 0.3)",
+        "recovered_std_y": "approximately 1.0 (within +/- 0.3)"
+      },
+      "interpretation": "The multi-parameter MCMC correctly recovers both marginal distributions. In a real mantle inversion, x might represent olivine Mg# (dimensionless, ~0.89-0.92) and y might represent temperature (hundreds of K). The step sizes should be scaled to match the expected posterior width of each parameter. This example is implemented in BayesianInversionTests.MetropolisHastings_2DGaussian_RecoversBothParameters()."
+    },
+    {
+      "problem_statement": "Demonstrate the importance of burn-in by starting the MCMC chain far from the posterior mode (initial guess x=-10, true mean=5.0, true std=0.5). Compare posterior mean estimates with and without burn-in removal.",
+      "solution_approach": "Run 10000 samples with step size 0.5. Compute the posterior mean using all samples (burn-in=0) and using samples after burn-in=100. The chain must first migrate from x=-10 to the high-probability region near x=5, so early samples are far from the posterior mode.",
+      "numerical_values": {
+        "true_mean": 5.0,
+        "true_std": 0.5,
+        "initial_guess": -10.0,
+        "step_size": 0.5,
+        "n_samples": 10000,
+        "mean_no_burnin": "biased below 5.0 due to transient samples near -10",
+        "mean_with_burnin_100": "closer to 5.0",
+        "error_reduction": "burn-in reduces the bias in the posterior mean estimate"
+      },
+      "interpretation": "The transient period during which the chain migrates from x=-10 to the posterior mode at x=5 contaminates the posterior mean if not removed. With burn-in=100, the biased early samples are discarded and the estimate improves. In real applications, a much longer burn-in (10-50% of chain length) is common, especially when the initial guess is far from the posterior mode. This example is implemented in BayesianInversionTests.BurnInRemoval_ImprovesPosteriorEstimate()."
+    }
+  ],
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch28 Nonlinear Least Squares and Parameter Fitting",
+      "nature_of_connection": "prerequisite",
+      "explanation": "Chapter 28 covers the deterministic optimization approach (Levenberg-Marquardt) to parameter fitting. Bayesian MCMC generalizes this by sampling the full posterior instead of finding a single optimum. The least-squares cost function becomes the Gaussian log-likelihood in the Bayesian framework. Understanding linearized uncertainties from Chapter 28 provides context for why MCMC is needed for non-Gaussian or multi-modal posteriors."
+    },
+    {
+      "related_chapter": "Ch18 Composition Inversion",
+      "nature_of_connection": "application",
+      "explanation": "Chapter 18 introduces the forward problem of computing seismic velocities for a given mineral composition and the grid-search approach to inversion. The Bayesian MCMC framework of this chapter provides a more principled and efficient way to solve the same inverse problem, with proper uncertainty quantification and the ability to handle trade-offs between temperature and composition."
+    },
+    {
+      "related_chapter": "Ch04 Elastic Moduli and Seismic Velocities",
+      "nature_of_connection": "prerequisite",
+      "explanation": "The forward model in a Bayesian seismic inversion computes predicted seismic velocities from thermoelastic parameters. Chapter 4 provides the fundamental relationships (Vp and Vs from bulk and shear moduli and density) that form the forward model g(m) inside the likelihood function."
+    },
+    {
+      "related_chapter": "Ch05 The Stixrude-Lithgow-Bertelloni Formulation",
+      "nature_of_connection": "prerequisite",
+      "explanation": "The SLB2011 formulation provides the complete thermodynamic and thermoelastic framework for computing mineral properties at arbitrary P-T conditions. In a Bayesian mantle inversion, the SLB forward model is called thousands of times inside the MCMC loop, making computational efficiency of the forward model critical."
+    },
+    {
+      "related_chapter": "Ch30 Geobarometry and Geothermometry",
+      "nature_of_connection": "extension",
+      "explanation": "Bayesian MCMC can be applied to geobarometry and geothermometry problems, where the goal is to estimate P-T conditions from mineral chemical data. The MCMC framework provides posterior distributions over pressure and temperature, capturing trade-offs and non-Gaussian uncertainties inherent in these problems."
+    },
+    {
+      "related_chapter": "Ch17 Sensitivity Kernels and Partial Derivatives",
+      "nature_of_connection": "prerequisite",
+      "explanation": "Sensitivity kernels (partial derivatives of seismic velocity with respect to temperature and composition) help design efficient MCMC proposals by indicating which parameters most strongly affect the data. They also aid in understanding posterior correlations and trade-offs."
+    }
+  ],
+  "computational_methods": "The MCMCSampler class implements the Metropolis-Hastings algorithm with a symmetric Gaussian random-walk proposal. The algorithm proceeds as follows: (1) Initialize the chain at the user-supplied starting point and evaluate the log-posterior. (2) For each iteration, generate a candidate by adding Gaussian noise scaled by the step sizes to the current state. Gaussian random variates are generated using the Box-Muller transform: z = sqrt(-2*ln(u1)) * cos(2*pi*u2) where u1, u2 are uniform random numbers. (3) Evaluate the log-posterior at the candidate. (4) Compute the log acceptance ratio logAlpha = logP_candidate - logP_current. Accept if logAlpha >= 0 or if log(U) < logAlpha where U is uniform on (0,1). (5) Store the current state (accepted candidate or unchanged) in the sample array.\n\nThe MCMCChain class stores the full [nSamples x nParams] sample matrix and the log-posterior trace. Post-processing methods GetMean(burnIn) and GetStdDev(burnIn) compute marginal posterior statistics after discarding burn-in samples. The acceptance rate diagnostic is computed as Accepted/Total.\n\nConvergence criteria: The chain is considered converged when the acceptance rate falls in the range 20-50% and the posterior mean stabilizes over successive windows. For production runs, typical settings are 10000-100000 total samples with 10-20% burn-in. The computational cost is dominated by forward model evaluations (one per MCMC iteration), so efficiency of the underlying thermoelastic calculations (Chapter 5) is critical. The current implementation uses a fixed random seed (default 42) for reproducibility in testing.\n\nThe BayesianInversionViewModel provides a UI layer for interactive exploration, allowing users to set the true mean, sigma, initial guess, step size, number of samples, and burn-in, then visualize the chain trace by sub-sampling every N/200 points for display.",
+  "open_questions": [
+    "How to efficiently handle high-dimensional parameter spaces (>10 mineral phases with multiple compositional parameters) where random-walk Metropolis becomes prohibitively slow due to the curse of dimensionality?",
+    "What is the optimal strategy for constructing informative priors for mantle composition -- should priors be based on cosmochemical constraints, xenolith data, or experimental phase equilibria?",
+    "How to properly account for model uncertainty (e.g., uncertainty in the equation of state itself) in addition to data uncertainty when constructing the likelihood function?",
+    "Can adaptive MCMC methods (e.g., adaptive Metropolis, Hamiltonian Monte Carlo) significantly improve sampling efficiency for thermoelastic inversion problems with strong parameter correlations?",
+    "How to handle multi-modal posteriors that arise when multiple mantle compositions produce nearly identical seismic velocities at a given depth (the non-uniqueness problem)?",
+    "What is the appropriate treatment of correlated measurement errors (e.g., systematic biases in seismic tomography models) in the likelihood function?",
+    "How to combine Bayesian inversion results from multiple independent data types (seismic velocities, attenuation, electrical conductivity) in a joint inversion framework?"
+  ],
+  "exercise_suggestions": [
+    "Basic: Implement the Metropolis-Hastings algorithm from scratch for a 1D Gaussian target N(0,1). Plot the chain trace and histogram of samples. Verify that the sample mean and variance converge to the true values.",
+    "Basic: For a 1D Gaussian target, run MCMC with three different step sizes (0.1, 1.0, 10.0) and compare acceptance rates and trace plots. Identify which step size gives the best mixing.",
+    "Intermediate: Modify the MCMCSampler to sample from a bivariate Gaussian with correlation rho=0.9 between parameters. Show that independent Gaussian proposals are inefficient for highly correlated targets. Propose a rotation-based proposal that improves mixing.",
+    "Intermediate: Implement a simple mantle composition inversion: given a PREM-like Vp and Vs at 400 km depth, use MCMC to estimate the olivine fraction and temperature, assuming a pyrolite-like mineral assemblage with the SLB2011 forward model.",
+    "Intermediate: Add a convergence diagnostic to MCMCChain: implement the Gelman-Rubin R-hat statistic by running multiple independent chains and comparing within-chain and between-chain variance.",
+    "Advanced: Implement an adaptive Metropolis algorithm where the proposal covariance is updated during the run based on the accumulated sample covariance. Compare its efficiency to the fixed-step-size implementation in MCMCSampler.",
+    "Advanced: Perform a synthetic inversion experiment: generate synthetic seismic velocity data from a known mantle composition with added Gaussian noise, then recover the composition using MCMC. Analyze the posterior to determine which parameters are well-constrained and which exhibit trade-offs.",
+    "Research-level: Compare the posterior distributions obtained from Bayesian MCMC with the linearized uncertainties from the Levenberg-Marquardt approach (Chapter 28) for a nonlinear mineral physics forward model. Under what conditions do the two approaches give similar results?"
+  ],
+  "figure_suggestions": [
+    {
+      "description": "MCMC trace plot showing the chain trajectory for a 1D Gaussian target",
+      "axes": "x-axis: iteration number (0 to N), y-axis: parameter value",
+      "key_features": "Highlight the burn-in region (shaded), show the chain converging from the initial guess to the stationary distribution. Mark the true mean with a horizontal dashed line. Annotate the acceptance rate."
+    },
+    {
+      "description": "Posterior histogram from MCMC samples overlaid with the true target distribution",
+      "axes": "x-axis: parameter value, y-axis: probability density",
+      "key_features": "Histogram of post-burn-in samples with the true Gaussian PDF overlaid. Show the posterior mean and 95% credible interval as vertical lines. Demonstrate the agreement between the MCMC-sampled distribution and the analytical target."
+    },
+    {
+      "description": "Acceptance rate as a function of proposal step size",
+      "axes": "x-axis: step size (log scale), y-axis: acceptance rate (0 to 1)",
+      "key_features": "Show the transition from near-100% acceptance (tiny steps, poor mixing) to near-0% acceptance (huge steps, frequent rejection). Mark the optimal range (20-50%) and the Roberts-Gelman-Gilks theoretical optimum at 23.4%."
+    },
+    {
+      "description": "2D scatter plot of MCMC samples for a bivariate posterior (e.g., temperature vs. olivine fraction)",
+      "axes": "x-axis: parameter 1 (e.g., olivine Mg#), y-axis: parameter 2 (e.g., temperature in K)",
+      "key_features": "Show all post-burn-in samples as points, color-coded by log-posterior value. Overlay contours of the 68% and 95% credible regions. Illustrate the trade-off (correlation) between the two parameters."
+    },
+    {
+      "description": "Schematic diagram of the Bayesian inference workflow for mantle composition estimation",
+      "axes": "Flow diagram (no axes)",
+      "key_features": "Boxes showing: Prior (physical constraints on composition and temperature) -> Forward Model (SLB2011 thermoelastic calculation) -> Predicted Vp, Vs -> Likelihood (comparison with observed velocities) -> Posterior (MCMC samples). Arrows indicating the flow of information and the MCMC iteration loop."
+    },
+    {
+      "description": "Comparison of burn-in effects: posterior mean convergence vs. iteration number",
+      "axes": "x-axis: burn-in cutoff (number of discarded samples), y-axis: estimated posterior mean",
+      "key_features": "Show how the posterior mean estimate changes as more initial samples are discarded. The estimate should stabilize once the burn-in cutoff exceeds the transient period. Mark the point where the estimate converges."
+    }
+  ],
+  "historical_context": "The Monte Carlo method was born at Los Alamos in the late 1940s, when Stanislaw Ulam, John von Neumann, and Nicholas Metropolis recognized that random sampling could solve intractable mathematical problems. The Metropolis algorithm was published in 1953 in the context of statistical mechanics simulations of liquids. W. K. Hastings generalized it in 1970 to allow asymmetric proposal distributions, creating the Metropolis-Hastings framework that is standard today. MCMC methods remained relatively obscure until the 1990s, when increasing computational power and the influential paper by Gelfand and Smith (1990) on Gibbs sampling triggered widespread adoption in statistics and applied sciences.\n\nIn geophysics, the Bayesian approach to inverse problems was championed by Albert Tarantola and colleagues starting in the 1980s. Tarantola's 1987 book 'Inverse Problem Theory' laid the theoretical groundwork, and the 1995 paper by Mosegaard and Tarantola demonstrated MCMC sampling for geophysical inverse problems. The approach gained rapid traction in seismology, where Sambridge and Mosegaard's 2002 review made Monte Carlo methods accessible to the broader geophysics community. In mineral physics specifically, Bayesian methods have been applied to estimate mantle composition from seismic velocities (e.g., Cobden et al., 2009; Khan et al., 2008), constrain thermoelastic parameters from experimental data, and quantify uncertainties in geodynamic models. The Roberts-Gelman-Gilks (1997) result on optimal scaling provided practical guidance for tuning Metropolis algorithms that is now standard practice.",
+  "uncertain": [
+    "historical_context"
+  ]
+}
