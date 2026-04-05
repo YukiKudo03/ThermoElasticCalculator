@@ -1,0 +1,132 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.SLBFitterView"
+             x:DataType="vm:SLBFitterViewModel">
+
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="SLB Parameter Fitter" FontWeight="Bold" FontSize="18" Margin="0,0,0,4" />
+        <TextBlock DockPanel.Dock="Top" Text="Import experimental Vp/Vs/density data, fit SLB thermoelastic parameters, and compare with PREM."
+                   Foreground="#666" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap" />
+
+        <TabControl>
+            <!-- Tab 1: Import -->
+            <TabItem Header="Import">
+                <DockPanel Margin="4">
+                    <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+                        <TextBlock Text="Paste CSV data (P[GPa], T[K], Vp[m/s], Vs[m/s], Density[g/cm³], sigmas):" />
+                        <TextBox Text="{Binding CsvText}" AcceptsReturn="True" Height="200"
+                                 FontFamily="Consolas, Menlo, monospace" FontSize="12" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Load Data" Command="{Binding LoadDataCommand}" />
+                            <TextBlock Text="{Binding ImportStatus}" VerticalAlignment="Center" Foreground="#444" />
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel DockPanel.Dock="Top" Spacing="4" IsVisible="{Binding DataPointCount}">
+                        <TextBlock Text="{Binding DataPointCount, StringFormat='Data Preview ({0} points):'}" FontWeight="SemiBold" />
+                        <TextBox Text="{Binding DataPreview}" IsReadOnly="True" AcceptsReturn="True" Height="200"
+                                 FontFamily="Consolas, Menlo, monospace" FontSize="11" />
+                    </StackPanel>
+                </DockPanel>
+            </TabItem>
+
+            <!-- Tab 2: Fit Config -->
+            <TabItem Header="Fit Config">
+                <DockPanel Margin="4">
+                    <StackPanel DockPanel.Dock="Top" Spacing="8">
+                        <!-- Mineral selector -->
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Initial Guess (from database):" FontWeight="SemiBold" />
+                            <ComboBox ItemsSource="{Binding MineralNames}"
+                                      SelectedIndex="{Binding SelectedMineralIndex}"
+                                      Width="300" />
+                        </StackPanel>
+
+                        <!-- Fit target -->
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Fit Target:" FontWeight="SemiBold" />
+                            <ComboBox ItemsSource="{Binding FitTargetOptions}"
+                                      SelectedIndex="{Binding SelectedFitTarget}"
+                                      Width="200" />
+                        </StackPanel>
+
+                        <!-- Parameter checkboxes -->
+                        <TextBlock Text="Parameters to Fit:" FontWeight="SemiBold" Margin="0,4,0,0" />
+                        <WrapPanel Orientation="Horizontal">
+                            <CheckBox Content="V0 (volume)" IsChecked="{Binding FitV0}" Margin="0,0,16,4" />
+                            <CheckBox Content="K0 (bulk mod.)" IsChecked="{Binding FitK0}" Margin="0,0,16,4" />
+                            <CheckBox Content="K0' (dK/dP)" IsChecked="{Binding FitK0Prime}" Margin="0,0,16,4" />
+                            <CheckBox Content="G0 (shear mod.)" IsChecked="{Binding FitG0}" Margin="0,0,16,4" />
+                            <CheckBox Content="G0' (dG/dP)" IsChecked="{Binding FitG0Prime}" Margin="0,0,16,4" />
+                            <CheckBox Content="θ0 (Debye T)" IsChecked="{Binding FitDebyeTemp}" Margin="0,0,16,4" />
+                            <CheckBox Content="γ0 (Grüneisen)" IsChecked="{Binding FitGamma0}" Margin="0,0,16,4" />
+                            <CheckBox Content="q0" IsChecked="{Binding FitQ0}" Margin="0,0,16,4" />
+                            <CheckBox Content="ηS0" IsChecked="{Binding FitEtaS0}" Margin="0,0,16,4" />
+                        </WrapPanel>
+
+                        <!-- Fit button -->
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                            <Button Content="Fit Parameters" Command="{Binding RunFitCommand}"
+                                    IsEnabled="{Binding !IsFitting}"
+                                    FontWeight="Bold" Padding="16,8" />
+                            <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsFitting}" Width="120" Height="16" />
+                            <TextBlock Text="{Binding FitStatus}" VerticalAlignment="Center" Foreground="#444" />
+                        </StackPanel>
+                    </StackPanel>
+                </DockPanel>
+            </TabItem>
+
+            <!-- Tab 3: Results -->
+            <TabItem Header="Results">
+                <DockPanel Margin="4">
+                    <StackPanel DockPanel.Dock="Top" IsVisible="{Binding !HasResults}">
+                        <TextBlock Text="Run a fit to see results." Foreground="#888" FontSize="14" Margin="0,20" />
+                    </StackPanel>
+                    <StackPanel DockPanel.Dock="Top" IsVisible="{Binding HasResults}" Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <TextBlock Text="{Binding FitConverged, StringFormat='Converged: {0}'}" />
+                            <TextBlock Text="{Binding ChiSquared, StringFormat='χ²: {0:E3}'}" />
+                            <TextBlock Text="{Binding ReducedChiSquared, StringFormat='Reduced χ²: {0:F4}'}" />
+                            <TextBlock Text="{Binding FitIterations, StringFormat='Iterations: {0}'}" />
+                        </StackPanel>
+
+                        <TextBlock Text="Fitted Parameters:" FontWeight="SemiBold" />
+                        <TextBox Text="{Binding ResultsText}" IsReadOnly="True" AcceptsReturn="True" Height="200"
+                                 FontFamily="Consolas, Menlo, monospace" FontSize="11" />
+
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Residuals (Observed - Predicted):" FontWeight="SemiBold" />
+                            <Button Content="Export JSON" Command="{Binding ExportFittedParamsCommand}" Padding="8,2" />
+                        </StackPanel>
+                        <TextBox Text="{Binding ResidualsText}" IsReadOnly="True" AcceptsReturn="True" Height="200"
+                                 FontFamily="Consolas, Menlo, monospace" FontSize="10" />
+                    </StackPanel>
+                </DockPanel>
+            </TabItem>
+
+            <!-- Tab 4: PREM Compare -->
+            <TabItem Header="PREM Compare">
+                <DockPanel Margin="4">
+                    <StackPanel DockPanel.Dock="Top" Spacing="8">
+                        <TextBlock Text="Compare fitted mineral properties with PREM along a mantle adiabat."
+                                   Foreground="#666" TextWrapping="Wrap" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Adiabatic T (K):" VerticalAlignment="Center" />
+                            <NumericUpDown Value="{Binding AdiabaticTemp}" Minimum="800" Maximum="4000" Increment="100" Width="100" />
+                            <TextBlock Text="Depth min (km):" VerticalAlignment="Center" />
+                            <NumericUpDown Value="{Binding DepthMin}" Minimum="0" Maximum="2891" Increment="50" Width="80" />
+                            <TextBlock Text="max:" VerticalAlignment="Center" />
+                            <NumericUpDown Value="{Binding DepthMax}" Minimum="100" Maximum="2891" Increment="50" Width="80" />
+                            <TextBlock Text="step:" VerticalAlignment="Center" />
+                            <NumericUpDown Value="{Binding DepthStep}" Minimum="10" Maximum="500" Increment="10" Width="80" />
+                        </StackPanel>
+                        <Button Content="Compute PREM Comparison" Command="{Binding ComputePREMComparisonCommand}" />
+                    </StackPanel>
+                    <TextBox DockPanel.Dock="Top" Text="{Binding PremComparisonText}" IsReadOnly="True"
+                             AcceptsReturn="True" Margin="0,8,0,0"
+                             FontFamily="Consolas, Menlo, monospace" FontSize="10" />
+                </DockPanel>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</UserControl>
