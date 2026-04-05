@@ -1,17 +1,13 @@
-name: CI
+name: Release
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    tags:
+      - 'v*'
 
 jobs:
-  build-and-test:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+  build-and-release:
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
@@ -30,18 +26,27 @@ jobs:
     - name: Test
       run: dotnet test ThermoElasticCalculator.sln --no-build --configuration Release --verbosity normal
 
-    - name: Publish
-      if: matrix.os == 'ubuntu-latest'
+    - name: Publish all platforms
       run: |
         dotnet publish src/ThermoElastic.Desktop/ThermoElastic.Desktop.csproj -c Release -r win-x64 --self-contained -o publish/win-x64
         dotnet publish src/ThermoElastic.Desktop/ThermoElastic.Desktop.csproj -c Release -r linux-x64 --self-contained -o publish/linux-x64
         dotnet publish src/ThermoElastic.Desktop/ThermoElastic.Desktop.csproj -c Release -r osx-x64 --self-contained -o publish/osx-x64
         dotnet publish src/ThermoElastic.Desktop/ThermoElastic.Desktop.csproj -c Release -r osx-arm64 --self-contained -o publish/osx-arm64
 
-    - name: Upload artifacts
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
+    - name: Create archives
+      run: |
+        cd publish
+        tar -czf ThermoElasticCalculator-win-x64.tar.gz -C win-x64 .
+        tar -czf ThermoElasticCalculator-linux-x64.tar.gz -C linux-x64 .
+        tar -czf ThermoElasticCalculator-osx-x64.tar.gz -C osx-x64 .
+        tar -czf ThermoElasticCalculator-osx-arm64.tar.gz -C osx-arm64 .
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
       with:
-        name: ThermoElasticCalculator-binaries
-        path: publish/
-        retention-days: 30
+        generate_release_notes: true
+        files: |
+          publish/ThermoElasticCalculator-win-x64.tar.gz
+          publish/ThermoElasticCalculator-linux-x64.tar.gz
+          publish/ThermoElasticCalculator-osx-x64.tar.gz
+          publish/ThermoElasticCalculator-osx-arm64.tar.gz
