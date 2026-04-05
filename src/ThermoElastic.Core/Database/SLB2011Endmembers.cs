@@ -3,8 +3,10 @@ using ThermoElastic.Core.Models;
 namespace ThermoElastic.Core.Database;
 
 /// <summary>
-/// SLB2011 Table A1 endmember mineral parameters.
-/// Stixrude &amp; Lithgow-Bertelloni (2011) Geophys. J. Int. 184, 1180-1213.
+/// SLB2011 endmember mineral parameters, extended with SLB2024 Part III Fe3+ species.
+/// SLB2011: Stixrude &amp; Lithgow-Bertelloni (2011) Geophys. J. Int. 184, 1180-1213.
+/// SLB2024: Stixrude &amp; Lithgow-Bertelloni (2024) Geophys. J. Int. 237, 1699-1733.
+/// HeFESTo parameters: github.com/stixrude/HeFESTo_Parameters_010123
 /// Units: V0 [cm³/mol], K0 [GPa], G0 [GPa], θ0 [K], F0 [kJ/mol]
 /// Landau: Tc0 [K], VD [cm³/mol], SD [J/mol/K]
 /// Magnetic: S = spin quantum number, r = magnetic atoms per f.u.
@@ -434,6 +436,162 @@ public static class SLB2011Endmembers
                 DebyeTempZero = 935.98, GammaZero = 1.18984, QZero = 2.34514, EhtaZero = 2.8078,
                 F0 = -1410.850, RefTemp = 300.0,
             },
+
+            // ==================== SLB2024 Part III: Fe3+ and iron phases ====================
+            // Source: HeFESTo_Parameters_010123, Stixrude & Lithgow-Bertelloni (2024)
+
+            // --- Ferropericlase Fe3+ (magnetite endmember) ---
+            new MineralParams
+            {
+                MineralName = "Magnetite", PaperName = "mag",
+                NumAtoms = 7, MolarVolume = 44.528, MolarWeight = 231.533,
+                KZero = 183.877, K1Prime = 5.22819, GZero = 60.30, G1Prime = 0.04657,
+                DebyeTempZero = 529.470, GammaZero = 1.35821, QZero = 0.41872, EhtaZero = 1.12258,
+                F0 = -1016.010, RefTemp = 300.0,
+                Tc0 = 845.50, SD = 43.176, VD = 0.0,
+            },
+            new MineralParams
+            {
+                MineralName = "HP-Magnetite", PaperName = "hmag",
+                NumAtoms = 7, MolarVolume = 41.702, MolarWeight = 231.533,
+                KZero = 172.00, K1Prime = 4.00, GZero = 120.889, G1Prime = 1.93591,
+                DebyeTempZero = 542.931, GammaZero = 1.56656, QZero = 0.41872, EhtaZero = 1.37608,
+                F0 = -993.124, RefTemp = 300.0,
+                Tc0 = 845.50, SD = 43.176, VD = 0.0,
+            },
+
+            // --- Ferropericlase low-spin wustite ---
+            new MineralParams
+            {
+                MineralName = "Wuestite-LS", PaperName = "wuls",
+                NumAtoms = 8, MolarVolume = 43.400, MolarWeight = 287.378,
+                KZero = 199.70, K1Prime = 4.00, GZero = 59.00, G1Prime = 1.44073,
+                DebyeTempZero = 492.994, GammaZero = 1.45033, QZero = 1.54870, EhtaZero = -0.14773,
+                F0 = -609.335, RefTemp = 300.0,
+            },
+
+            // --- Bridgmanite Fe3+ endmembers ---
+            new MineralParams
+            {
+                MineralName = "Fe2O3-Bridgmanite-HS", PaperName = "hebg",
+                NumAtoms = 5, MolarVolume = 29.577, MolarWeight = 159.689,
+                KZero = 204.251, K1Prime = 4.10, GZero = 123.483, G1Prime = 1.73254,
+                DebyeTempZero = 646.799, GammaZero = 1.54466, QZero = 0.83352, EhtaZero = 1.88876,
+                F0 = -706.527, RefTemp = 300.0,
+                Tc0 = 5.0, SD = 29.794, VD = 0.0,
+            },
+            new MineralParams
+            {
+                MineralName = "Fe2O3-Bridgmanite-LS", PaperName = "hlbg",
+                NumAtoms = 5, MolarVolume = 27.521, MolarWeight = 159.689,
+                KZero = 204.251, K1Prime = 4.10, GZero = 177.578, G1Prime = 1.73254,
+                DebyeTempZero = 759.639, GammaZero = 1.54466, QZero = 0.83352, EhtaZero = 3.54218,
+                F0 = -597.159, RefTemp = 300.0,
+                Tc0 = 5.0, SD = 20.660, VD = 0.0,
+            },
+            new MineralParams
+            {
+                MineralName = "FeAlO3-Bridgmanite", PaperName = "fabg",
+                NumAtoms = 5, MolarVolume = 27.090, MolarWeight = 130.825,
+                KZero = 223.326, K1Prime = 4.10, GZero = 159.882, G1Prime = 1.73254,
+                DebyeTempZero = 755.621, GammaZero = 1.54466, QZero = 0.83352, EhtaZero = 2.85480,
+                F0 = -1131.675, RefTemp = 300.0,
+                Tc0 = 5.0, SD = 14.897, VD = 0.0,
+            },
+
+            // --- Post-perovskite Fe3+ ---
+            new MineralParams
+            {
+                MineralName = "Fe2O3-PostPerovskite-HS", PaperName = "hppv",
+                NumAtoms = 5, MolarVolume = 27.688, MolarWeight = 159.689,
+                KZero = 176.50, K1Prime = 4.00, GZero = 172.363, G1Prime = 1.98845,
+                DebyeTempZero = 680.924, GammaZero = 1.64015, QZero = 1.76454, EhtaZero = 2.56327,
+                F0 = -620.840, RefTemp = 300.0,
+                Tc0 = 5.0, SD = 29.794, VD = 0.0,
+            },
+            new MineralParams
+            {
+                MineralName = "Cr-PostPerovskite", PaperName = "cppv",
+                NumAtoms = 5, MolarVolume = 26.949, MolarWeight = 151.990,
+                KZero = 247.740, K1Prime = 4.00, GZero = 187.874, G1Prime = 1.98845,
+                DebyeTempZero = 755.019, GammaZero = 1.64015, QZero = 1.76454, EhtaZero = 3.16235,
+                F0 = -1110.023, RefTemp = 300.0,
+                Tc0 = 5.0, SD = 23.052, VD = 0.0,
+            },
+
+            // --- Hematite ---
+            new MineralParams
+            {
+                MineralName = "Hematite", PaperName = "hem",
+                NumAtoms = 5, MolarVolume = 30.287, MolarWeight = 159.689,
+                KZero = 204.245, K1Prime = 4.09970, GZero = 91.00, G1Prime = 1.81492,
+                DebyeTempZero = 653.807, GammaZero = 1.58944, QZero = 2.22481, EhtaZero = 0.52410,
+                F0 = -744.045, RefTemp = 300.0,
+                Tc0 = 950.01, SD = 29.794, VD = 0.0,
+            },
+
+            // --- Native iron phases ---
+            new MineralParams
+            {
+                MineralName = "alpha-Fe (bcc)", PaperName = "fea",
+                NumAtoms = 1, MolarVolume = 7.093, MolarWeight = 55.845,
+                KZero = 163.421, K1Prime = 6.01732, GZero = 81.47, G1Prime = 1.92230,
+                DebyeTempZero = 398.005, GammaZero = 1.66729, QZero = 0.90658, EhtaZero = 5.96207,
+                F0 = 0.012, RefTemp = 300.0,
+                Tc0 = 1043.01, SD = 9.460, VD = 0.0,
+                BetaElectronic = 0.00388, GammaElectronic = 1.47960,
+            },
+            new MineralParams
+            {
+                MineralName = "gamma-Fe (fcc)", PaperName = "feg",
+                NumAtoms = 1, MolarVolume = 6.988, MolarWeight = 55.845,
+                KZero = 165.00, K1Prime = 5.97, GZero = 91.00, G1Prime = 2.33869,
+                DebyeTempZero = 285.193, GammaZero = 1.84924, QZero = 1.02176, EhtaZero = 6.50014,
+                F0 = 4.676, RefTemp = 300.0,
+                BetaElectronic = 0.00375, GammaElectronic = 1.47960,
+            },
+            new MineralParams
+            {
+                MineralName = "epsilon-Fe (hcp)", PaperName = "fee",
+                NumAtoms = 1, MolarVolume = 6.765, MolarWeight = 55.845,
+                KZero = 165.00, K1Prime = 4.97, GZero = 91.00, G1Prime = 2.24804,
+                DebyeTempZero = 379.743, GammaZero = 2.13092, QZero = 1.02253, EhtaZero = 5.20603,
+                F0 = 3.428, RefTemp = 300.0,
+                BetaElectronic = 0.00411, GammaElectronic = 1.69270,
+            },
+
+            // --- Eskolaite (Cr2O3, corundum structure) ---
+            new MineralParams
+            {
+                MineralName = "Eskolaite", PaperName = "esk",
+                NumAtoms = 5, MolarVolume = 28.796, MolarWeight = 151.990,
+                KZero = 231.00, K1Prime = 4.00, GZero = 130.00, G1Prime = 0.72839,
+                DebyeTempZero = 758.244, GammaZero = 1.44550, QZero = 1.54000, EhtaZero = 2.21000,
+                F0 = -1084.180, RefTemp = 300.0,
+                Tc0 = 305.50, SD = 23.052, VD = 0.0,
+            },
+
+            // --- Cr-Perovskite ---
+            new MineralParams
+            {
+                MineralName = "Cr-Bridgmanite", PaperName = "crpv",
+                NumAtoms = 5, MolarVolume = 25.577, MolarWeight = 151.990,
+                KZero = 252.55, K1Prime = 4.10, GZero = 163.20, G1Prime = 1.73254,
+                DebyeTempZero = 932.57, GammaZero = 1.54466, QZero = 0.83352, EhtaZero = 2.80780,
+                F0 = -1082.450, RefTemp = 300.0,
+                Tc0 = 5.0, SD = 23.052, VD = 0.0,
+            },
+
+            // --- Cr-CaFerrite ---
+            new MineralParams
+            {
+                MineralName = "Cr-CaFerrite", PaperName = "crcf",
+                NumAtoms = 7, MolarVolume = 36.58, MolarWeight = 151.990,
+                KZero = 218.00, K1Prime = 4.00, GZero = 128.00, G1Prime = 1.70,
+                DebyeTempZero = 836.0, GammaZero = 1.50, QZero = 1.50, EhtaZero = 2.50,
+                F0 = -1500.00, RefTemp = 300.0,
+            },
         };
     }
 }
+

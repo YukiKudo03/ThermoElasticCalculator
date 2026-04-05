@@ -21,7 +21,7 @@ public class Phase5Tests
     public void MineralDatabase_GetAll_Returns42Endmembers()
     {
         var all = MineralDatabase.GetAll();
-        Assert.Equal(46, all.Count);
+        Assert.Equal(61, all.Count); // 46 SLB2011 + 15 SLB2024
     }
 
     [Fact]
