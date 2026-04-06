@@ -154,6 +154,57 @@ public class SLBParameterFitterTests
         Assert.Throws<FormatException>(() => ExperimentalDataset.ParseCsv(csv));
     }
 
+    /// <summary>
+    /// Sparse data: each point has a different subset of observables.
+    /// Simulates real Brillouin experiments where Vp, Vs, density are not always
+    /// all available at every P-T condition.
+    /// </summary>
+    [Fact]
+    public void RoundTrip_SparseData_MixedObservables()
+    {
+        var fo = SLB2011Endmembers.GetAll().First(m => m.PaperName == "fo");
+        var data = new ExperimentalDataset { Name = "Sparse Forsterite" };
+
+        var pressures = new[] { 0.001, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0 };
+        for (int i = 0; i < pressures.Length; i++)
+        {
+            var eos = new MieGruneisenEOSOptimizer(fo, pressures[i], 300.0);
+            var r = eos.ExecOptimize();
+
+            // Simulate sparse data: each point has different observables
+            var pt = new ExperimentalDataPoint { Pressure = pressures[i], Temperature = 300.0 };
+            if (i % 3 != 0) pt.Vp = r.Vp;       // Vp missing at i=0,3,6
+            if (i % 2 == 0) pt.Vs = r.Vs;        // Vs only at even indices
+            if (i % 4 != 2) pt.Density = r.Density; // Density missing at i=2,6
+            data.Data.Add(pt);
+        }
+
+        _output.WriteLine($"Data points: {data.Data.Count}");
+        _output.WriteLine($"Vp values: {data.Data.Count(d => d.Vp.HasValue)}");
+        _output.WriteLine($"Vs values: {data.Data.Count(d => d.Vs.HasValue)}");
+        _output.WriteLine($"Density values: {data.Data.Count(d => d.Density.HasValue)}");
+
+        var guess = SLB2011Endmembers.GetAll().First(m => m.PaperName == "fo");
+        guess.KZero *= 1.03;
+        guess.GZero *= 0.97;
+
+        var fitter = new SLBParameterFitter();
+        var result = fitter.Fit(data, guess, new FittingOptions
+        {
+            FitV0 = false, FitK0 = true, FitK0Prime = false,
+            FitG0 = true, FitG0Prime = false,
+            Target = FitTarget.Joint,
+        });
+
+        _output.WriteLine($"Converged: {result.Optimization.Converged}");
+        _output.WriteLine($"K0: true={fo.KZero:F2}, fitted={result.FittedMineral.KZero:F2}");
+        _output.WriteLine($"G0: true={fo.GZero:F2}, fitted={result.FittedMineral.GZero:F2}");
+
+        Assert.True(result.Optimization.Converged);
+        Assert.Equal(fo.KZero, result.FittedMineral.KZero, 1.0);
+        Assert.Equal(fo.GZero, result.FittedMineral.GZero, 1.0);
+    }
+
     [Fact]
     public void Fit_NoParamsSelected_Throws()
     {
