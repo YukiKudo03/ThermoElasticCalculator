@@ -1,7 +1,8 @@
 namespace ThermoElastic.Core.Database;
 
 /// <summary>
-/// SLB2011 Table A2 interaction parameters for solid solutions.
+/// Interaction parameters for solid solutions.
+/// SLB2011 Table A2 + SLB2024 Table C2 updates.
 /// W values in kJ/mol.
 /// </summary>
 public static class SLB2011Solutions
@@ -24,8 +25,13 @@ public static class SLB2011Solutions
             // Ringwoodite
             new("Ringwoodite", "mrw", "frw", 9.1),
 
-            // Ferropericlase
-            new("Ferropericlase", "pe", "wu", 13.0),
+            // Ferropericlase — SLB2024 updated W values (Table C2)
+            new("Ferropericlase", "pe", "wu", 44.0),        // Updated from 13.0 (SLB2011)
+            new("Ferropericlase", "pe", "wuls", -87.1),      // SLB2024: favorable HS-LS interaction
+            new("Ferropericlase", "pe", "mag", 303.0),       // SLB2024
+            new("Ferropericlase", "wu", "wuls", -60.0),      // SLB2024
+            new("Ferropericlase", "wu", "mag", 120.0),       // SLB2024
+            new("Ferropericlase", "wuls", "mag", 120.0),     // SLB2024
 
             // Spinel
             new("Spinel", "sp", "hc", 5.0),
@@ -56,15 +62,40 @@ public static class SLB2011Solutions
             new("Akimotoite", "mak", "cor", 66.0),
             new("Akimotoite", "fak", "cor", 116.0),
 
-            // Perovskite (Bridgmanite)
+            // Perovskite (Bridgmanite) — SLB2024 extended with Fe3+ (Table C2)
             new("Perovskite", "mpv", "fpv", 0.0),
             new("Perovskite", "mpv", "apv", 0.0),
             new("Perovskite", "fpv", "apv", 0.0),
+            new("Perovskite", "mpv", "hebg", 93.9),          // SLB2024
+            new("Perovskite", "mpv", "hlbg", 49.9),          // SLB2024
+            new("Perovskite", "mpv", "fabg", 31.7),          // SLB2024 (albg-like)
+            new("Perovskite", "mpv", "crpv", 93.0),          // SLB2024
+            new("Perovskite", "fpv", "hebg", 93.9),          // SLB2024
+            new("Perovskite", "fpv", "hlbg", 49.9),          // SLB2024
+            new("Perovskite", "fpv", "fabg", 65.0),          // SLB2024
+            new("Perovskite", "fpv", "crpv", 93.0),          // SLB2024
+            new("Perovskite", "hebg", "hlbg", -5.9),         // SLB2024: negative = favorable
+            new("Perovskite", "hebg", "fabg", 65.0),         // SLB2024
+            new("Perovskite", "hebg", "crpv", 65.0),         // SLB2024
+            new("Perovskite", "hlbg", "fabg", 40.0),         // SLB2024
+            new("Perovskite", "hlbg", "crpv", 40.0),         // SLB2024
+            new("Perovskite", "apv", "hebg", 65.0),          // SLB2024
+            new("Perovskite", "apv", "hlbg", 65.0),          // SLB2024
+            new("Perovskite", "apv", "fabg", 65.0),          // SLB2024
+            new("Perovskite", "apv", "crpv", 40.0),          // SLB2024
+            new("Perovskite", "fabg", "crpv", 40.0),         // SLB2024
 
-            // Post-Perovskite
+            // Post-Perovskite — SLB2024 extended
             new("PostPerovskite", "mppv", "fppv", 0.0),
             new("PostPerovskite", "mppv", "appv", 0.0),
             new("PostPerovskite", "fppv", "appv", 0.0),
+            new("PostPerovskite", "mppv", "hppv", 93.9),     // SLB2024
+            new("PostPerovskite", "mppv", "cppv", 93.0),     // SLB2024
+            new("PostPerovskite", "fppv", "hppv", 93.9),     // SLB2024
+            new("PostPerovskite", "fppv", "cppv", 93.0),     // SLB2024
+            new("PostPerovskite", "appv", "hppv", 65.0),     // SLB2024
+            new("PostPerovskite", "appv", "cppv", 40.0),     // SLB2024
+            new("PostPerovskite", "hppv", "cppv", 65.0),     // SLB2024
 
             // CaFerrite-type
             new("CaFerrite", "mcf", "fcf", 0.0),

@@ -54,6 +54,11 @@ public class MineralParams
     /// <summary>Magnetic atoms per formula unit r (0=disabled)</summary>
     public double MagneticAtomCount { get; set; }
 
+    /// <summary>Electronic density of states at Fermi level (0=insulator). For native iron only.</summary>
+    public double BetaElectronic { get; set; }
+    /// <summary>Volume dependence of electronic density of states. For native iron only.</summary>
+    public double GammaElectronic { get; set; }
+
     public double Aii => 6.0d * GammaZero;
 
     public double Aiikk => -12.0d * GammaZero + 36.0 * GammaZero * GammaZero - 18.0d * GammaZero * QZero;

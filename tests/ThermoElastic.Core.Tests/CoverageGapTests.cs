@@ -93,8 +93,8 @@ public class CoverageGapTests
             Assert.False(string.IsNullOrEmpty(e.SolutionName));
             Assert.False(string.IsNullOrEmpty(e.EndmemberA));
             Assert.False(string.IsNullOrEmpty(e.EndmemberB));
-            // W >= 0 (ideal solutions have W=0)
-            Assert.True(e.W_kJ >= 0, $"{e.SolutionName}: W should be >= 0");
+            // SLB2024 allows negative W (favorable interactions, e.g., pe-wuls = -87.1)
+            Assert.True(e.W_kJ >= -200 && e.W_kJ <= 500, $"{e.SolutionName} {e.EndmemberA}-{e.EndmemberB}: W={e.W_kJ} out of physical range");
         });
     }
 

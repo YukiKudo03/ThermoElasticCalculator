@@ -11,6 +11,9 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private string _title = "ThermoElasticCalculator v1.0.0";
 
+    // === Experimental Data ===
+    private readonly SLBFitterViewModel _slbFitterViewModel = new();
+
     // === Core Tools ===
     private readonly MineralEditorViewModel _mineralEditorViewModel = new();
     private readonly PTProfileViewModel _ptProfileViewModel = new();
@@ -58,6 +61,9 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly MLDataViewModel _mlDataViewModel = new();
     private readonly BayesianInversionViewModel _bayesianInversionViewModel = new();
     private readonly LookupTableViewModel _lookupTableViewModel = new();
+
+    // === Experimental Data Commands ===
+    [RelayCommand] private void ShowSLBFitter() => CurrentView = _slbFitterViewModel;
 
     // === Core Tools Commands ===
     [RelayCommand] private void ShowMineralEditor() => CurrentView = _mineralEditorViewModel;
