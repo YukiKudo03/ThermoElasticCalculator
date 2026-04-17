@@ -13,6 +13,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{3C5D640B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThermoElastic.Desktop.E2E", "tests\ThermoElastic.Desktop.E2E\ThermoElastic.Desktop.E2E.csproj", "{0B585ABB-188C-4E8B-8DF5-37071AAD7E70}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{F89DD340-1EB1-4334-B159-A14892B820EA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleDataGenerator", "tools\SampleDataGenerator\SampleDataGenerator.csproj", "{8D462461-0DFB-4B0A-9F62-5DDC6E5B11E4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,8 +39,13 @@ Global
 		{0B585ABB-188C-4E8B-8DF5-37071AAD7E70}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0B585ABB-188C-4E8B-8DF5-37071AAD7E70}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0B585ABB-188C-4E8B-8DF5-37071AAD7E70}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D462461-0DFB-4B0A-9F62-5DDC6E5B11E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D462461-0DFB-4B0A-9F62-5DDC6E5B11E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D462461-0DFB-4B0A-9F62-5DDC6E5B11E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D462461-0DFB-4B0A-9F62-5DDC6E5B11E4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{0B585ABB-188C-4E8B-8DF5-37071AAD7E70} = {3C5D640B-CBA7-4489-B510-518C9C226A1C}
+		{8D462461-0DFB-4B0A-9F62-5DDC6E5B11E4} = {F89DD340-1EB1-4334-B159-A14892B820EA}
 	EndGlobalSection
 EndGlobal
