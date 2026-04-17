@@ -1,0 +1,26 @@
+# Pure MgO (periclase) Brillouin Vs data from Murakami et al. publications.
+# Likely source: Murakami, M. et al. (2009) "Elasticity of MgO to 130 GPa:
+# Implications for lower mantle mineralogy" EPSL 277, 123-129.
+# DOI: 10.1016/j.epsl.2008.10.010
+# Sample: pure MgO periclase at 300 K.
+# Vp and Density were NOT directly measured — left blank for honest import.
+# Data extracted from BurnMan reference dataset (ExoPlex repository mirror).
+# Sigma Vs = 1% (typical Brillouin precision at these pressures).
+P(GPa),T(K),Vp(m/s),Vs(m/s),Density(g/cm3),SigmaVp(m/s),SigmaVs(m/s),SigmaDensity(g/cm3)
+34.2,300,,6440,,,64,
+38.3,300,,6460,,,65,
+44.1,300,,6530,,,65,
+50.1,300,,6570,,,66,
+53.2,300,,6620,,,66,
+54.5,300,,6800,,,68,
+58.1,300,,6920,,,69,
+61.6,300,,6930,,,69,
+65.8,300,,6960,,,70,
+70.4,300,,7020,,,70,
+77.7,300,,7080,,,71,
+86.4,300,,7130,,,71,
+90.2,300,,7240,,,72,
+95.0,300,,7300,,,73,
+99.4,300,,7330,,,73,
+107.2,300,,7380,,,74,
+120.6,300,,7430,,,74,

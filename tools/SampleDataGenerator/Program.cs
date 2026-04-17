@@ -126,6 +126,36 @@ File.WriteAllText(murakamiPath, murakamiCsv.ToString());
 Console.WriteLine($"Wrote {murakamiPressures.Length} data points to: {murakamiPath}");
 
 // ============================================================================
+// Validate hand-curated CSVs (Murakami 2012 bridgmanite + MgO periclase)
+// These files are transcribed real Vs measurements, not generated. We just
+// parse them and confirm the format is valid.
+// ============================================================================
+Console.WriteLine();
+Console.WriteLine("=== Validating hand-curated Murakami datasets ===");
+foreach (var fileName in new[] { "murakami2012_bridgmanite.csv", "murakami_periclase.csv" })
+{
+    var path = Path.Combine("samples", fileName);
+    if (!File.Exists(path))
+    {
+        Console.WriteLine($"  ! {fileName}: not found");
+        continue;
+    }
+    try
+    {
+        var ds = ExperimentalDataset.ParseCsv(File.ReadAllText(path), fileName);
+        int vsCount = ds.Data.Count(d => d.Vs.HasValue);
+        double pMin = ds.Data.Min(d => d.Pressure);
+        double pMax = ds.Data.Max(d => d.Pressure);
+        Console.WriteLine($"  ✓ {fileName}: {ds.Data.Count} points, {vsCount} with Vs, P = {pMin:F1}-{pMax:F1} GPa");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"  ✗ {fileName}: parse failed — {ex.Message}");
+        Environment.Exit(1);
+    }
+}
+
+// ============================================================================
 // Self-verification: round-trip the generated CSV through the SLB Fitter and
 // confirm we recover the known K0 and G0 within uncertainty.
 // ============================================================================

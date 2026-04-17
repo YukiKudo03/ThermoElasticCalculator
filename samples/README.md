@@ -8,6 +8,8 @@ Demo datasets for the **SLB Parameter Fitter** (v1.1.0+).
 |------|---------|------|--------|
 | `bridgmanite_synthetic.csv` | Mg-Perovskite (mpv) | Synthetic (SLB2011 forward model + Gaussian noise) | 15 |
 | `murakami2007_mgsio3_pv.csv` | Mg-Perovskite | Model curve from Murakami et al. (2007) EPSL parameters | 13 |
+| `murakami2012_bridgmanite.csv` | Mg-Perovskite | **Real** Brillouin Vs measurements, Murakami 2012 Nature | 20 |
+| `murakami_periclase.csv` | MgO (periclase) | **Real** Brillouin Vs measurements, Murakami 2009 EPSL | 17 |
 
 ## CSV Format
 
@@ -51,6 +53,17 @@ Covers 0.001–96 GPa at 300 K (13 points). Pure MgSiO3 perovskite (no Al).
 Ambient anchor values validate against paper:
 - Vs(0 GPa) = 6489 m/s — paper reports 6490 ± 30 m/s ✓
 - Vp(0 GPa) = 10879 m/s — paper reports 10850 ± 30 m/s ✓
+
+## Real Brillouin Measurements
+
+`murakami2012_bridgmanite.csv` and `murakami_periclase.csv` contain **actual measured Vs values** extracted from the BurnMan reference dataset (ExoPlex repository mirror), originally published by:
+
+- **`murakami2012_bridgmanite.csv`** — Murakami, M., Ohishi, Y., Hirao, N., & Hirose, K. (2012). "A perovskitic lower mantle inferred from high-pressure, high-temperature sound velocity data." *Nature* **485**, 90–94. DOI: [10.1038/nature11004](https://doi.org/10.1038/nature11004). 20 measurements of Vs for MgSiO3 bridgmanite, 42–124 GPa at 300 K.
+- **`murakami_periclase.csv`** — Likely Murakami, M. et al. (2009). "Elasticity of MgO to 130 GPa: Implications for lower mantle mineralogy." *EPSL* **277**, 123–129. 17 measurements of Vs for pure MgO, 34–121 GPa at 300 K.
+
+**Important:** These CSVs contain **only Vs measurements** (Vp and density columns are blank). Use `FitTarget.VsOnly` in `FittingOptions` when running the fitter, or provide density from a compressible EoS as auxiliary input.
+
+These datasets are intended for validating the SLB Parameter Fitter against published experimental results from the Murakami lab.
 
 ## Regenerating Sample Data
 

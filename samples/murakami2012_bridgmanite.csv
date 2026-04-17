@@ -1,0 +1,28 @@
+# Murakami et al. (2012) Nature 485, 90-94
+# "A perovskitic lower mantle inferred from high-pressure, high-temperature sound velocity data"
+# DOI: 10.1038/nature11004
+# Sample: MgSiO3 bridgmanite at 300 K, measured Vs from Brillouin scattering.
+# Vp and Density were NOT directly measured — left blank for honest import.
+# Data extracted from BurnMan reference dataset (ExoPlex repository mirror).
+# Sigma Vs = 1% (typical Brillouin precision at these pressures).
+P(GPa),T(K),Vp(m/s),Vs(m/s),Density(g/cm3),SigmaVp(m/s),SigmaVs(m/s),SigmaDensity(g/cm3)
+42.0,300,,7010,,,70,
+42.9,300,,7030,,,70,
+46.2,300,,7050,,,71,
+49.9,300,,7150,,,72,
+53.3,300,,7130,,,71,
+61.8,300,,7220,,,72,
+66.3,300,,7290,,,73,
+70.0,300,,7320,,,73,
+75.2,300,,7370,,,74,
+80.9,300,,7410,,,74,
+82.7,300,,7430,,,74,
+85.0,300,,7400,,,74,
+87.5,300,,7420,,,74,
+89.2,300,,7490,,,75,
+89.8,300,,7460,,,75,
+92.0,300,,7520,,,75,
+95.3,300,,7570,,,76,
+99.2,300,,7590,,,76,
+105.4,300,,7590,,,76,
+123.8,300,,7820,,,78,
