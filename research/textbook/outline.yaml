@@ -1,0 +1,139 @@
+topic: "Computational Mineral Physics: From Thermodynamic Theory to Earth's Interior — A Comprehensive Textbook"
+
+items:
+  # === Part I: Foundations ===
+  - name: "Ch01 Thermodynamics of Solids at High Pressure"
+    category: "Part I: Foundations"
+    description: "Helmholtz and Gibbs free energy at high P-T. Euler finite strain theory. Birch-Murnaghan equation of state (3rd and 4th order). Cold compression energy F_cold = 9K0V0(f²/2 + a1f³/6). Isothermal bulk modulus K_T(f). Covers the mathematical foundation for MineralParams.GetPressure(), BM3Finite(), BM3KT()."
+
+  - name: "Ch02 Debye Model and Thermal Properties"
+    category: "Part I: Foundations"
+    description: "Debye model for lattice vibrations. Debye function D3(x) and internal energy. Heat capacity Cv. Thermal pressure Delta_P = gamma/V * Delta_E. Thermal free energy F_thermal. Temperature-dependent Debye temperature theta(f). Covers DebyeFunctionCalculator, ThermoMineralParams thermal contributions."
+
+  - name: "Ch03 Gruneisen Parameter and Anharmonicity"
+    category: "Part I: Foundations"
+    description: "Gruneisen parameter gamma(V), its volume dependence q = dln(gamma)/dln(V). Anharmonic corrections to elastic moduli. eta_S parameter for shear modulus thermal correction. Strain-dependent gamma and eta_S from finite strain theory. Aii, Aiikk, As coefficients in SLB2011. Covers ThermoMineralParams._gamma, _ethaS, _q."
+
+  - name: "Ch04 Elastic Moduli and Seismic Velocities"
+    category: "Part I: Foundations"
+    description: "Isothermal vs adiabatic bulk modulus (K_T, K_S). Shear modulus G and its pressure/temperature dependence. Thermal corrections to K and G. P-wave velocity Vp = sqrt((K_S + 4G/3)/rho), S-wave velocity Vs = sqrt(G/rho). Bulk sound velocity Vphi. Covers ThermoMineralParams.KT, KS, GS, Vp, Vs."
+
+  # === Part II: The SLB2011 Framework ===
+  - name: "Ch05 The Stixrude-Lithgow-Bertelloni Formulation"
+    category: "Part II: SLB2011 Framework"
+    description: "Complete SLB2011 thermodynamic formulation. Self-consistent finite strain + Mie-Gruneisen-Debye model. The 11 independent parameters per mineral (V0, K0, K', G0, G', theta0, gamma0, q0, etaS0, n, M). How these combine to compute all thermodynamic and elastic properties. Covers MineralParams, the full ThermoMineralParams constructor."
+
+  - name: "Ch06 Mie-Gruneisen Equation of State Solver"
+    category: "Part II: SLB2011 Framework"
+    description: "The self-consistent pressure problem: given target P and T, find finite strain f such that P_ref(f) + P_thermal(f,T) = P_target. Iterative pressure correction algorithm. Convergence criteria (1e-5 GPa). Handling of edge cases (near-zero pressure, very high compression). Covers MieGruneisenEOSOptimizer."
+
+  - name: "Ch07 SLB2011 Mineral Database"
+    category: "Part II: SLB2011 Framework"
+    description: "The 46 endmember minerals in SLB2011 Table A1. Parameter sources and uncertainties. Mineral families: olivine, wadsleyite, ringwoodite, garnet, pyroxene, perovskite/bridgmanite, post-perovskite, ferropericlase, SiO2 polymorphs, feldspar, Ca-perovskite. Covers SLB2011Endmembers database."
+
+  - name: "Ch08 Landau Phase Transitions"
+    category: "Part II: SLB2011 Framework"
+    description: "Displacive phase transitions modeled by Landau theory. Order parameter Q, critical temperature Tc(P), excess volume VD, excess entropy SD. Free energy contribution F_Landau. Application to quartz alpha-beta transition, stishovite CaCl2-type transition. Covers LandauCalculator, Tc0, VD, SD parameters."
+
+  - name: "Ch09 Magnetic Contributions"
+    category: "Part II: SLB2011 Framework"
+    description: "Magnetic free energy F_mag = -T*r*R*ln(2S+1). Spin quantum number S, magnetic atom count r. Application to wuestite (FeO), hercynite, and other Fe-bearing minerals. Interaction with spin crossover. Covers MineralParams.SpinQuantumNumber, MagneticAtomCount."
+
+  # === Part III: Mixtures and Rock Properties ===
+  - name: "Ch10 Elastic Mixing Models"
+    category: "Part III: Mixtures"
+    description: "Voigt (iso-strain), Reuss (iso-stress), and Hill (VRH) averages for elastic moduli. Physical basis and bounds. Hashin-Shtrikman bounds (upper and lower). Application to two-phase and multi-phase aggregates. Volume-weighted vs molar-weighted mixing. Covers MixtureCalculator, RockCalculator mixing schemes."
+
+  - name: "Ch11 Rock Compositions and Assemblages"
+    category: "Part III: Mixtures"
+    description: "Defining rock compositions by mineral volume fractions. Predefined assemblages: Pyrolite, Harzburgite, MORB, lower mantle composition. How to construct a realistic mantle rock from endmember minerals. Covers PredefinedRocks database, RockComposition model."
+
+  # === Part IV: Phase Equilibria ===
+  - name: "Ch12 Gibbs Free Energy and Phase Stability"
+    category: "Part IV: Phase Equilibria"
+    description: "Helmholtz to Gibbs: G = F + PV. Entropy from numerical differentiation S = -dF/dT. Phase stability: the phase with lowest G at given P,T is stable. Clapeyron slope dP/dT = Delta_S / Delta_V. Covers ThermoMineralParams.HelmholtzF, GibbsG, Entropy."
+
+  - name: "Ch13 Phase Diagrams and Boundaries"
+    category: "Part IV: Phase Equilibria"
+    description: "Computing phase boundaries by equating Gibbs energies. Binary phase diagrams (e.g., fo-mw at 410 km). Multi-phase reactions (ringwoodite → bridgmanite + ferropericlase at 660 km). Clapeyron slope computation and its geodynamic significance. Covers PhaseDiagramCalculator, FindPhaseBoundary(), FindMultiPhaseBoundary()."
+
+  - name: "Ch14 Post-Perovskite Transition"
+    category: "Part IV: Phase Equilibria"
+    description: "The pPv transition at D'' layer (~120-135 GPa, 2500-3000K). Discovery by Murakami et al. (2004). Boundary detection, Clapeyron slope (~+8-10 MPa/K). Double-crossing hypothesis. Implications for D'' seismic structure. Covers PostPerovskiteCalculator."
+
+  # === Part V: Seismic Interpretation ===
+  - name: "Ch15 PREM and Radial Earth Models"
+    category: "Part V: Seismic Interpretation"
+    description: "Preliminary Reference Earth Model (Dziewonski & Anderson 1981). Radial profiles of density, Vp, Vs, pressure. Major discontinuities (Moho, 410, 660, CMB). Using PREM as reference for comparing mineral physics predictions. Depth-pressure conversion. Covers PREMModel."
+
+  - name: "Ch16 Anelasticity and Q"
+    category: "Part V: Seismic Interpretation"
+    description: "Frequency-dependent seismic attenuation Q^-1. Anderson & Given (1982) velocity correction. Karato (1993) Q model. Jackson & Faul (2010) Extended Burgers model. Andrade viscoelastic model. Grain-size dependence. Water and melt effects on Q. Depth-dependent Q profiles. The gap between lab (MHz) and seismic (Hz) frequencies. Covers all anelasticity calculators, WaterQCorrector, MeltQCorrector, QProfileBuilder."
+
+  - name: "Ch17 Sensitivity Kernels"
+    category: "Part V: Seismic Interpretation"
+    description: "Partial derivatives dlnVs/dT, dlnVp/dT, dlnVs/dP, dlnVp/dP. The ratio R = dlnVs/dlnVp as diagnostic of thermal vs compositional anomalies. Sensitivity to composition (Mg#, Fe content). Application to interpreting seismic tomography. Covers SensitivityKernelCalculator."
+
+  - name: "Ch18 Composition Inversion"
+    category: "Part V: Seismic Interpretation"
+    description: "The inverse problem: given seismic velocities at depth, what is the mineral composition? Grid search over Mg#. Misfit functions comparing calculated vs PREM velocities. Role of anelastic corrections. Trade-offs between temperature and composition. Covers CompositionInverter."
+
+  # === Part VI: Deep Earth Structures ===
+  - name: "Ch19 Subducting Slabs"
+    category: "Part VI: Deep Earth"
+    description: "Thermal structure of subducting slabs. Cold slab anomaly: positive dVs, negative dT. Slab-ambient contrast in velocity and density. Phase transitions within slabs (metastable olivine). Application to interpreting slab-related seismic anomalies. Covers SlabThermalModel."
+
+  - name: "Ch20 LLSVPs and ULVZs"
+    category: "Part VI: Deep Earth"
+    description: "Large Low Shear Velocity Provinces: thermal vs thermochemical origin. Required Delta_T for observed dVs. Ultra-Low Velocity Zones at CMB: partial melt hypothesis, iron enrichment. Velocity reduction from melt fraction. Covers LLSVPCalculator, ULVZCalculator."
+
+  - name: "Ch21 Planetary Interiors"
+    category: "Part VI: Deep Earth"
+    description: "Extending mineral physics to other planets. Self-consistent interior models: radial integration of hydrostatic equilibrium dP/dr = -rho*g. Moment of inertia constraint I/(MR²). Application to Mars (MoI ~ 0.363) and super-Earths. Covers PlanetaryInteriorSolver, MarsInteriorModel."
+
+  # === Part VII: Transport and Material Properties ===
+  - name: "Ch22 Iron Spin Crossover"
+    category: "Part VII: Material Properties"
+    description: "High-spin to low-spin transition in Fe²⁺ ferropericlase at ~40-90 GPa. Elastic softening in the mixed-spin region. Effect on density, bulk modulus, and seismic velocities. HS/LS population from Boltzmann statistics. Implications for mid-mantle seismic anomalies. Covers SpinCrossoverCalculator."
+
+  - name: "Ch23 Iron Partitioning"
+    category: "Part VII: Material Properties"
+    description: "Distribution of Fe between coexisting phases (bridgmanite + ferropericlase). Partition coefficient K_D(P,T). Effect of spin crossover on partitioning. Application to lower mantle composition estimation. Covers IronPartitioningSolver."
+
+  - name: "Ch24 Water in the Mantle"
+    category: "Part VII: Material Properties"
+    description: "Nominally anhydrous minerals (NAMs) as water reservoirs. Water storage capacity of olivine, wadsleyite, ringwoodite. Effect of water on velocity, density, attenuation, and rheology. Estimating water content from velocity anomalies. Covers WaterContentEstimator."
+
+  - name: "Ch25 Thermal and Electrical Conductivity"
+    category: "Part VII: Material Properties"
+    description: "Lattice thermal conductivity kappa(P,T): phonon scattering, pressure enhancement, temperature reduction. Radiative contribution. Electrical conductivity: Arrhenius behavior, water enhancement. Application to mantle heat flow and electromagnetic sounding. Covers ThermalConductivityCalculator, ElectricalConductivityCalculator."
+
+  - name: "Ch26 Elastic Anisotropy"
+    category: "Part VII: Material Properties"
+    description: "Single-crystal elastic constants C_ijkl. Christoffel equation for directional velocities. Voigt-Reuss-Hill averaging for polycrystalline aggregates. Olivine anisotropy and lattice preferred orientation (LPO). Application to upper mantle anisotropy observations. Covers ElasticTensorCalculator, SingleCrystalElasticConstants."
+
+  # === Part VIII: Advanced Methods ===
+  - name: "Ch27 Shock Compression and Hugoniot"
+    category: "Part VIII: Advanced Methods"
+    description: "Rankine-Hugoniot relations for shock waves. Hugoniot curve P(V) and temperature along Hugoniot. Isomeke (equal shock impedance) surfaces. Application to constraining deep Earth EOS from shock experiments. Covers HugoniotCalculator, IsomekeCalculator, RankineHugoniotSolver."
+
+  - name: "Ch28 Nonlinear Least Squares and Parameter Fitting"
+    category: "Part VIII: Advanced Methods"
+    description: "Levenberg-Marquardt algorithm for nonlinear optimization. Jacobian computation via central differences. Covariance matrix and parameter uncertainties. Application to EOS fitting (P-V data) and thermoelastic parameter fitting (Vp/Vs data). Covers LevenbergMarquardtOptimizer, EOSFitter, ThermoElasticFitter."
+
+  - name: "Ch29 Bayesian Inversion and MCMC"
+    category: "Part VIII: Advanced Methods"
+    description: "Bayesian inference framework for Earth science. Prior distributions, likelihood functions, posterior sampling. Metropolis-Hastings MCMC algorithm. Acceptance rate tuning. Application to mantle composition estimation with uncertainties. Covers MCMCSampler, InversionFramework."
+
+  - name: "Ch30 Geobarometry and Geothermometry"
+    category: "Part VIII: Advanced Methods"
+    description: "Classical exchange and net-transfer barometers. Elastic geobarometry: residual inclusion pressure from isomeke analysis. Modern thermodynamic geobarometry. Application to estimating P-T conditions of mantle xenoliths and inclusions. Covers ClassicalGeobarometer, IsomekeCalculator (elastic geobarometry)."
+
+  - name: "Ch31 Oxygen Fugacity"
+    category: "Part VIII: Advanced Methods"
+    description: "Oxygen fugacity fO2 and redox state of the mantle. Buffer reactions: IW (iron-wuestite), QFM (quartz-fayalite-magnetite), NNO (nickel-nickel oxide). Pressure and temperature dependence. Implications for volatile speciation, melting, and mantle dynamics. Covers OxygenFugacityCalculator."
+
+execution:
+  output_dir: ./results
+  batch_size: 4
+  items_per_agent: 1

@@ -1,0 +1,381 @@
+{
+  "chapter_summary": "Anelasticity describes the deviation of real Earth materials from perfectly elastic behavior, where seismic energy is dissipated through internal friction processes. The quality factor Q characterizes this dissipation: Q^{-1} measures the fractional energy lost per oscillation cycle, with low Q indicating high attenuation. In the mantle, dominant mechanisms include diffusion-assisted grain-boundary sliding (GBS), dislocation-assisted processes, and viscous relaxation at grain boundaries. The distinction between the unrelaxed (high-frequency, elastic) modulus and the relaxed (low-frequency, viscoelastic) modulus is fundamental: laboratory ultrasonic measurements at MHz frequencies probe the unrelaxed state, while seismic waves at mHz-Hz frequencies sample partially relaxed moduli. Bridging this frequency gap is one of the central challenges in seismic interpretation of mantle composition and temperature.\n\nThe simplest treatment follows the Karato (1993) parametric model, where Q_S = A * f^alpha * exp(alpha * H_eff / (RT)), with frequency exponent alpha approximately 0.27, activation enthalpy H_eff = E* + PV*, and a pre-exponential factor A calibrated against laboratory data. The velocity correction from elastic to anelastic follows Anderson and Given (1982): V_anelastic = V_elastic * (1 - cot(pi*alpha/2) / (2*Q_S)). This formulation is simple and computationally efficient but does not capture the full frequency dependence of the viscoelastic response. More physically complete models treat the problem through complex compliance J*(omega). The Extended Burgers model (Jackson and Faul 2010) integrates over a distribution of relaxation times with a log-normal envelope modulated by a power-law background, requiring numerical quadrature. The Andrade model provides an analytical alternative: J*(omega) = J_U + beta * Gamma(1+n) * (i*omega)^{-n} - i/(omega*eta), with the Andrade exponent n approximately 1/3, capturing the transient creep regime that dominates seismic-frequency attenuation.\n\nGrain size exerts a strong control on Q through its effect on relaxation times. For diffusion-controlled GBS, the relaxation time scales as tau proportional to d^m where m is approximately 3 for olivine. Since laboratory samples (d approximately 10-50 micrometers) are much finer-grained than mantle olivine (d approximately 1-10 mm), extrapolation across three orders of magnitude in grain size is required. This extrapolation is the primary source of uncertainty in predicting mantle Q from laboratory data. Water (hydrogen) dissolved in nominally anhydrous minerals enhances grain-boundary diffusion, reducing relaxation times and lowering Q. The correction scales as Q^{-1}_wet / Q^{-1}_dry = (C_OH / C_ref)^{r*alpha} where r is approximately 1. Partial melt has two effects: elastic modulus reduction through loss of grain contiguity (G_eff proportional to contiguity^2), and enhanced dissipation through melt squirt flow at grain boundaries. Even small melt fractions (phi < 0.01) can produce significant velocity reductions.\n\nDepth-dependent Q profiles are constructed by combining a geotherm T(z) with mineral-specific Q parameters that change across phase boundaries (olivine to wadsleyite at 410 km, ringwoodite at 520 km, bridgmanite below 660 km). The QProfileBuilder in this codebase implements this by computing elastic velocities from the Mie-Gruneisen EOS, then applying anelastic corrections at each depth step, and comparing the resulting Q_S profile with the PREM seismic reference model. The transition zone minerals (wadsleyite, ringwoodite) have lower activation energies than olivine, while bridgmanite in the lower mantle has a higher activation energy but much smaller activation volume, leading to the characteristically high Q observed below 660 km.",
+  "prerequisite_knowledge": [
+    "Elasticity theory: bulk modulus K, shear modulus G, and seismic velocities Vp and Vs (Ch04)",
+    "Thermodynamics of high-pressure minerals: equations of state and thermal corrections (Ch01, Ch05-06)",
+    "Complex analysis: complex compliance, Fourier transforms, and the Kramers-Kronig relations",
+    "Diffusion kinetics: Arrhenius temperature dependence, activation energy, and activation volume",
+    "Seismology basics: body waves, surface waves, normal modes, and the PREM reference model",
+    "Grain-scale deformation mechanisms: dislocation creep, diffusion creep, grain-boundary sliding",
+    "Viscoelasticity: Maxwell, Kelvin-Voigt, and standard linear solid rheological models",
+    "Mineral phase transitions in the mantle (Ch08, Ch12)"
+  ],
+  "key_equations": [
+    {
+      "equation": "Q_S = A \\cdot f^{\\alpha} \\cdot \\exp\\left(\\frac{\\alpha (E^* + P V^*)}{R T}\\right)",
+      "name": "Karato (1993) Parametric Q Model",
+      "variables": {
+        "Q_S": "Shear quality factor [dimensionless]",
+        "A": "Pre-exponential factor (4.35e-4 for olivine)",
+        "f": "Frequency [Hz]",
+        "\\alpha": "Frequency exponent (approximately 0.27 for olivine)",
+        "E^*": "Activation energy [J/mol] (424 kJ/mol for olivine)",
+        "V^*": "Activation volume [m^3/mol] (10e-6 for olivine)",
+        "P": "Pressure [Pa]",
+        "R": "Gas constant 8.314 J/(mol K)",
+        "T": "Temperature [K]"
+      },
+      "interpretation": "The exponential Arrhenius dependence ensures that Q decreases rapidly with increasing temperature (more dissipation at higher T). The frequency exponent alpha appears both in the power-law frequency scaling and multiplying the activation enthalpy, reflecting the self-consistent relationship between Q and the slope of the creep compliance in log-frequency space. Pressure increases Q through the PV* term in the effective activation enthalpy. Implemented in AnelasticityCalculator.ComputeQS()."
+    },
+    {
+      "equation": "V_{\\text{anelastic}} = V_{\\text{elastic}} \\left(1 - \\frac{\\cot(\\pi \\alpha / 2)}{2 Q_S}\\right)",
+      "name": "Anderson and Given (1982) Velocity Correction",
+      "variables": {
+        "V_{\\text{anelastic}}": "Anelastic (seismically observed) velocity [m/s]",
+        "V_{\\text{elastic}}": "Elastic (unrelaxed, high-frequency) velocity [m/s]",
+        "\\alpha": "Frequency exponent (same as in Q model)",
+        "Q_S": "Shear quality factor"
+      },
+      "interpretation": "This correction reduces elastic velocities to account for the dispersion (frequency-dependent velocity) that necessarily accompanies attenuation via the Kramers-Kronig relations. For alpha=0.27 and Q_S=100, the Vs reduction is about 1.2%. For Vp, the correction involves weighted contributions from both Q_S and Q_K. Implemented in AnelasticCorrectionHelper.Apply()."
+    },
+    {
+      "equation": "V_p^{\\text{anel}} = V_p^{\\text{el}} \\left(1 - \\left(\\frac{4G}{3M} \\cdot \\frac{1}{2 Q_S} + \\frac{K_S}{M} \\cdot \\frac{1}{2 Q_K}\\right) \\cot\\frac{\\pi \\alpha}{2}\\right)",
+      "name": "P-wave Anelastic Correction",
+      "variables": {
+        "M": "P-wave modulus M = K_S + 4G/3 [GPa]",
+        "K_S": "Adiabatic bulk modulus [GPa]",
+        "G": "Shear modulus [GPa]",
+        "Q_S": "Shear quality factor",
+        "Q_K": "Bulk quality factor (typically approximately 1000)"
+      },
+      "interpretation": "P-wave velocity reduction is smaller than S-wave reduction because P-waves involve bulk deformation (high Q_K approximately 1000) in addition to shear. The weighting factors 4G/(3M) and K_S/M partition the correction between shear and bulk dissipation. Since Q_K >> Q_S, the bulk contribution is negligible for most mantle conditions."
+    },
+    {
+      "equation": "J^*(\\omega) = J_U + \\beta \\Gamma(1+n)(i\\omega)^{-n} - \\frac{i}{\\omega \\eta}",
+      "name": "Andrade Viscoelastic Model",
+      "variables": {
+        "J^*(\\omega)": "Complex compliance [Pa^{-1}]",
+        "J_U": "Unrelaxed compliance = 1/G_U [Pa^{-1}]",
+        "\\beta": "Andrade beta coefficient [Pa^{-1} s^{-n}] (3.2e-15 for olivine)",
+        "n": "Andrade exponent (approximately 1/3)",
+        "\\Gamma": "Gamma function",
+        "\\omega": "Angular frequency 2*pi*f [rad/s]",
+        "\\eta": "Steady-state viscosity [Pa s]"
+      },
+      "interpretation": "The Andrade model captures the transient creep response analytically. The middle term (beta term) represents the power-law transient creep that dominates at seismic frequencies, while the last term represents steady-state viscous flow important only at very low frequencies. Q is computed as |Re(J*)/Im(J*)|. The analytical form avoids numerical integration, making it faster than the Extended Burgers model. Implemented in AndradeCalculator."
+    },
+    {
+      "equation": "J^*(\\omega) = J_U \\left(1 + \\Delta \\int D(\\tau) \\frac{1}{1 + i\\omega\\tau} d\\ln\\tau \\right) - \\frac{i}{\\omega \\eta_M}",
+      "name": "Extended Burgers Model (Jackson and Faul 2010)",
+      "variables": {
+        "\\Delta": "Relaxation strength (1.04 for olivine)",
+        "D(\\tau)": "Distribution of relaxation times (log-normal with power-law background)",
+        "\\tau": "Relaxation time [s]",
+        "\\eta_M": "Maxwell viscosity [Pa s]",
+        "J_U": "Unrelaxed compliance [Pa^{-1}]"
+      },
+      "interpretation": "The Extended Burgers model is the most physically complete, representing a continuous spectrum of anelastic relaxation processes. The distribution D(tau) is normalized and integrated numerically over ln(tau) space using 200-point trapezoidal quadrature. The relaxation strength Delta approximately 1.04 means the fully relaxed modulus is about half the unrelaxed value. Implemented in ExtendedBurgersCalculator with ComputeCompliance()."
+    },
+    {
+      "equation": "Q_S^{\\text{grain}} = Q_S^{\\text{base}} \\cdot \\left(\\frac{d}{d_{\\text{ref}}}\\right)^{m \\alpha}",
+      "name": "Grain-Size Scaling of Q",
+      "variables": {
+        "d": "Grain size [m]",
+        "d_{\\text{ref}}": "Reference mantle grain size (0.01 m = 1 cm)",
+        "m": "Grain-size exponent for diffusion (approximately 3 for olivine)",
+        "\\alpha": "Frequency exponent"
+      },
+      "interpretation": "Larger grains have longer diffusion paths, increasing relaxation times and raising Q (less attenuation). The combined exponent m*alpha approximately 0.81 for olivine means Q increases roughly as d^{0.81}. This is implemented in ParametricQCalculator with MantleGrainRef = 0.01 m. In the viscoelastic models (Andrade, Extended Burgers), grain size enters through the relaxation time scale factor."
+    },
+    {
+      "equation": "\\tau = \\tau_{\\text{ref}} \\cdot \\left(\\frac{d}{d_{\\text{ref}}}\\right)^m \\cdot \\exp\\left(\\frac{H_{\\text{eff}}}{R T} - \\frac{H_{\\text{ref}}}{R T_{\\text{ref}}}\\right)",
+      "name": "Relaxation Time Scaling",
+      "variables": {
+        "\\tau_{\\text{ref}}": "Reference relaxation time at lab conditions [s]",
+        "d_{\\text{ref}}": "Reference grain size from lab (13.4 micrometers, Jackson and Faul 2010)",
+        "m": "Grain-size exponent",
+        "H_{\\text{eff}}": "Effective activation enthalpy E* + PV*",
+        "T_{\\text{ref}}": "Reference temperature (1473 K)"
+      },
+      "interpretation": "This is the master scaling relation used by both Andrade and Extended Burgers models to extrapolate lab measurements to mantle conditions. The grain-size term shifts the relaxation spectrum to longer times (lower frequencies) for larger grains, while the Arrhenius term shifts it based on temperature and pressure differences from lab conditions. The exponent is clamped to [-50, 50] to prevent numerical overflow."
+    },
+    {
+      "equation": "Q^{-1}_{\\text{wet}} = Q^{-1}_{\\text{dry}} \\cdot \\left(\\frac{C_{\\text{OH}}}{C_{\\text{ref}}}\\right)^{r \\alpha}",
+      "name": "Water Effect on Q",
+      "variables": {
+        "C_{\\text{OH}}": "Water content [ppm H/Si]",
+        "C_{\\text{ref}}": "Reference water content (50 ppm H/Si)",
+        "r": "Water exponent (approximately 1.0)",
+        "\\alpha": "Frequency exponent"
+      },
+      "interpretation": "Dissolved hydrogen enhances grain-boundary diffusivity, shortening relaxation times and increasing attenuation. The correction is applied as a multiplicative factor on Q^{-1} (inverse Q), so higher water content reduces Q. Implemented in WaterQCorrector as a decorator pattern wrapping any IAnelasticityModel."
+    },
+    {
+      "equation": "Q^{-1}_{\\text{melt}} = Q^{-1}_{\\text{dry}} + A_{\\text{melt}} \\cdot \\phi^{0.5}",
+      "name": "Melt Dissipation Enhancement",
+      "variables": {
+        "A_{\\text{melt}}": "Melt dissipation amplitude (0.1)",
+        "\\phi": "Melt volume fraction"
+      },
+      "interpretation": "Partial melt adds an extra dissipation channel via melt squirt flow between grain boundaries. The square-root dependence on melt fraction reflects the geometry of melt films along grain edges. Even phi=0.01 (1% melt) adds 0.01 to Q^{-1}, which is significant when Q^{-1}_dry is of order 0.01. The elastic modulus is also reduced via a contiguity model: G_eff = G * contiguity^2 where contiguity = 1 - 1.8*phi^{0.5}. Implemented in MeltQCorrector."
+    },
+    {
+      "equation": "T_{\\text{solidus}} = 1400 + 130 P - 5 P^2 \\quad [\\text{K}]",
+      "name": "Peridotite Solidus (Hirschmann 2000)",
+      "variables": {
+        "P": "Pressure [GPa], clamped to maximum 13 GPa",
+        "T_{\\text{solidus}}": "Solidus temperature [K]"
+      },
+      "interpretation": "Used for the premelting correction near the solidus. When T/T_solidus > 0.9, Q drops sharply: Q *= exp(-10 * (T/T_solidus)^30). This captures the enhanced attenuation observed in partially molten or near-solidus conditions due to enhanced grain-boundary mobility."
+    }
+  ],
+  "physical_concepts": [
+    {
+      "concept": "Seismic Quality Factor Q",
+      "definition": "Q is the ratio of energy stored to energy dissipated per cycle. Q^{-1} (specific attenuation) measures fractional energy loss. Shear Q_S is typically 50-300 in the upper mantle; bulk Q_K is approximately 1000 (nearly elastic in compression).",
+      "physical_intuition": "Think of Q like the damping of a bell: a high-Q bell rings for many cycles before the sound decays, while a low-Q bell is quickly muted. In the mantle, temperature and grain-boundary processes act like damping: hot, fine-grained regions ring less (low Q), while cold, coarse-grained regions ring more (high Q).",
+      "common_misconceptions": "Q is NOT simply a measure of viscosity. Q describes oscillatory dissipation and depends on frequency, while viscosity describes steady-state flow. A material can have high viscosity but low Q if grain-boundary relaxation times fall near the seismic period."
+    },
+    {
+      "concept": "Unrelaxed vs Relaxed Modulus",
+      "definition": "The unrelaxed modulus G_U is measured at frequencies much higher than any relaxation frequency (elastic limit). The relaxed modulus G_R is the low-frequency limit where all anelastic processes have completed. G_R = G_U / (1 + Delta), where Delta is the total relaxation strength.",
+      "physical_intuition": "Imagine stretching a rubber band quickly (unrelaxed: stiff) versus slowly (relaxed: compliant). At intermediate frequencies near the relaxation time, the modulus transitions smoothly between these limits, and dissipation peaks. For olivine, Delta approximately 1.04 means the relaxed modulus is about half the unrelaxed value.",
+      "common_misconceptions": "Laboratory ultrasonic velocities are NOT directly comparable to seismic velocities. Ultrasonic measurements at MHz probe the unrelaxed modulus, while seismic waves at Hz probe a partially relaxed state. The velocity correction can be 1-3% for Vs, which maps to hundreds of degrees in temperature interpretation if ignored."
+    },
+    {
+      "concept": "Frequency-Attenuation Relationship (Absorption Band)",
+      "definition": "In the absorption band model, Q^{-1} is approximately constant (weakly frequency-dependent as f^{-alpha}) over a broad range of frequencies spanning many decades. This band corresponds to the superposition of many relaxation processes with a continuous distribution of relaxation times.",
+      "physical_intuition": "Rather than a single relaxation peak (as in a Debye solid), grain boundaries in polycrystalline mantle minerals exhibit a broad spectrum of relaxation times due to varying grain sizes, orientations, and boundary structures. The result is a nearly flat Q^{-1} over the seismic frequency band.",
+      "common_misconceptions": "Q being approximately frequency-independent does NOT mean there is no dispersion. The Kramers-Kronig relations mandate that any non-zero Q^{-1} must be accompanied by velocity dispersion. Even a frequency-independent Q^{-1} produces logarithmic velocity dispersion with frequency."
+    },
+    {
+      "concept": "Grain-Boundary Sliding (GBS)",
+      "definition": "The primary attenuation mechanism in the seismic frequency band for mantle minerals. Grain boundaries slide under applied shear stress, accommodated by diffusion of atoms across or along the boundaries. The relaxation time depends on grain size as tau proportional to d^m with m approximately 3.",
+      "physical_intuition": "Under a seismic shear wave, individual grains try to slide past each other at their boundaries. The sliding is not instantaneous because atoms must diffuse to fill gaps and remove overlaps at the boundary. Larger grains mean longer diffusion distances and thus longer relaxation times, pushing the absorption band to lower frequencies.",
+      "common_misconceptions": "GBS is NOT grain-boundary diffusion creep. GBS is a transient anelastic process that is fully recoverable (grains return to original positions when the load is removed). Diffusion creep is a permanent, non-recoverable deformation. Both processes depend on grain size with similar exponents, which is a source of confusion."
+    },
+    {
+      "concept": "The Lab-Seismic Frequency Gap",
+      "definition": "Laboratory forced-oscillation experiments operate at 0.001-10 Hz, overlapping with seismic frequencies. However, traditional ultrasonic measurements at MHz frequencies probe the unrelaxed elastic limit. The gap between these frequency ranges means ultrasonic measurements cannot directly constrain Q at seismic frequencies.",
+      "physical_intuition": "This is analogous to measuring the stiffness of silly putty by hitting it with a hammer (MHz, high frequency, appears stiff) versus slowly pressing on it (Hz, low frequency, appears compliant). The behavior is fundamentally different because different deformation mechanisms operate at different timescales.",
+      "common_misconceptions": "Modern forced-oscillation and torsional-pendulum experiments (Jackson, Faul, and colleagues) DO operate at seismic frequencies. The gap refers primarily to older datasets and to the inability of ultrasonic methods to access the absorption band."
+    },
+    {
+      "concept": "Premelting Effects on Q",
+      "definition": "As temperature approaches the solidus (T/T_solidus > 0.9), attenuation increases dramatically even before melt appears. Enhanced grain-boundary mobility, pre-melting grain-boundary films, and possibly incipient partial melting all contribute to a sharp drop in Q near the solidus.",
+      "physical_intuition": "Just as ice becomes weak and slushy near its melting point, mantle rocks become much more dissipative as grain boundaries approach melting conditions. This is implemented as a multiplicative correction Q *= exp(-10 * (T/T_solidus)^30) that is negligible below T/T_solidus = 0.9 but causes Q to plummet as T approaches T_solidus.",
+      "common_misconceptions": "Low Q does NOT necessarily imply the presence of melt. Premelting effects and high subsolidus temperatures can produce very low Q without any melt being present. However, partial melt does provide an additional dissipation mechanism beyond the premelting effect."
+    },
+    {
+      "concept": "Decorator Pattern for Q Corrections",
+      "definition": "The codebase implements WaterQCorrector and MeltQCorrector as decorator classes wrapping an IAnelasticityModel base model. This allows water and melt corrections to be composed independently and applied to any Q model (Karato, Andrade, or Extended Burgers).",
+      "physical_intuition": "This design mirrors the physics: water and melt are independent perturbations on the base anelastic response. One can study dry anelasticity, add water effects, add melt effects, or combine all three in any combination. The decorator pattern ensures each correction is applied cleanly without modifying the base model.",
+      "common_misconceptions": "The corrections are NOT simply additive in Q^{-1}. Water modifies the relaxation time spectrum (multiplicative on Q^{-1}), while melt adds an independent dissipation channel (additive in Q^{-1}) and also reduces the elastic modulus. These are physically distinct mechanisms with different mathematical forms."
+    }
+  ],
+  "key_references": [
+    {
+      "author": "Anderson, D.L. and Given, J.W.",
+      "year": 1982,
+      "title": "Absorption band Q model for the Earth",
+      "journal": "Journal of Geophysical Research, 87, 3893-3904",
+      "why_essential": "Foundational paper establishing the velocity correction formula V_anel = V_el * (1 - cot(pi*alpha/2)/(2Q)) used in all subsequent work and implemented directly in AnelasticCorrectionHelper."
+    },
+    {
+      "author": "Karato, S.",
+      "year": 1993,
+      "title": "Importance of anelasticity in the interpretation of seismic tomography",
+      "journal": "Geophysical Research Letters, 20, 1623-1626",
+      "why_essential": "Established the parametric Q(T,P,f) model with Arrhenius temperature dependence that is the foundation of the Tier 1 AnelasticityCalculator. Demonstrated that failing to account for anelasticity leads to systematic overestimation of temperature anomalies from seismic tomography."
+    },
+    {
+      "author": "Jackson, I. and Faul, U.H.",
+      "year": 2010,
+      "title": "Grainsize-sensitive viscoelastic relaxation in olivine: Towards a robust laboratory-based model for seismological application",
+      "journal": "Physics of the Earth and Planetary Interiors, 183, 151-163",
+      "why_essential": "Definitive laboratory calibration of the Extended Burgers model for olivine. Provides all parameter values used in ExtendedBurgersCalculator and AnelasticityDatabase (E*=424 kJ/mol, alpha=0.27, Delta=1.04, d_ref=13.4 micrometers, T_ref=1473 K)."
+    },
+    {
+      "author": "Sundberg, M. and Cooper, R.F.",
+      "year": 2010,
+      "title": "A composite viscoelastic model for incorporating grain boundary sliding and transient diffusion creep; correlating creep and attenuation responses for materials with a fine grain size",
+      "journal": "Philosophical Magazine, 90, 2817-2840",
+      "why_essential": "Provides the theoretical basis for the Andrade model applied to mantle minerals, linking transient creep compliance to attenuation. The Andrade exponent n approximately 1/3 is motivated by this work."
+    },
+    {
+      "author": "Yamauchi, H. and Takei, Y.",
+      "year": 2016,
+      "title": "Polycrystal anelasticity at near-solidus temperatures",
+      "journal": "Journal of Geophysical Research: Solid Earth, 121, 7790-7820",
+      "why_essential": "Provides the framework for pre-melting and partial melt effects on Q. Their contiguity-based model for modulus reduction (contiguity = 1 - 1.8*phi^0.5) and melt dissipation enhancement is the basis for MeltQCorrector."
+    },
+    {
+      "author": "Faul, U.H. and Jackson, I.",
+      "year": 2015,
+      "title": "Transient creep and strain energy dissipation: An experimental perspective",
+      "journal": "Annual Review of Earth and Planetary Sciences, 43, 541-569",
+      "why_essential": "Comprehensive review linking laboratory creep experiments to seismic attenuation. Discusses the grain-size extrapolation problem and provides updated parameters for the mineral-specific database in AnelasticityDatabase."
+    },
+    {
+      "author": "Hirschmann, M.M.",
+      "year": 2000,
+      "title": "Mantle solidus: Experimental constraints and the effects of peridotite composition",
+      "journal": "Geochemistry, Geophysics, Geosystems, 1, 2000GC000070",
+      "why_essential": "Provides the peridotite solidus parameterization T_solidus = 1400 + 130P - 5P^2 used in the premelting correction within AnelasticityCalculator.GetSolidusTemperature()."
+    },
+    {
+      "author": "Aizawa, Y. et al.",
+      "year": 2008,
+      "title": "Seismic properties of Anita Bay dunite: An exploratory study of the effect of water",
+      "journal": "Journal of Petrology, 49, 2063-2080",
+      "why_essential": "Experimental constraint on water effects on attenuation in olivine aggregates, motivating the WaterQCorrector scaling relation."
+    }
+  ],
+  "worked_examples": [
+    {
+      "problem": "Compute the anelastic Vs correction for olivine at 200 km depth (P = 6.5 GPa, T = 1600 K) at 1 Hz seismic frequency using the Karato (1993) model.",
+      "solution": "Using AnelasticityCalculator with the hardcoded Karato parameters: H_eff = E* + P*V* = 500000 + 6.5e9 * 10e-6 = 565000 J/mol. Q_S = 4.35e-4 * exp(0.27 * 565000 / (8.314 * 1600)) * (1.0)^0.27 = 4.35e-4 * exp(11.46) = 4.35e-4 * 94874 = 41.3. Check premelting: T_solidus = 1400 + 130*6.5 - 5*6.5^2 = 1400 + 845 - 211 = 2034 K; T/T_solidus = 0.787 < 0.9, so no premelting correction. Velocity correction factor: 1 - cot(pi*0.27/2) / (2*41.3) = 1 - cot(0.424) / 82.6 = 1 - 2.185/82.6 = 1 - 0.0265 = 0.974. If Vs_elastic = 4700 m/s, then Vs_anelastic = 4700 * 0.974 = 4577 m/s, a 2.6% reduction.",
+      "numerical_values": {
+        "P_GPa": 6.5,
+        "T_K": 1600,
+        "H_eff_J_mol": 565000,
+        "Q_S": 41.3,
+        "T_solidus_K": 2034,
+        "correction_factor": 0.974,
+        "Vs_elastic_m_s": 4700,
+        "Vs_anelastic_m_s": 4577,
+        "DeltaVs_percent": -2.6
+      },
+      "interpretation": "A Q_S of 41 is in the range typical for the asthenosphere. The 2.6% Vs reduction is significant: if this correction is neglected when interpreting seismic tomography, the inferred temperature anomaly would be overestimated by roughly 100-200 K, as noted by Karato (1993)."
+    },
+    {
+      "problem": "Compare Q_S predictions from the three model tiers (Parametric, Andrade, Extended Burgers) for mantle olivine at T = 1500 K, P = 4 GPa, f = 0.01 Hz, with grain size d = 1 mm.",
+      "solution": "All models use the same AnelasticityParams from AnelasticityDatabase.Olivine() with GrainSize_m = 0.001 m. (1) ParametricQCalculator: Q_base from Karato formula with H_eff = 424000 + 4e9*10e-6 = 464000 J/mol. Q_base = 4.35e-4 * (0.01)^0.27 * exp(0.27*464000/(8.314*1500)) = 4.35e-4 * 0.289 * exp(10.08) = 4.35e-4 * 0.289 * 21700 = 2.73. Grain-size scaling: (0.001/0.01)^(3*0.27) = (0.1)^0.81 = 0.153. Q_S = 2.73 * 0.153 = 0.42, floored to 1.0. (2) AndradeCalculator and (3) ExtendedBurgersCalculator: These compute the full complex compliance J*(omega), where the relaxation time scale factor shifts the entire spectrum based on T, P, and grain size relative to lab reference conditions. Typical Q_S values from these models at these conditions are in the range 30-100 depending on exact parameters, as they handle the frequency dependence more accurately than the simple parametric model.",
+      "numerical_values": {
+        "T_K": 1500,
+        "P_GPa": 4.0,
+        "frequency_Hz": 0.01,
+        "grain_size_mm": 1.0,
+        "Q_S_parametric": "[uncertain] approximately 30-80 after proper parameter calibration",
+        "Q_S_andrade": "[uncertain] approximately 40-100",
+        "Q_S_extended_burgers": "[uncertain] approximately 40-100"
+      },
+      "interpretation": "The three tiers represent a tradeoff between simplicity and physical completeness. The parametric model is fastest but breaks down at extreme conditions. The Andrade model provides a good balance of accuracy and speed (analytical). The Extended Burgers model is most accurate but requires numerical integration (200-point quadrature). For routine calculations, the parametric or Andrade model is preferred; for detailed comparisons with experimental data, the Extended Burgers model is recommended."
+    },
+    {
+      "problem": "Estimate the effect of 1000 ppm H/Si water on Q_S for olivine at asthenospheric conditions (T = 1600 K, P = 5 GPa, f = 1 Hz) using WaterQCorrector.",
+      "solution": "First compute dry Q_S using any base model. Using AnelasticityCalculator: H_eff = 424000 + 5e9*10e-6 = 474000 J/mol; Q_S_dry = 4.35e-4 * exp(0.27*474000/(8.314*1600)) = 4.35e-4 * exp(9.62) = 4.35e-4 * 15076 = 6.56. T_solidus = 1400 + 130*5 - 5*25 = 1925 K; T/T_solidus = 0.831 < 0.9, no premelting. Then WaterQCorrector applies: waterFactor = (C_OH/C_ref)^(r*alpha) = (1000/50)^(1.0*0.27) = 20^0.27 = 2.46. Q_S_wet = Q_S_dry / waterFactor = 6.56 / 2.46 = 2.67, floored to appropriate minimum. The Q^{-1} increases by a factor of 2.46, corresponding to much stronger attenuation.",
+      "numerical_values": {
+        "T_K": 1600,
+        "P_GPa": 5.0,
+        "water_ppm": 1000,
+        "Q_S_dry": 6.56,
+        "water_factor": 2.46,
+        "Q_S_wet": 2.67,
+        "Qinv_enhancement": 2.46
+      },
+      "interpretation": "Water content of 1000 ppm H/Si (plausible for the asthenosphere above subduction zones) increases Q^{-1} by nearly a factor of 2.5. This demonstrates that water is a major factor in controlling seismic attenuation, potentially explaining the observed low-Q zones beneath mid-ocean ridges and back-arc basins without requiring partial melt."
+    }
+  ],
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch04: Elastic Moduli and Seismic Velocities",
+      "nature": "prerequisite",
+      "explanation": "Anelastic corrections are applied to elastic velocities computed from K_S, G, and density. The elastic Vp and Vs from Ch04 serve as the starting point for anelastic velocity reduction. Understanding the K_S-K_T distinction is also critical since anelastic dispersion further modifies the adiabatic velocities."
+    },
+    {
+      "related_chapter": "Ch06: Mie-Gruneisen Equation of State Solver",
+      "nature": "prerequisite",
+      "explanation": "QProfileBuilder uses MieGruneisenEOSOptimizer to compute elastic properties at each depth point before applying anelastic corrections. The EOS provides the high-frequency reference velocities that are then reduced by Q-dependent dispersion."
+    },
+    {
+      "related_chapter": "Ch05: The Stixrude-Lithgow-Bertelloni Formulation",
+      "nature": "prerequisite",
+      "explanation": "The SLB2011 mineral parameters (from SLB2011Endmembers database) provide elastic moduli and their pressure/temperature derivatives needed as input for the anelastic correction. The EOS formulation determines the unrelaxed moduli."
+    },
+    {
+      "related_chapter": "Ch07: SLB2011 Mineral Database",
+      "nature": "prerequisite",
+      "explanation": "AnelasticityDatabase maps SLB2011 PaperName identifiers (fo, mw, mrw, mpv, pe, etc.) to mineral-specific anelastic parameters. The phase classification system bridges the elastic property database with attenuation models."
+    },
+    {
+      "related_chapter": "Ch11: Rock Compositions and Assemblages",
+      "nature": "extension",
+      "explanation": "A complete seismic interpretation requires applying anelastic corrections to multi-mineral assemblages. The QProfileBuilder uses a simplified single-mineral-per-depth approach, but a full treatment would apply Q corrections to each mineral in a rock mixture before Voigt-Reuss-Hill averaging."
+    },
+    {
+      "related_chapter": "Ch12: Gibbs Free Energy and Phase Stability",
+      "nature": "application",
+      "explanation": "Phase boundaries determined by Gibbs free energy minimization define where mineral-specific Q parameters change (e.g., olivine to wadsleyite at 410 km). The QProfileBuilder uses fixed depth boundaries, but in principle the phase boundary depths are P-T dependent."
+    },
+    {
+      "related_chapter": "Ch08: Landau Phase Transitions",
+      "nature": "extension",
+      "explanation": "Second-order phase transitions (like those in quartz or feldspar) modify elastic moduli discontinuously, which affects the baseline for anelastic corrections. The interaction between Landau-type softening and anelastic relaxation near phase transitions is an active research area."
+    }
+  ],
+  "computational_methods": "The codebase implements a three-tier architecture for anelastic Q computations, all conforming to the IAnelasticityModel interface with ComputeQS() and ApplyCorrection() methods.\n\nTier 1 (AnelasticityCalculator): Direct evaluation of the Karato (1993) Q formula with hardcoded parameters. Computational cost is trivial (a few exponentials and multiplications). Includes a premelting correction using the Hirschmann (2000) solidus.\n\nTier 2 (ParametricQCalculator): Extends Tier 1 with configurable AnelasticityParams and grain-size scaling. Uses a grain-size correction factor (d/d_ref)^{m*alpha} relative to a 1 cm mantle reference grain size. Same computational cost as Tier 1.\n\nTier 3a (ExtendedBurgersCalculator): Numerical integration of the complex compliance J*(omega) over a distribution of relaxation times. Uses 200-point trapezoidal quadrature over a 10-sigma range in ln(tau) space. The relaxation time scale factor accounts for T, P, and grain size relative to lab reference conditions (T_ref=1473 K, P_ref=0.2 GPa, d_ref=13.4 micrometers). The distribution function D(tau) combines a power-law tau^{-alpha} with a Gaussian envelope of width sigma=4. Computational cost is moderate (200 iterations per Q evaluation). The Arrhenius exponent is clamped to [-50, 50] to prevent overflow.\n\nTier 3b (AndradeCalculator): Analytical evaluation of the Andrade compliance J*(omega) = J_U + beta*Gamma(1+n)*(i*omega)^{-n} - i/(omega*eta). Uses a Lanczos approximation for the Gamma function. The (i*omega)^{-n} term is decomposed into real (cos) and imaginary (sin) parts. Computational cost is similar to Tier 1 (no integration needed) but provides viscoelastic compliance output.\n\nVelocity Corrections (AnelasticCorrectionHelper): Shared static method implementing Anderson and Given (1982). Computes cot(pi*alpha/2) once, then applies separate corrections to Vs (using Q_S only) and Vp (using weighted Q_S and Q_K contributions). Safety clamps prevent correction factors below 0.5.\n\nDecorators (WaterQCorrector, MeltQCorrector): Wrap any IAnelasticityModel to add water or melt effects. WaterQCorrector divides Q by the water factor (C_OH/C_ref)^{r*alpha}. MeltQCorrector adds a melt dissipation term A_melt*phi^0.5 to Q^{-1} and reduces elastic moduli via a contiguity model before applying the anelastic correction.\n\nQProfileBuilder: Constructs depth profiles by looping over depth from 25 km to maxDepth_km (default 800 km) in steps of 25 km. At each depth: (1) gets PREM pressure, (2) computes adiabatic temperature from potential temperature with 0.4 K/km gradient, (3) identifies dominant mineral phase, (4) runs MieGruneisenEOSOptimizer for elastic properties, (5) applies anelastic correction, (6) records QProfilePoint with comparison to PREM Q_S values.",
+  "open_questions": [
+    "What is the true grain-size exponent m for olivine at seismic frequencies? Laboratory values of m=2.9-3.1 are measured at small grain sizes; extrapolation to mantle grain sizes (mm-cm) involves three orders of magnitude and remains poorly validated.",
+    "How does the frequency exponent alpha vary with temperature and pressure? Current models assume a constant alpha, but some experimental evidence suggests alpha may increase near the solidus, affecting both Q and velocity dispersion.",
+    "What are the anelastic parameters for transition zone and lower mantle minerals? Almost all laboratory calibrations are for olivine. Parameters for wadsleyite, ringwoodite, and bridgmanite in AnelasticityDatabase are largely estimated by analogy, not directly measured.",
+    "Can water and melt effects on Q be separated from temperature effects in seismic observations? All three reduce Q, and their trade-offs in explaining seismic attenuation tomography remain ambiguous.",
+    "What is the role of dislocation-assisted anelasticity relative to grain-boundary sliding? The GBS mechanism dominates in fine-grained lab samples, but mantle deformation may be controlled by dislocations, which have different Q scaling relationships.",
+    "How should anelastic corrections be applied to multi-mineral assemblages? The current QProfileBuilder uses a single dominant phase per depth, but a rigorous treatment should account for inter-phase boundaries and the interaction between phases with different relaxation spectra.",
+    "Is Q_K truly frequency-independent and approximately 1000 throughout the mantle? Limited observational constraints on bulk attenuation mean the assumption of nearly elastic bulk behavior may not hold in all regions.",
+    "How do spin crossover transitions in ferropericlase (lower mantle) affect Q? The elastic anomaly associated with the iron spin transition may introduce additional relaxation mechanisms not captured in current models."
+  ],
+  "exercise_suggestions": [
+    "Basic: Using AnelasticityCalculator, compute Q_S at 1 Hz for olivine at temperatures from 1000 K to 2000 K at 5 GPa. Plot Q_S vs T and identify the temperature at which the premelting correction becomes significant.",
+    "Basic: Compute the Anderson and Given (1982) velocity correction factor as a function of Q_S for Q_S ranging from 10 to 1000 with alpha=0.27. Plot the percentage velocity reduction versus Q_S.",
+    "Intermediate: Compare Q_S predictions from ParametricQCalculator, AndradeCalculator, and ExtendedBurgersCalculator for olivine at T=1500 K, P=4 GPa, scanning frequency from 0.001 Hz to 1 MHz. Plot log(Q_S) vs log(f) for all three models and discuss where they agree and diverge.",
+    "Intermediate: Using QProfileBuilder, construct Q profiles for potential temperatures of 1300 K, 1400 K, and 1500 K and compare with PREM Q_S values. Identify which potential temperature best matches PREM in the upper mantle.",
+    "Intermediate: Demonstrate the grain-size sensitivity by computing Q_S with ParametricQCalculator for grain sizes of 10 micrometers (lab), 1 mm, and 1 cm (mantle) at T=1600 K, P=5 GPa, f=1 Hz. Discuss the implications for extrapolating lab data to mantle conditions.",
+    "Advanced: Implement a composite Q correction for a pyrolite mantle (60% olivine, 20% orthopyroxene, 10% clinopyroxene, 10% garnet) at 100 km depth using mineral-specific parameters from AnelasticityDatabase. Compare with the single-mineral approximation used by QProfileBuilder.",
+    "Advanced: Using WaterQCorrector, map the trade-off between temperature and water content that produces Q_S=80 at 200 km depth. Plot iso-Q contours in T-C_OH space.",
+    "Research-level: Construct a full depth-dependent Q and velocity profile for a subduction zone thermal model, incorporating both the cold slab (high Q) and overlying mantle wedge (low Q from water + temperature). Compare with seismic attenuation tomography observations."
+  ],
+  "figure_suggestions": [
+    {
+      "description": "Q_S versus temperature at constant pressure (5 GPa) and frequency (1 Hz), comparing all three model tiers plus the premelting regime",
+      "axes": "X: Temperature [K] from 1000 to 2200; Y: Q_S on log scale from 1 to 10000",
+      "key_features": "Show the exponential Q decrease with T, the premelting drop near T_solidus, and the differences between Karato parametric, Andrade, and Extended Burgers models. Mark the solidus temperature."
+    },
+    {
+      "description": "Frequency dependence of Q_S and velocity dispersion for olivine at asthenospheric conditions",
+      "axes": "X: log10(frequency) from -4 to 7 Hz; Y-left: Q_S on log scale; Y-right: Vs [m/s]",
+      "key_features": "Highlight the absorption band (nearly flat Q^{-1} at seismic frequencies), the unrelaxed elastic limit at MHz, and the transition zone. Mark typical lab forced-oscillation, seismic, and ultrasonic frequency ranges."
+    },
+    {
+      "description": "Depth-dependent Q_S profile from QProfileBuilder compared with PREM",
+      "axes": "X: Q_S on log scale from 10 to 10000; Y: Depth [km] from 0 to 800 (inverted)",
+      "key_features": "Show the low-Q asthenosphere (80-200 km), the increase through the transition zone, the jump at 660 km, and comparison with PREM Q values. Label the mineral phase boundaries at 410, 520, and 660 km."
+    },
+    {
+      "description": "Anelastic velocity correction (DeltaVs percent) as a function of depth for different potential temperatures",
+      "axes": "X: DeltaVs [%] from -5 to 0; Y: Depth [km] from 0 to 800 (inverted)",
+      "key_features": "Show curves for Tp = 1300, 1400, 1500 K. Demonstrate that corrections are largest in the asthenosphere (up to 3-5%) and decrease with depth as Q increases."
+    },
+    {
+      "description": "Effect of grain size on Q_S at constant T=1600 K, P=5 GPa, f=1 Hz",
+      "axes": "X: Grain size on log scale from 1 micrometer to 10 cm; Y: Q_S on log scale",
+      "key_features": "Show the d^{m*alpha} scaling (slope approximately 0.81 on log-log plot). Mark typical lab grain sizes (10-50 micrometers) and mantle grain sizes (1-10 mm). Highlight the extrapolation uncertainty."
+    },
+    {
+      "description": "Water content and melt fraction effects on Q_S",
+      "axes": "X-left panel: Water content [ppm H/Si] from 0 to 2000; X-right panel: Melt fraction from 0 to 0.05; Y: Q_S on log scale",
+      "key_features": "Left panel shows the power-law Q reduction with water (from WaterQCorrector). Right panel shows the combined elastic (contiguity) and dissipative (melt squirt) effects from MeltQCorrector. Show both Q and DeltaVs."
+    },
+    {
+      "description": "Complex compliance J*(omega) from Andrade and Extended Burgers models",
+      "axes": "X: log10(omega) [rad/s]; Y: Re(J*) and -Im(J*) on log scale [Pa^{-1}]",
+      "key_features": "Show the unrelaxed compliance J_U at high frequency, the transition to relaxed compliance at low frequency, and the peak in Im(J*) corresponding to maximum dissipation. Compare the smooth Andrade model with the distribution-based Extended Burgers model."
+    }
+  ],
+  "historical_context": "The study of seismic attenuation began with early observations that seismic waves attenuate more strongly in certain regions of the Earth. Anderson and Given (1982) formalized the absorption band model, establishing the mathematical framework for relating Q to velocity dispersion through the Kramers-Kronig relations. Their velocity correction formula remains the standard approach used in all modern mineral physics interpretations.\n\nKarato (1993) made the crucial connection between laboratory creep experiments and seismic attenuation, proposing the parametric Q(T,P,f) model and demonstrating that neglecting anelastic corrections leads to large systematic errors in interpreting seismic tomography. This paper transformed how the geophysics community interprets velocity anomalies in terms of temperature.\n\nThe experimental breakthrough came from Jackson and colleagues at the Australian National University, who developed forced-oscillation and microcreep techniques capable of measuring attenuation at seismic frequencies (0.001-1 Hz) under mantle pressures and temperatures. Jackson and Faul (2010) provided the definitive calibration of the Extended Burgers model for olivine, establishing the parameter set (E*=424 kJ/mol, alpha=0.27, d_ref=13.4 micrometers) that is now the community standard and is directly encoded in this codebase.\n\nThe Andrade model, originally proposed by E.N. da C. Andrade in 1910 for creep of metals, was adapted for mantle minerals by Sundberg and Cooper (2010), who showed that the transient creep regime responsible for seismic-frequency attenuation follows Andrade-type behavior with exponent n approximately 1/3. This provided a simpler analytical alternative to the Extended Burgers numerical integration.\n\nMore recently, Yamauchi and Takei (2016) extended Q models to near-solidus and partially molten conditions, providing the physical basis for the premelting correction and melt effects implemented in this codebase. The effects of water on Q were quantified by Aizawa et al. (2008) and Cline et al. (2018), motivating the WaterQCorrector. Current research focuses on extending these models to deep mantle minerals and resolving the persistent uncertainties in grain-size extrapolation.",
+  "uncertain": [
+    "Q_S_parametric",
+    "Q_S_andrade",
+    "Q_S_extended_burgers"
+  ]
+}

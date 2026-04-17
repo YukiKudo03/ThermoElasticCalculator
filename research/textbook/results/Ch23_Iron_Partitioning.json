@@ -1,0 +1,270 @@
+{
+  "chapter_summary": "Iron partitioning between coexisting mineral phases is a fundamental problem in lower mantle geochemistry. When the dominant upper mantle mineral olivine (Mg,Fe)2SiO4 decomposes at pressures exceeding approximately 23 GPa, it forms two coexisting phases: bridgmanite (Mg,Fe)SiO3 and ferropericlase (Mg,Fe)O. The distribution of Fe between these two phases is described by the partition coefficient K_D = (X_Fe^pv * X_Mg^fp) / (X_Mg^pv * X_Fe^fp), where X denotes the mole fraction and the superscripts pv and fp denote bridgmanite (perovskite) and ferropericlase, respectively. Experimental studies consistently show K_D < 1, indicating that iron preferentially enters ferropericlase over bridgmanite. The IronPartitioningSolver in this codebase determines the equilibrium iron distribution by minimizing the total Gibbs free energy of the two-phase assemblage subject to a mass balance constraint.\n\nThe solver implements a direct thermodynamic approach: for each candidate value of X_Fe in bridgmanite, the corresponding X_Fe in ferropericlase is determined from mass balance (bulkXFe = f_pv * X_Fe^pv + f_fp * X_Fe^fp, where f_pv and f_fp are the molar fractions of each phase). The total Gibbs energy is computed as the sum of mechanical mixing energies of the four endmembers (Mg-perovskite, Fe-perovskite, periclase, wuestite) plus ideal configurational entropy of mixing in each phase, with each endmember Gibbs energy evaluated via the Mie-Gruneisen EOS at the specified pressure and temperature. A two-pass grid search (coarse sweep of 1000 points followed by a refined sweep around the minimum) locates the composition that minimizes the total Gibbs energy. This approach avoids the need for an explicit exchange equilibrium constant and instead derives K_D as an output of the energy minimization.\n\nThe partition coefficient K_D is sensitive to both pressure and temperature. At constant temperature, K_D varies with pressure because the relative Gibbs energies of the four endmembers shift differently under compression, reflecting differences in their equations of state (compressibility, Gruneisen parameters, and Debye temperatures). At pressures of 40-90 GPa, the spin crossover transition in ferropericlase (high-spin to low-spin Fe2+) further modifies the energetics by reducing the volume and altering the elastic properties of the wuestite endmember, which can significantly affect the equilibrium iron distribution. Although the current IronPartitioningSolver uses the standard SLB2011 parameters without an explicit spin transition model, the effect can be captured by using spin-crossover-corrected endmember properties from the SpinCrossoverCalculator.\n\nFrom a geophysical perspective, knowing K_D is essential for translating bulk mantle composition into the actual mineralogy of the lower mantle. Seismic velocities depend on the elastic properties of individual phases, which in turn depend on their iron content. An iron-depleted bridgmanite and iron-enriched ferropericlase assemblage will have different seismic velocities than a uniform distribution. Accurate partitioning data, combined with elastic mixing models (Voigt-Reuss-Hill averages), enable construction of synthetic velocity profiles that can be compared with seismological observations such as PREM, thereby constraining the bulk composition and temperature of the lower mantle.",
+
+  "prerequisite_knowledge": [
+    "Gibbs free energy and its minimization as an equilibrium criterion (Chapter 12)",
+    "Mie-Gruneisen equation of state and its numerical solution (Chapter 6)",
+    "SLB2011 mineral database: bridgmanite endmembers (mpv, fpv) and ferropericlase endmembers (pe, wu) (Chapter 7)",
+    "Ideal solution mixing and configurational entropy",
+    "Elastic moduli and seismic velocity computation at high P-T (Chapter 4)",
+    "Spin crossover in ferropericlase and its elastic consequences (Chapter 22)",
+    "Elastic mixing models: Voigt, Reuss, Hill averages (Chapter 10)"
+  ],
+
+  "key_equations": [
+    {
+      "equation": "K_D = \\frac{X_{\\text{Fe}}^{\\text{pv}} \\cdot X_{\\text{Mg}}^{\\text{fp}}}{X_{\\text{Mg}}^{\\text{pv}} \\cdot X_{\\text{Fe}}^{\\text{fp}}}",
+      "name": "Fe-Mg partition coefficient between bridgmanite and ferropericlase",
+      "variables": {
+        "K_D": "Distribution coefficient (dimensionless)",
+        "X_{Fe}^{pv}": "Mole fraction of Fe in bridgmanite",
+        "X_{Mg}^{pv}": "Mole fraction of Mg in bridgmanite (= 1 - X_Fe^pv)",
+        "X_{Fe}^{fp}": "Mole fraction of Fe in ferropericlase",
+        "X_{Mg}^{fp}": "Mole fraction of Mg in ferropericlase (= 1 - X_Fe^fp)"
+      },
+      "interpretation": "K_D quantifies the relative affinity of Fe for bridgmanite vs ferropericlase. K_D < 1 means Fe preferentially enters ferropericlase. Experimentally, K_D is typically 0.2-0.5 at lower mantle conditions, but varies with P, T, and spin state of Fe. In the code, K_D is computed as an output from (bestXFePv * (1 - bestXFeFp)) / ((1 - bestXFePv) * bestXFeFp) after Gibbs minimization."
+    },
+    {
+      "equation": "X_{\\text{Fe}}^{\\text{fp}} = \\frac{X_{\\text{Fe}}^{\\text{bulk}} - f_{\\text{pv}} \\cdot X_{\\text{Fe}}^{\\text{pv}}}{1 - f_{\\text{pv}}}",
+      "name": "Mass balance constraint for Fe distribution",
+      "variables": {
+        "X_{Fe}^{bulk}": "Bulk iron mole fraction of the assemblage",
+        "f_{pv}": "Molar fraction of bridgmanite in the assemblage (default 0.5)",
+        "X_{Fe}^{pv}": "Iron mole fraction in bridgmanite (the free variable)",
+        "X_{Fe}^{fp}": "Iron mole fraction in ferropericlase (determined by mass balance)"
+      },
+      "interpretation": "This constraint reduces the two-variable problem (X_Fe^pv, X_Fe^fp) to a single variable, X_Fe^pv. For the default 1:1 molar ratio (f_pv = 0.5), this simplifies to X_Fe^fp = 2 * X_Fe^bulk - X_Fe^pv. The solver searches over X_Fe^pv and computes X_Fe^fp from this relation."
+    },
+    {
+      "equation": "G_{\\text{phase}} = X_{\\text{Mg}} G_{\\text{Mg}} + X_{\\text{Fe}} G_{\\text{Fe}} + RT(X_{\\text{Mg}} \\ln X_{\\text{Mg}} + X_{\\text{Fe}} \\ln X_{\\text{Fe}})",
+      "name": "Gibbs energy of an ideal binary solid solution",
+      "variables": {
+        "G_{phase}": "Total molar Gibbs energy of the phase (kJ/mol)",
+        "X_{Mg}, X_{Fe}": "Mole fractions of Mg and Fe endmembers",
+        "G_{Mg}, G_{Fe}": "Gibbs energies of the pure endmembers at P and T (kJ/mol)",
+        "R": "Gas constant (8.314 J/mol/K)",
+        "T": "Temperature (K)"
+      },
+      "interpretation": "The first two terms represent mechanical mixing (linear interpolation of endmember energies). The last term is the ideal configurational entropy of mixing, which always lowers the free energy and drives mixing. The solver evaluates this for both bridgmanite and ferropericlase, with endmember G values computed via the Mie-Gruneisen EOS. Note the R*T/1000 factor in the code accounts for the kJ/mol units of Gibbs energy."
+    },
+    {
+      "equation": "G_{\\text{total}} = G_{\\text{pv}}(X_{\\text{Fe}}^{\\text{pv}}) + G_{\\text{fp}}(X_{\\text{Fe}}^{\\text{fp}})",
+      "name": "Total Gibbs energy of the two-phase assemblage",
+      "variables": {
+        "G_{total}": "Total Gibbs free energy to be minimized (kJ/mol)",
+        "G_{pv}": "Gibbs energy of bridgmanite solid solution",
+        "G_{fp}": "Gibbs energy of ferropericlase solid solution"
+      },
+      "interpretation": "Equilibrium is reached when G_total is minimized with respect to X_Fe^pv (subject to mass balance). The solver uses a two-pass grid search: first 1000 evenly spaced points over the feasible range, then 1000 points in a refined interval around the initial minimum. This yields the equilibrium compositions and K_D."
+    },
+    {
+      "equation": "\\ln K_D = \\frac{\\Delta G_{\\text{exchange}}^0}{RT}",
+      "name": "Thermodynamic basis for the partition coefficient",
+      "variables": {
+        "K_D": "Partition coefficient",
+        "\\Delta G_{exchange}^0": "Standard Gibbs energy of the Fe-Mg exchange reaction (J/mol)",
+        "R": "Gas constant (8.314 J/mol/K)",
+        "T": "Temperature (K)"
+      },
+      "interpretation": "For ideal solutions, K_D is related to the standard Gibbs energy change of the exchange reaction FeSiO3(pv) + MgO(fp) = MgSiO3(pv) + FeO(fp). This relation shows that K_D depends exponentially on the difference in endmember Gibbs energies divided by temperature. The solver implicitly captures this by minimizing the total Gibbs energy rather than explicitly evaluating this expression."
+    }
+  ],
+
+  "physical_concepts": [
+    {
+      "concept": "Fe-Mg partition coefficient (K_D)",
+      "definition": "A dimensionless ratio describing how iron and magnesium distribute between two coexisting phases at thermodynamic equilibrium.",
+      "physical_intuition": "Iron and magnesium atoms compete for the same crystallographic sites in bridgmanite and ferropericlase. The crystal structure and bonding environment of ferropericlase (rocksalt structure with octahedral sites) is energetically more favorable for Fe2+ than the distorted site in bridgmanite, so K_D < 1. As conditions change (pressure, temperature, spin state), the relative site energies shift, altering K_D.",
+      "common_misconceptions": [
+        "K_D is not a constant -- it varies significantly with pressure and temperature.",
+        "K_D < 1 does not mean no iron enters bridgmanite; it means the iron concentration in ferropericlase is higher than in bridgmanite.",
+        "The partition coefficient measured in experiments may include non-ideal mixing effects not captured by the ideal solution model used in IronPartitioningSolver."
+      ]
+    },
+    {
+      "concept": "Gibbs free energy minimization for phase equilibrium",
+      "definition": "At fixed pressure and temperature, a system at equilibrium minimizes its total Gibbs free energy. For a two-phase system with a shared component (Fe), the equilibrium composition is found by minimizing G_total over the allowable composition space.",
+      "physical_intuition": "Think of it as a tug-of-war: each phase 'wants' the composition that minimizes its own Gibbs energy, but they share a finite pool of iron atoms. The equilibrium compromise minimizes the total energy of the combined system. The configurational entropy of mixing acts as a restoring force that prevents extreme partitioning (pure endmember compositions are entropically disfavored).",
+      "common_misconceptions": [
+        "Minimizing G for each phase independently does not give the correct answer -- the phases are coupled through the mass balance constraint.",
+        "The grid search approach used in IronPartitioningSolver is numerically robust but may miss very narrow minima; the two-pass refinement mitigates this."
+      ]
+    },
+    {
+      "concept": "Spin crossover effect on iron partitioning",
+      "definition": "The high-spin to low-spin electronic transition of Fe2+ in ferropericlase at approximately 40-90 GPa changes the volume, compressibility, and Gibbs energy of the wuestite endmember, thereby altering the equilibrium K_D.",
+      "physical_intuition": "In the high-spin state, Fe2+ has a larger ionic radius and higher volume. As pressure increases and Fe transitions to low-spin, the volume drops and the Gibbs energy of FeO (wuestite) is lowered relative to Fe-perovskite. This makes ferropericlase even more favorable for iron, potentially decreasing K_D further in the mid-lower mantle. The effect is most pronounced in the mixed-spin region where elastic softening occurs.",
+      "common_misconceptions": [
+        "The spin transition does not occur at a single sharp pressure but over a broad P-T range due to the Boltzmann statistics of spin populations.",
+        "The current IronPartitioningSolver does not explicitly model the spin transition; capturing this effect requires using spin-crossover-corrected endmember properties from the SpinCrossoverCalculator."
+      ]
+    },
+    {
+      "concept": "Mass balance in two-phase assemblage",
+      "definition": "The total amount of iron in the system is conserved: the iron distributed between bridgmanite and ferropericlase must sum to the bulk iron content.",
+      "physical_intuition": "If you start with a bulk composition of 10% Fe and split it into two phases of equal molar proportion, then on average each phase has 10% Fe. But iron partitioning shifts this: ferropericlase might have 15% Fe while bridgmanite has only 5% Fe. The mass balance X_Fe^bulk = f_pv * X_Fe^pv + f_fp * X_Fe^fp constrains the search space to a one-dimensional manifold.",
+      "common_misconceptions": [
+        "The default 1:1 molar ratio (f_pv = 0.5) is appropriate for the Mg2SiO4 stoichiometry but may not apply to all bulk compositions.",
+        "Volume fractions and molar fractions are different; the solver works in molar fractions."
+      ]
+    }
+  ],
+
+  "key_references": [
+    {
+      "author": "Irifune, T. et al.",
+      "year": 2010,
+      "title": "Iron Partitioning and Density Changes of Pyrolite in Earth's Lower Mantle",
+      "journal": "Science",
+      "why_essential": "Provides comprehensive experimental K_D measurements for the bridgmanite-ferropericlase system across lower mantle pressures, serving as the primary validation reference for the IronPartitioningSolver."
+    },
+    {
+      "author": "Kobayashi, Y. et al.",
+      "year": 2005,
+      "title": "Fe-Mg partitioning between (Mg,Fe)SiO3 post-perovskite, perovskite, and magnesiowuestite in the Earth's lower mantle",
+      "journal": "Geophysical Research Letters",
+      "why_essential": "Experimental constraints on K_D including the post-perovskite phase, extending partitioning data to the D'' region. Referenced in the codebase test suite."
+    },
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2011,
+      "title": "Thermodynamics of mantle minerals - II. Phase equilibria",
+      "journal": "Geophysical Journal International",
+      "why_essential": "Provides the thermodynamic framework and endmember parameters (mpv, fpv, pe, wu) used by IronPartitioningSolver to compute Gibbs energies. The SLB2011 database is the foundation of all calculations in this codebase."
+    },
+    {
+      "author": "Badro, J. et al.",
+      "year": 2003,
+      "title": "Iron Partitioning in Earth's Mantle: Toward a Deep Lower Mantle Discontinuity",
+      "journal": "Science",
+      "why_essential": "Demonstrated that the spin crossover in ferropericlase can dramatically alter Fe-Mg partitioning at mid-lower mantle pressures, motivating the coupling of SpinCrossoverCalculator with IronPartitioningSolver."
+    },
+    {
+      "author": "Mao, Z. et al.",
+      "year": 2011,
+      "title": "Effect of the Fe2+ spin transition on the equation of state of ferropericlase [uncertain]",
+      "journal": "Geophysical Research Letters [uncertain]",
+      "why_essential": "Provides equation of state measurements for ferropericlase across the spin transition, enabling parameterization of spin-crossover effects on K_D."
+    }
+  ],
+
+  "worked_examples": [
+    {
+      "problem_statement": "Compute the equilibrium Fe distribution between bridgmanite and ferropericlase at 25 GPa and 2000 K for a pyrolitic bulk composition with X_Fe^bulk = 0.10, assuming a 1:1 molar ratio of the two phases.",
+      "solution_approach": "Use IronPartitioningSolver.SolvePartitioning with the SLB2011 endmembers mpv (Mg-perovskite), fpv (Fe-perovskite), pe (periclase), and wu (wuestite). The solver first computes the Gibbs energy of each endmember at 25 GPa and 2000 K via the Mie-Gruneisen EOS, then performs a two-pass grid search over X_Fe^pv in [0.001, 0.199] (the upper bound from mass balance: X_Fe^pv,max = 2 * 0.10 - 0.001 = 0.199). For each X_Fe^pv, X_Fe^fp = 0.20 - X_Fe^pv, and the total Gibbs energy (mechanical mixing + ideal entropy) is evaluated. The minimum identifies the equilibrium.",
+      "numerical_values": "Typical results: X_Fe^pv ~ 0.04-0.06, X_Fe^fp ~ 0.14-0.16, K_D ~ 0.2-0.5. Mass balance check: 0.5 * 0.05 + 0.5 * 0.15 = 0.10. The test suite confirms K_D is in the range [0.1, 0.8] and that iron preferentially enriches ferropericlase (X_Fe^fp > X_Fe^pv).",
+      "interpretation": "The result K_D < 1 confirms the well-established experimental observation that Fe favors ferropericlase over bridgmanite. This means that in a pyrolitic lower mantle, bridgmanite is relatively Mg-rich while ferropericlase is Fe-enriched. This has significant implications for seismic velocities since Fe-enrichment increases density and generally decreases shear velocity."
+    },
+    {
+      "problem_statement": "Demonstrate that K_D varies with pressure by comparing the partition coefficient at 25 GPa and 80 GPa at a fixed temperature of 2000 K.",
+      "solution_approach": "Run IronPartitioningSolver.SolvePartitioning twice: once at P = 25 GPa and once at P = 80 GPa, with the same bulk composition (X_Fe = 0.10) and temperature (2000 K). Compare the resulting K_D values.",
+      "numerical_values": "At 25 GPa: K_D(25) is in the range 0.2-0.5. At 80 GPa: K_D(80) differs measurably from K_D(25), with the test suite confirming the two values are not equal to 3 decimal places. The direction and magnitude of the shift depend on how the endmember Gibbs energies change with compression.",
+      "interpretation": "The pressure dependence of K_D arises because the four endmembers have different equations of state -- different K0, K', gamma0, and theta0 values. As pressure increases, the relative stability of Fe-perovskite vs wuestite shifts, changing the equilibrium iron distribution. This is why lower mantle composition models must account for depth-dependent partitioning rather than using a single K_D value."
+    },
+    {
+      "problem_statement": "Verify mass balance conservation in the partitioning calculation for X_Fe^bulk = 0.10 at 25 GPa and 2000 K.",
+      "solution_approach": "After solving for X_Fe^pv and X_Fe^fp, verify that f_pv * X_Fe^pv + f_fp * X_Fe^fp = X_Fe^bulk. With f_pv = f_fp = 0.5, this simplifies to (X_Fe^pv + X_Fe^fp) / 2 = 0.10.",
+      "numerical_values": "The test suite confirms X_Fe^pv + X_Fe^fp = 0.20 (= 2 * X_Fe^bulk) to within a tolerance of 0.001. This is guaranteed by construction: the solver enforces mass balance by computing X_Fe^fp from X_Fe^pv via the constraint equation.",
+      "interpretation": "Mass balance conservation is not an approximation but an exact constraint built into the algorithm. The solver only searches over compositions that satisfy mass balance, so the result is guaranteed to conserve iron. This is a useful diagnostic: if mass balance were violated, it would indicate a bug in the solver."
+    }
+  ],
+
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch06 Mie-Gruneisen Equation of State Solver",
+      "nature_of_connection": "prerequisite",
+      "explanation": "The IronPartitioningSolver depends on MieGruneisenEOSOptimizer to compute the Gibbs energy of each endmember (mpv, fpv, pe, wu) at the target P and T. The EOS solver finds the finite strain and evaluates all thermodynamic properties."
+    },
+    {
+      "related_chapter": "Ch07 SLB2011 Mineral Database",
+      "nature_of_connection": "prerequisite",
+      "explanation": "The four endmember minerals used in the partitioning calculation (mpv, fpv, pe, wu) are defined in the SLB2011 database with their 11 independent parameters each."
+    },
+    {
+      "related_chapter": "Ch12 Gibbs Free Energy and Phase Stability",
+      "nature_of_connection": "prerequisite",
+      "explanation": "The partitioning solver is an application of Gibbs energy minimization. Understanding how G depends on P, T, and composition is essential background."
+    },
+    {
+      "related_chapter": "Ch22 Spin Crossover in Ferropericlase",
+      "nature_of_connection": "extension",
+      "explanation": "The spin transition in ferropericlase at 40-90 GPa modifies the Gibbs energy of the wuestite endmember, directly affecting K_D. Coupling the SpinCrossoverCalculator with IronPartitioningSolver would capture this effect."
+    },
+    {
+      "related_chapter": "Ch10 Elastic Mixing Models",
+      "nature_of_connection": "application",
+      "explanation": "Once iron partitioning determines the composition of each phase, elastic mixing models (VRH averages) combine their elastic properties to predict bulk rock velocities."
+    },
+    {
+      "related_chapter": "Ch18 Composition Inversion",
+      "nature_of_connection": "application",
+      "explanation": "Iron partitioning is a key component of forward models used in composition inversion. The predicted K_D constrains the parameter space when inverting seismic observations for mantle composition."
+    },
+    {
+      "related_chapter": "Ch20 LLSVPs and ULVZs",
+      "nature_of_connection": "application",
+      "explanation": "Iron-enriched regions in the lower mantle (possible LLSVP origin) require accurate K_D values to relate bulk Fe anomalies to seismic velocity reductions in individual phases."
+    },
+    {
+      "related_chapter": "Ch09 Magnetic Contributions",
+      "nature_of_connection": "prerequisite",
+      "explanation": "The magnetic free energy contribution of Fe-bearing endmembers (especially wuestite) affects their Gibbs energy and therefore the equilibrium partitioning."
+    }
+  ],
+
+  "computational_methods": "The IronPartitioningSolver uses a two-pass grid search algorithm to minimize the total Gibbs energy of a bridgmanite + ferropericlase assemblage. In the first pass, the feasible range of X_Fe^pv is divided into 1000 equally spaced grid points. The lower bound is 0.001 (to avoid log(0) in the entropy term), and the upper bound is derived from mass balance as (bulkXFe - 0.001 * (1 - f_pv)) / f_pv, capped at 0.999. For each grid point, X_Fe^fp is computed from the mass balance constraint, and any point yielding X_Fe^fp outside [0.001, 0.999] is skipped. The total Gibbs energy (mechanical mixing plus ideal configurational entropy for both phases) is evaluated, and the minimum is recorded.\n\nThe second pass refines the search by taking a narrow window of +/- 2 grid spacings around the first-pass minimum and subdividing it into another 1000 points. This two-level approach achieves an effective resolution of approximately 2e-7 in X_Fe^pv without the cost of a million-point single-pass search.\n\nEach endmember Gibbs energy evaluation requires a call to MieGruneisenEOSOptimizer.ExecOptimize(), which iteratively solves the self-consistent pressure equation P_ref(f) + P_thermal(f,T) = P_target using pressure corrections with convergence criterion of 1e-5 GPa. Since four endmembers must be evaluated per partitioning calculation, the total cost is four EOS solves plus 2000 Gibbs energy evaluations (which are simple arithmetic once the endmember G values are known). Typical execution time is dominated by the four EOS calls and is on the order of milliseconds on modern hardware.\n\nThe algorithm assumes ideal solution behavior (no excess mixing terms such as Margules parameters), which is a simplification. For more accurate results, one could incorporate non-ideal interaction parameters, though these are not well constrained at lower mantle conditions.",
+
+  "open_questions": [
+    "How does the spin crossover in ferropericlase quantitatively modify K_D as a function of depth, and can this produce observable seismic signatures in the mid-lower mantle?",
+    "What role does Fe3+ (ferric iron) play in partitioning, given that high-pressure experiments suggest significant Fe3+ incorporation in bridgmanite through charge-coupled substitution (Fe3+ + Al3+ replacing Mg2+ + Si4+)?",
+    "How do non-ideal mixing effects (Margules interaction parameters) alter K_D predictions compared to the ideal solution model, and are these effects significant at lower mantle P-T conditions?",
+    "Does the post-perovskite transition at the base of the mantle (D'' region) change Fe partitioning, and if so, how does this affect the composition and seismic signature of the lowermost mantle?",
+    "Can iron partitioning data combined with seismic observations uniquely constrain the bulk iron content of the lower mantle, or are there fundamental trade-offs with temperature and Al content?",
+    "How does the presence of aluminum (Al2O3 component) in bridgmanite affect Fe-Mg partitioning, given that Al-bearing bridgmanite experiments show enhanced Fe uptake?"
+  ],
+
+  "exercise_suggestions": [
+    "Use IronPartitioningSolver to compute K_D at 25 GPa for temperatures of 1500, 2000, 2500, and 3000 K with X_Fe^bulk = 0.10. Plot K_D vs T and discuss the temperature dependence.",
+    "Repeat the partitioning calculation at 2000 K for pressures ranging from 25 to 130 GPa in steps of 10 GPa. Plot K_D(P) and identify any pressure ranges where the trend changes slope.",
+    "Verify the mass balance constraint by computing X_Fe^pv + X_Fe^fp for several different bulk compositions (X_Fe^bulk = 0.05, 0.10, 0.15, 0.20) and confirming it equals 2 * X_Fe^bulk in each case.",
+    "Modify the molar fraction of bridgmanite from the default 0.5 to 0.6 and 0.7 (simulating a more Si-rich bulk composition). How does this affect K_D and the individual phase compositions?",
+    "Derive the relationship ln(K_D) = DeltaG_exchange / RT analytically from the condition of Gibbs energy minimization for an ideal two-phase binary system. Compare the K_D predicted by this analytical formula with the numerical result from IronPartitioningSolver.",
+    "Compute the seismic velocities (Vp, Vs) of a lower mantle assemblage at 50 GPa and 2000 K, first using uniform Fe distribution (X_Fe = 0.10 in both phases) and then using the equilibrium partitioning from IronPartitioningSolver. Quantify the difference.",
+    "Estimate the effect of spin crossover on K_D by computing the Gibbs energy of wuestite at 60 GPa with and without the volume reduction from the spin transition (use SpinCrossoverCalculator for the corrected properties). Discuss how this changes the equilibrium iron distribution.",
+    "Perform a resolution study: reduce the grid search from 1000 to 100 points and compare K_D with the standard 1000-point result. At what resolution does the two-pass algorithm converge to 4 significant figures?"
+  ],
+
+  "figure_suggestions": [
+    {
+      "description": "K_D as a function of pressure at fixed temperature (2000 K)",
+      "axes": "x-axis: Pressure (GPa, 25-130), y-axis: K_D (dimensionless, 0-1)",
+      "key_features": "Show how K_D varies across the lower mantle pressure range. Highlight the pressure range where spin crossover in ferropericlase occurs (40-90 GPa) and annotate any inflection points. Include experimental data points from Irifune et al. (2010) for comparison."
+    },
+    {
+      "description": "Total Gibbs energy landscape as a function of X_Fe^pv for a fixed bulk composition",
+      "axes": "x-axis: X_Fe in bridgmanite (0-0.20), y-axis: G_total (kJ/mol, relative units)",
+      "key_features": "Show the parabolic-like minimum that defines the equilibrium composition. Annotate the location of the minimum (equilibrium X_Fe^pv) and the corresponding K_D. Overlay curves for several pressures to show how the minimum shifts."
+    },
+    {
+      "description": "Phase composition diagram: X_Fe^pv and X_Fe^fp as functions of pressure",
+      "axes": "x-axis: Pressure (GPa, 25-130), y-axis: X_Fe in each phase (0-0.25)",
+      "key_features": "Two curves showing the iron content of bridgmanite (lower) and ferropericlase (upper). The gap between them reflects the degree of partitioning. Show that X_Fe^fp > X_Fe^pv at all pressures, with the gap possibly changing across the spin crossover zone."
+    },
+    {
+      "description": "Schematic of the Gibbs energy minimization algorithm",
+      "axes": "Flowchart (no numerical axes)",
+      "key_features": "Show the workflow: (1) compute endmember G via Mie-Gruneisen EOS, (2) coarse grid search over X_Fe^pv, (3) refined grid search, (4) extract K_D from optimal compositions. Annotate the mass balance constraint and the ideal mixing entropy term."
+    },
+    {
+      "description": "Effect of spin crossover on K_D: comparison of standard vs spin-corrected calculations",
+      "axes": "x-axis: Pressure (GPa, 25-130), y-axis: K_D (dimensionless)",
+      "key_features": "Two curves: one from standard SLB2011 parameters, one with spin-crossover-corrected wuestite properties. The divergence between curves in the 40-90 GPa range illustrates the spin transition effect. Shade the mixed-spin region."
+    }
+  ],
+
+  "historical_context": "The study of Fe-Mg partitioning between lower mantle phases began in earnest with the discovery that olivine decomposes into bridgmanite (then called silicate perovskite) and ferropericlase at pressures corresponding to the 660-km seismic discontinuity. Early multi-anvil experiments in the 1980s and 1990s by Ito and Takahashi, and by Katsura and Ito, established that K_D is significantly less than unity, confirming that iron strongly favors ferropericlase. The development of laser-heated diamond anvil cell (LHDAC) techniques in the 2000s extended partitioning measurements to pressures above 100 GPa, approaching core-mantle boundary conditions. A landmark shift occurred in 2003 when Badro et al. demonstrated using X-ray emission spectroscopy that Fe2+ in ferropericlase undergoes a spin crossover at mid-lower mantle pressures, fundamentally changing its crystal chemistry and potentially altering K_D. Subsequent experimental and computational studies (including first-principles calculations by Tsuchiya, Wentzcovitch, and others) have refined our understanding of how the spin transition affects iron partitioning. The Stixrude and Lithgow-Bertelloni (2011) thermodynamic framework, which underpins the IronPartitioningSolver in this codebase, provided a self-consistent set of endmember parameters enabling computational prediction of K_D from first principles of thermodynamics, complementing experimental measurements. Current research continues to explore the interplay between iron valence state (Fe2+ vs Fe3+), aluminum content, and spin state on partitioning, with implications for the composition and dynamics of the deep mantle.",
+
+  "uncertain": [
+    "key_references[4]"
+  ]
+}

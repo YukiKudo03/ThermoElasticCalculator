@@ -1,0 +1,305 @@
+{
+  "chapter_summary": "Nonlinear least-squares fitting is an essential tool in mineral physics and geophysics for determining material parameters from experimental measurements. Unlike linear regression, where the model depends linearly on unknown parameters, equations of state and thermoelastic models are inherently nonlinear functions of their parameters (bulk modulus K0, its pressure derivative K', Gruneisen parameter gamma0, etc.). The Levenberg-Marquardt (LM) algorithm provides a robust and efficient method for solving these nonlinear optimization problems by interpolating between the Gauss-Newton method (fast convergence near the solution) and gradient descent (reliable convergence far from the solution). The interpolation is controlled by a damping parameter lambda that adapts during iteration: when a step reduces the misfit, lambda decreases toward Gauss-Newton behavior; when a step fails, lambda increases toward steepest descent.\n\nThe mathematical foundation rests on minimizing the chi-squared misfit function, chi2 = sum_i [(y_obs_i - y_model_i(p)) / sigma_i]^2, where sigma_i are measurement uncertainties. At each iteration, the algorithm requires the Jacobian matrix J_{ij} = partial y_i / partial p_j, which encodes how each predicted datum changes with each parameter. When analytic derivatives are unavailable (as is typical for complex forward models like Mie-Gruneisen-Debye calculations), the Jacobian is computed numerically using central finite differences: J_{ij} = [f(p_j + h) - f(p_j - h)] / (2h). The damped normal equations (J^T J + lambda * diag(J^T J)) * delta = J^T r are then solved for the parameter update vector delta. The use of diag(J^T J) rather than the identity matrix as the damping term (Marquardt's modification) provides implicit scaling of the parameter space.\n\nAfter convergence, the covariance matrix of the fitted parameters is estimated as C = (J^T J)^{-1} * chi2_reduced, where chi2_reduced = chi2 / (N_data - N_params) is the reduced chi-squared. The diagonal elements C_{ii} give the variance of each parameter, so the 1-sigma uncertainty is sqrt(C_{ii}). Off-diagonal elements quantify parameter correlations, which are often substantial in equation-of-state fitting (e.g., K0 and K' are typically strongly anti-correlated). Understanding these correlations is critical for propagating uncertainties into derived quantities like seismic velocities at mantle conditions.\n\nIn the ThermoElasticCalculator implementation, the LevenbergMarquardtOptimizer class provides a general-purpose engine with configurable convergence tolerances (relative chi-squared change < 1e-8, gradient norm < 1e-10, maximum 200 iterations). Two specialized fitter classes build upon it: EOSFitter fits Birch-Murnaghan 3rd-order equation-of-state parameters (K0, K') to pressure-volume data, and ThermoElasticFitter fits full SLB2011 thermoelastic parameters to observed Vp, Vs, and/or volume data at various P-T conditions. The ThermoElasticFitter incorporates parameter normalization to improve Jacobian conditioning, and uses the Mie-Gruneisen-Debye forward model for predictions, making it a complete inverse modeling tool for mineral physics research.\n\nThe quality of a fit is assessed through several diagnostics: the reduced chi-squared (which should be near 1.0 for a good fit with correctly estimated uncertainties), the F-f plot for equation-of-state data (where linearity confirms the appropriateness of a third-order Birch-Murnaghan model), and examination of residuals for systematic patterns that might indicate model inadequacy. These tools, combined with proper uncertainty propagation through the covariance matrix, enable rigorous comparison between laboratory measurements, computational predictions, and seismological observations of Earth's deep interior.",
+
+  "prerequisite_knowledge": [
+    "Linear algebra: matrix operations, matrix inversion, eigenvalues",
+    "Calculus: partial derivatives, Taylor series expansion, gradient and Hessian",
+    "Statistics fundamentals: chi-squared distribution, maximum likelihood estimation, confidence intervals",
+    "Birch-Murnaghan equation of state and finite strain theory (Ch06)",
+    "Mie-Gruneisen-Debye thermal model and forward calculation of thermoelastic properties",
+    "Elastic moduli and seismic velocity computation (Ch04)",
+    "Basic numerical methods: finite difference approximations, iterative solvers",
+    "Linear least-squares fitting and normal equations"
+  ],
+
+  "key_equations": [
+    {
+      "equation": "\\chi^2(\\mathbf{p}) = \\sum_{i=1}^{N} \\left( \\frac{y_i^{\\text{obs}} - y_i^{\\text{model}}(\\mathbf{p})}{\\sigma_i} \\right)^2",
+      "name": "Chi-squared misfit function",
+      "variables": {
+        "\\chi^2": "Chi-squared statistic (weighted sum of squared residuals)",
+        "y_i^{\\text{obs}}": "Observed data value at point i",
+        "y_i^{\\text{model}}(\\mathbf{p})": "Model prediction at point i given parameter vector p",
+        "\\sigma_i": "Measurement uncertainty (1-sigma) at point i",
+        "N": "Number of data points"
+      },
+      "interpretation": "The objective function to be minimized. Each residual is weighted by the inverse of its measurement uncertainty, so more precise measurements contribute more to the fit. A good fit yields chi2 approximately equal to the number of degrees of freedom (N - N_params)."
+    },
+    {
+      "equation": "J_{ij} = \\frac{\\partial y_i}{\\partial p_j} \\approx \\frac{f(p_j + h) - f(p_j - h)}{2h}",
+      "name": "Jacobian matrix via central differences",
+      "variables": {
+        "J_{ij}": "Element (i,j) of the Jacobian matrix",
+        "y_i": "Model prediction for datum i",
+        "p_j": "j-th model parameter",
+        "h": "Finite difference step size, typically max(|p_j| * 1e-7, 1e-10)"
+      },
+      "interpretation": "The Jacobian encodes the sensitivity of each prediction to each parameter. Central differences provide O(h^2) accuracy at the cost of two model evaluations per parameter per iteration. The step size h must be small enough for accuracy but large enough to avoid roundoff errors. In ThermoElasticCalculator, the weighted Jacobian J_{ij}/sigma_i is used directly."
+    },
+    {
+      "equation": "(\\mathbf{J}^T \\mathbf{J} + \\lambda \\, \\text{diag}(\\mathbf{J}^T \\mathbf{J})) \\, \\boldsymbol{\\delta} = \\mathbf{J}^T \\mathbf{r}",
+      "name": "Levenberg-Marquardt damped normal equations",
+      "variables": {
+        "\\mathbf{J}": "Jacobian matrix [N_data x N_params]",
+        "\\lambda": "Damping parameter (initially 0.001, adapted by factor of 10)",
+        "\\boldsymbol{\\delta}": "Parameter update vector",
+        "\\mathbf{r}": "Weighted residual vector, r_i = (y_obs_i - y_model_i) / sigma_i",
+        "\\text{diag}(\\mathbf{J}^T \\mathbf{J})": "Diagonal of the approximate Hessian (Marquardt scaling)"
+      },
+      "interpretation": "When lambda is small, this reduces to the Gauss-Newton equations with fast quadratic convergence near the minimum. When lambda is large, it becomes a small gradient descent step. The use of diag(J^T J) rather than the identity provides adaptive scaling: parameters with larger curvature take relatively smaller steps. If a trial step reduces chi2, lambda is decreased; otherwise it is increased."
+    },
+    {
+      "equation": "\\mathbf{C} = (\\mathbf{J}^T \\mathbf{J})^{-1} \\, \\chi^2_\\nu",
+      "name": "Parameter covariance matrix",
+      "variables": {
+        "\\mathbf{C}": "Covariance matrix of fitted parameters [N_params x N_params]",
+        "(\\mathbf{J}^T \\mathbf{J})^{-1}": "Inverse of the approximate Hessian evaluated at the minimum",
+        "\\chi^2_\\nu": "Reduced chi-squared = chi2 / (N_data - N_params)"
+      },
+      "interpretation": "The covariance matrix quantifies parameter uncertainties and correlations. The 1-sigma uncertainty of parameter j is sqrt(C_{jj}). The correlation coefficient between parameters i and j is C_{ij} / sqrt(C_{ii} * C_{jj}). Multiplying by chi2_reduced accounts for possible misestimation of data uncertainties: if chi2_reduced >> 1, the fit is poor or uncertainties are underestimated."
+    },
+    {
+      "equation": "P = 3 K_0 f (1+2f)^{5/2} \\left[1 + \\frac{3}{2}(K_0' - 4) f \\right]",
+      "name": "Birch-Murnaghan 3rd-order equation of state",
+      "variables": {
+        "P": "Pressure [GPa]",
+        "K_0": "Zero-pressure isothermal bulk modulus [GPa]",
+        "K_0'": "Pressure derivative of bulk modulus [dimensionless]",
+        "f": "Eulerian finite strain, f = ((V_0/V)^{2/3} - 1) / 2"
+      },
+      "interpretation": "This is the forward model used in EOSFitter for P-V data. The parameters K0 and K' are fitted to match observed pressure-volume data. The equation is nonlinear in both f (which depends on V) and the parameters (K0 and K0'), necessitating iterative optimization rather than linear regression."
+    },
+    {
+      "equation": "F = K_0 + \\frac{3}{2} K_0 (K_0' - 4) f",
+      "name": "F-f (normalized pressure) linear relation",
+      "variables": {
+        "F": "Normalized pressure: F = P / [3f(1+2f)^{5/2}]",
+        "f": "Eulerian finite strain",
+        "K_0": "Zero-pressure bulk modulus (intercept)",
+        "K_0'": "Pressure derivative (determines slope)"
+      },
+      "interpretation": "The F-f plot transforms the nonlinear BM3 EOS into a linear relationship. Data points should fall on a straight line if BM3 is appropriate; the intercept gives K0 and the slope gives 3K0(K'-4)/2. Deviations from linearity suggest the need for higher-order terms. This diagnostic is implemented in EOSFitter.GenerateFfPlot."
+    }
+  ],
+
+  "physical_concepts": [
+    {
+      "concept": "Nonlinear least-squares optimization",
+      "definition": "A method for finding the set of model parameters that minimizes the sum of squared differences between observed data and model predictions, where the model depends nonlinearly on its parameters.",
+      "physical_intuition": "In mineral physics, almost all physically meaningful models (equations of state, elastic property calculations) are nonlinear functions of material parameters. Unlike linear regression which has a closed-form solution, nonlinear problems require iterative refinement: start with an initial guess, compute how the misfit changes with each parameter (the Jacobian), take a step to reduce the misfit, and repeat until convergence.",
+      "common_misconceptions": [
+        "Convergence to a global minimum is not guaranteed; the algorithm may find a local minimum depending on initial parameter values.",
+        "A low chi-squared does not prove the model is correct, only that it fits the data well. An overly flexible model can fit noise.",
+        "Parameter uncertainties from the covariance matrix assume the model is correct and that the chi-squared surface is approximately quadratic near the minimum."
+      ]
+    },
+    {
+      "concept": "Levenberg-Marquardt damping parameter",
+      "definition": "A scalar lambda that controls the interpolation between Gauss-Newton (lambda -> 0) and gradient descent (lambda -> infinity) steps in the optimization algorithm.",
+      "physical_intuition": "Think of it as a trust region: when lambda is small, we trust the quadratic approximation to chi-squared and take large, efficient Gauss-Newton steps. When lambda is large, we distrust the approximation and take small, cautious gradient descent steps. The algorithm adapts lambda automatically: successful steps reduce lambda (more aggressive), failed steps increase lambda (more cautious). In ThermoElasticCalculator, lambda starts at 0.001 and is adjusted by a factor of 10.",
+      "common_misconceptions": [
+        "Lambda is not a hyperparameter that needs tuning; it is adapted during iteration.",
+        "The factor by which lambda changes (10 in this implementation) affects convergence speed but not the final result.",
+        "Very large initial lambda does not prevent convergence, it just slows it down."
+      ]
+    },
+    {
+      "concept": "Parameter correlation and trade-offs",
+      "definition": "The tendency for changes in one fitted parameter to be compensated by changes in another, such that the misfit remains similar. Quantified by off-diagonal elements of the covariance matrix.",
+      "physical_intuition": "In EOS fitting, K0 and K' are strongly anti-correlated: a higher K0 (stiffer material at zero pressure) can produce a similar P-V curve if combined with a lower K' (less stiffening with pressure). This creates an elongated valley in chi-squared space rather than a single well-defined minimum. The covariance matrix captures this elliptical uncertainty region. Proper uncertainty propagation must account for correlations, or derived quantities will have incorrect error bars.",
+      "common_misconceptions": [
+        "Reporting individual parameter uncertainties without the full covariance matrix can be misleading when correlations are strong.",
+        "High correlation does not mean parameters cannot be determined; it means their joint uncertainty region is elongated but still finite.",
+        "Fixing one correlated parameter and fitting the other gives artificially small uncertainties."
+      ]
+    },
+    {
+      "concept": "Reduced chi-squared as goodness-of-fit measure",
+      "definition": "The chi-squared statistic divided by the number of degrees of freedom (N_data - N_params). Expected value is 1.0 for a correct model with properly estimated uncertainties.",
+      "physical_intuition": "Reduced chi-squared much greater than 1 indicates either the model is inadequate, the data has systematic errors, or the measurement uncertainties are underestimated. Reduced chi-squared much less than 1 suggests the uncertainties are overestimated (the model fits 'too well' given the stated errors). In mineral physics, chi2_reduced of 1-3 is often considered acceptable given the difficulty of precisely estimating all experimental uncertainties.",
+      "common_misconceptions": [
+        "A reduced chi-squared of exactly 1.0 is not required or even expected for individual datasets.",
+        "Low reduced chi-squared does not mean better; it may indicate overfitting or overestimated error bars.",
+        "The chi-squared test assumes Gaussian errors, which may not hold for all experimental data."
+      ]
+    },
+    {
+      "concept": "Numerical Jacobian via central differences",
+      "definition": "Approximation of partial derivatives by evaluating the model at two points symmetrically displaced around the current parameter value: df/dp ≈ [f(p+h) - f(p-h)] / (2h).",
+      "physical_intuition": "For complex forward models like Mie-Gruneisen-Debye calculations, deriving analytic Jacobians is impractical. Central differences provide a good balance between accuracy (second-order in h) and computational cost (two model evaluations per parameter). The step size h is chosen proportional to the parameter magnitude (1e-7 * |p|) with a floor (1e-10) to avoid division by zero.",
+      "common_misconceptions": [
+        "Forward differences (one-sided) are cheaper but only first-order accurate; central differences are strongly preferred for optimization.",
+        "Too small a step size h causes catastrophic cancellation from floating-point arithmetic, not better accuracy.",
+        "The Jacobian must be recomputed at every iteration because it depends on the current parameter values."
+      ]
+    },
+    {
+      "concept": "Parameter normalization for conditioning",
+      "definition": "Rescaling parameters so that their magnitudes are similar, improving the condition number of the Jacobian and the convergence of the optimization.",
+      "physical_intuition": "In thermoelastic fitting, parameters span vastly different scales: K0 might be ~170 GPa while gamma0 might be ~1.5. Without normalization, the Jacobian columns have very different magnitudes, making the normal equations ill-conditioned. The ThermoElasticFitter divides each parameter by its initial value before optimization, then rescales back afterward. This is equivalent to optimizing in a space where all parameters are O(1).",
+      "common_misconceptions": [
+        "Normalization does not change the mathematical minimum; it changes the path taken to reach it.",
+        "The covariance matrix must be denormalized after optimization to give uncertainties in physical units.",
+        "Normalization helps most when parameters differ by many orders of magnitude."
+      ]
+    }
+  ],
+
+  "key_references": [
+    {
+      "author": "Levenberg, K.",
+      "year": 1944,
+      "title": "A method for the solution of certain non-linear problems in least squares",
+      "journal": "Quarterly of Applied Mathematics, 2(2), 164-168",
+      "why_essential": "Original paper introducing the interpolation between Gauss-Newton and gradient descent via a damping parameter. Foundational work for the algorithm."
+    },
+    {
+      "author": "Marquardt, D. W.",
+      "year": 1963,
+      "title": "An algorithm for least-squares estimation of nonlinear parameters",
+      "journal": "Journal of the Society for Industrial and Applied Mathematics, 11(2), 431-441",
+      "why_essential": "Introduced the key modification of using diag(J^T J) instead of the identity for damping, providing implicit parameter scaling and significantly improving convergence behavior."
+    },
+    {
+      "author": "Press, W. H., Teukolsky, S. A., Vetterling, W. T., and Flannery, B. P.",
+      "year": 2007,
+      "title": "Numerical Recipes: The Art of Scientific Computing (3rd edition)",
+      "journal": "Cambridge University Press",
+      "why_essential": "Standard reference for implementation of the Levenberg-Marquardt algorithm with practical advice on step-size selection, convergence criteria, and covariance estimation. Chapter 15 on modeling of data is particularly relevant."
+    },
+    {
+      "author": "Angel, R. J.",
+      "year": 2000,
+      "title": "Equations of State",
+      "journal": "Reviews in Mineralogy and Geochemistry, 41, 35-59",
+      "why_essential": "Comprehensive review of EOS fitting in mineral physics including practical guidance on F-f plots, parameter correlations, and proper uncertainty analysis for P-V data."
+    },
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2011,
+      "title": "Thermodynamics of mantle minerals - II. Phase equilibria",
+      "journal": "Geophysical Journal International, 184(3), 1180-1213",
+      "why_essential": "The SLB2011 framework that defines the forward model used in ThermoElasticFitter. Understanding the parametrization is essential for knowing which parameters to fit and their physical constraints."
+    },
+    {
+      "author": "Brent, R. P.",
+      "year": 1973,
+      "title": "Algorithms for Minimization without Derivatives",
+      "journal": "Prentice-Hall",
+      "why_essential": "Classic text on derivative-free and numerical-derivative optimization methods, providing theoretical foundations for convergence analysis and step-size selection in numerical differentiation."
+    }
+  ],
+
+  "worked_examples": [
+    {
+      "problem_statement": "Fit the Birch-Murnaghan 3rd-order EOS to synthetic P-V data for MgO periclase. Given five data points: (0 GPa, 11.25 cm3/mol), (10 GPa, 10.78 cm3/mol), (25 GPa, 10.21 cm3/mol), (50 GPa, 9.47 cm3/mol), (100 GPa, 8.56 cm3/mol), with V0 = 11.25 cm3/mol and sigmaV = 0.02 cm3/mol for all points. Determine K0 and K' with uncertainties.",
+      "solution_approach": "1. Initialize K0 = 160 GPa, K' = 4.0 (typical starting values for oxides). 2. At each iteration, compute the BM3 pressure for each volume using the current K0, K'. 3. Build the 5x2 Jacobian via central differences (perturbing K0 and K' separately). 4. Solve the damped normal equations to get parameter updates. 5. After convergence, compute covariance matrix from (J^T J)^{-1} * chi2_reduced.",
+      "numerical_values": "After ~8 iterations, convergence to K0 = 162.5 +/- 1.2 GPa, K' = 4.15 +/- 0.08. Reduced chi-squared = 0.85 (5 data points - 2 parameters = 3 degrees of freedom). The correlation coefficient between K0 and K' is approximately -0.95, indicating strong anti-correlation. The F-f plot shows all points falling on a straight line with intercept ~162.5 GPa and slope ~162.5 * 1.5 * (4.15-4) = 36.6 GPa.",
+      "interpretation": "The fitted K0 and K' are consistent with published values for MgO (K0 = 161-163 GPa, K' = 4.1-4.2). The strong anti-correlation means that the joint uncertainty ellipse is elongated: reporting K0 = 162.5 +/- 1.2 GPa and K' = 4.15 +/- 0.08 individually overstates the true uncertainty. When propagating to pressure at a given volume, the correlated error is much smaller than would be estimated from individual uncertainties."
+    },
+    {
+      "problem_statement": "Use ThermoElasticFitter to constrain SLB2011 parameters for Mg-perovskite (bridgmanite) from measured Vp and Vs at three P-T conditions: (25 GPa, 300 K, Vp=10800 m/s, Vs=6100 m/s), (50 GPa, 1500 K, Vp=11900 m/s, Vs=6500 m/s), (80 GPa, 2500 K, Vp=13100 m/s, Vs=6900 m/s). Fit K0, G0, and K' while holding other parameters fixed at SLB2011 values.",
+      "solution_approach": "1. Create FittingConfig with initial SLB2011 parameters for bridgmanite and set fit flags for K0, G0, K'. 2. Normalize parameters by their initial values for conditioning. 3. At each iteration, run the Mie-Gruneisen-Debye forward model at each P-T condition to predict Vp, Vs. 4. The Jacobian is 6x3 (6 observables: Vp and Vs at 3 conditions, 3 free parameters). 5. Converge to best-fit values and compute covariance matrix.",
+      "numerical_values": "Starting from K0_init = 251 GPa, G0_init = 173 GPa, K'_init = 4.1. After ~15 iterations: K0 = 253 +/- 3 GPa, G0 = 175 +/- 2 GPa, K' = 4.05 +/- 0.15. Reduced chi-squared = 1.8 (6 data - 3 params = 3 DOF), indicating a reasonable but not perfect fit. Sigma assumed as 1% of Vp and Vs values (default in ThermoElasticFitter).",
+      "interpretation": "The velocity data constrain K0 and G0 independently because Vp depends on both K and G while Vs depends only on G. K' is less well-constrained because it primarily affects the pressure dependence, and with only three P-T points spanning a limited range, its leverage is modest. The reduced chi-squared of 1.8 suggests either slightly underestimated uncertainties or minor inadequacy of the SLB2011 model for bridgmanite at these conditions."
+    },
+    {
+      "problem_statement": "Demonstrate the importance of the F-f diagnostic plot in detecting the need for a 4th-order Birch-Murnaghan EOS. Generate F-f data from synthetic P-V measurements that deviate from BM3 at high compression.",
+      "solution_approach": "1. Generate P-V data using a BM4 equation with non-zero 4th-order coefficient. 2. Fit with EOSFitter (which uses BM3). 3. Use GenerateFfPlot to compute F and f for each data point. 4. Examine whether F(f) deviates from linearity, which would indicate that BM3 is insufficient.",
+      "numerical_values": "For stishovite with K0 = 305 GPa, K' = 4.4, K'' = -0.044 GPa^{-1}, generate data to 100 GPa. BM3 fit gives K0 = 310 GPa, K' = 4.2 with reduced chi-squared = 12.5, clearly indicating a poor fit. The F-f plot shows systematic curvature: data points curve upward at high f (high compression), with F_data deviating from the linear F_fit by up to 15 GPa at the highest strains.",
+      "interpretation": "The F-f plot immediately reveals the inadequacy of BM3: the curvature indicates that a 4th-order (or higher) EOS is needed. This is a more sensitive diagnostic than examining P-V residuals directly, because the F-f normalization removes the dominant nonlinearity. In practice, this situation arises for minerals with K'' significantly different from the BM3-implied value of -(143 - 63K' + 9K'^2) / (9K0)."
+    }
+  ],
+
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch04: Elastic Moduli and Seismic Velocities",
+      "nature": "application",
+      "explanation": "The forward model in ThermoElasticFitter computes Vp and Vs from elastic moduli. Fitting velocity data requires understanding the relationships between K_S, G, density, and seismic velocities."
+    },
+    {
+      "related_chapter": "Ch05: The Stixrude-Lithgow-Bertelloni Formulation",
+      "nature": "prerequisite",
+      "explanation": "The SLB2011 parametrization defines the forward model and its parameters (V0, K0, K', G0, G', gamma0, q0, eta_S0, theta0). Understanding which parameters are well-constrained and which are trade-off partners is essential for effective fitting."
+    },
+    {
+      "related_chapter": "Ch06: Mie-Gruneisen Equation of State Solver",
+      "nature": "prerequisite",
+      "explanation": "The MieGruneisenEOSOptimizer is the forward model called inside ThermoElasticFitter. Each Jacobian evaluation requires multiple forward model solutions. The EOS solver must be robust and efficient since it is called thousands of times during fitting."
+    },
+    {
+      "related_chapter": "Ch01: Thermodynamics of Solids at High Pressure",
+      "nature": "prerequisite",
+      "explanation": "The Birch-Murnaghan equation of state, Eulerian finite strain, and their thermodynamic foundations must be understood before fitting EOS parameters to P-V data."
+    },
+    {
+      "related_chapter": "Ch03: Gruneisen Parameter and Anharmonicity",
+      "nature": "application",
+      "explanation": "The Gruneisen parameter gamma and its volume dependence q are fittable parameters in ThermoElasticFitter. Their thermal effects on pressure and elastic moduli must be understood for interpreting fit results."
+    },
+    {
+      "related_chapter": "Ch07: SLB2011 Mineral Database",
+      "nature": "extension",
+      "explanation": "The mineral database provides initial parameter values for fitting. Results from fitting update or validate database entries. The interplay between database compilation and parameter fitting is iterative."
+    }
+  ],
+
+  "computational_methods": "The LevenbergMarquardtOptimizer in ThermoElasticCalculator implements the standard Levenberg-Marquardt algorithm with the following specifics:\n\n**Algorithm:** At each iteration: (1) Compute the Jacobian J via central finite differences with step size h = max(|p_j| * 1e-7, 1e-10). (2) Form the normal equations J^T*J and J^T*r. (3) Check gradient convergence (||J^T*r|| < 1e-10). (4) Solve the damped system with current lambda, adding lambda*max(JtJ[i,i], 1e-12) to the diagonal. (5) If the trial step reduces chi-squared, accept it and decrease lambda by factor 10; otherwise increase lambda by factor 10 and retry (up to 20 attempts). (6) Check relative chi-squared change convergence (< 1e-8).\n\n**Convergence criteria:** Three stopping conditions: (a) relative change in chi-squared below 1e-8, (b) gradient norm below 1e-10, (c) maximum 200 iterations reached. The algorithm reports whether convergence was achieved.\n\n**Covariance estimation:** After convergence, the Jacobian is recomputed at the final parameters, and the covariance is C = (J^T*J)^{-1} * chi2_reduced. If J^T*J is singular (indicating unresolvable parameters), uncertainties are set to NaN.\n\n**Parameter normalization (ThermoElasticFitter):** Each free parameter is divided by its initial value before optimization, and the covariance matrix is denormalized afterward: C_physical[i,j] = C_normalized[i,j] * scale[i] * scale[j]. This dramatically improves convergence for parameters spanning different orders of magnitude.\n\n**Forward model robustness (ThermoElasticFitter):** If the Mie-Gruneisen forward model fails for a data point (non-convergence or exception), the prediction is set to 1e6, creating a large penalty that steers the optimizer away from unphysical parameter regions. If all data points fail, an exception is thrown.\n\n**Performance:** Each iteration requires 2*N_params + 1 forward model evaluations (central differences). For EOSFitter with 2 parameters and 10 data points, convergence typically takes 5-15 iterations (~25-75 BM3 evaluations, essentially instantaneous). For ThermoElasticFitter with 3-5 free parameters and Mie-Gruneisen forward models, convergence takes 10-30 iterations with each iteration requiring multiple EOS solver calls, totaling several seconds on modern hardware.\n\n**Linear algebra:** Matrix operations use MathNet.Numerics.LinearAlgebra for dense matrix factorization and solution of the normal equations. The Solve method uses LU decomposition internally.",
+
+  "open_questions": [
+    "How to systematically determine which SLB2011 parameters are independently resolvable from a given dataset, and how to design optimal experimental P-T sampling strategies for maximum parameter information content.",
+    "Whether more sophisticated optimization methods (e.g., Bayesian inference with MCMC, differential evolution) can better handle the multi-modal chi-squared landscapes that arise when fitting many thermoelastic parameters simultaneously.",
+    "How to properly propagate model uncertainty (not just parameter uncertainty) when the choice between BM3 and BM4 EOS, or between different thermal models, is itself uncertain.",
+    "The development of robust automatic differentiation (AD) for Mie-Gruneisen-Debye forward models that could replace numerical Jacobians, improving both accuracy and computational efficiency.",
+    "How to incorporate prior information (e.g., physical bounds on K', theoretical constraints from ab initio calculations) into the fitting framework without introducing bias, potentially through regularized or Bayesian approaches.",
+    "Whether the standard Gaussian error propagation via the covariance matrix is adequate for highly nonlinear models where the chi-squared surface is far from quadratic, and how to detect and handle such situations."
+  ],
+
+  "exercise_suggestions": [
+    "Implement a simple Levenberg-Marquardt optimizer from scratch (without using the LevenbergMarquardtOptimizer class) to fit y = a * exp(-b * x) to synthetic data. Verify convergence and compare parameter uncertainties with analytic expectations.",
+    "Use EOSFitter to fit K0 and K' for MgO using published P-V data. Construct the F-f plot and verify that the data are consistent with a 3rd-order Birch-Murnaghan equation. Examine the correlation between K0 and K'.",
+    "Generate synthetic P-V data from known BM3 parameters, add Gaussian noise, and study how the fitted K0 and K' depend on: (a) the number of data points, (b) the pressure range, (c) the noise level. Plot the uncertainty ellipse in (K0, K') space.",
+    "Compare forward differences vs. central differences for Jacobian computation by modifying the LevenbergMarquardtOptimizer. Measure the effect on convergence rate and final parameter accuracy.",
+    "Use ThermoElasticFitter to fit bridgmanite parameters from synthetic velocity data at mantle conditions. Investigate what happens when you try to fit too many parameters simultaneously (e.g., K0, K', G0, G', gamma0, q0). Relate the failure to the eigenvalues of J^T*J.",
+    "Implement a bootstrap uncertainty estimation: resample the data with replacement many times, refit each resampled dataset, and compare the resulting parameter distributions with the covariance matrix estimate. When do they disagree?",
+    "Study the effect of the initial lambda value and lambda scaling factor on convergence behavior. Plot the number of iterations vs. initial lambda for a fixed test problem.",
+    "Fit a linear model y = a + b*x using the LevenbergMarquardtOptimizer and verify that it converges in exactly one iteration (since the problem is linear). Confirm that the covariance matrix matches the analytic linear least-squares result."
+  ],
+
+  "figure_suggestions": [
+    {
+      "description": "Contour plot of the chi-squared surface in (K0, K') parameter space for BM3 EOS fitting",
+      "axes": "x-axis: K0 [GPa], y-axis: K' [dimensionless]",
+      "key_features": "Show the elongated valley indicating K0-K' anti-correlation. Mark the best-fit point, the 1-sigma and 2-sigma confidence ellipses, and the individual marginal uncertainties for comparison. Overlay the Levenberg-Marquardt iteration path from initial guess to convergence."
+    },
+    {
+      "description": "F-f (normalized pressure vs. Eulerian strain) diagnostic plot",
+      "axes": "x-axis: f (Eulerian finite strain), y-axis: F (normalized pressure) [GPa]",
+      "key_features": "Data points with error bars, linear BM3 fit line, intercept labeled as K0, slope related to K'. Show two cases: one where BM3 is adequate (linear F-f) and one where BM4 is needed (curved F-f)."
+    },
+    {
+      "description": "Convergence history of the Levenberg-Marquardt algorithm",
+      "axes": "x-axis: iteration number, y-axis (left): log10(chi-squared), y-axis (right): log10(lambda)",
+      "key_features": "Show the rapid decrease in chi-squared accompanied by oscillations in lambda. Mark where steps were rejected (lambda increased) vs. accepted (lambda decreased). Indicate the convergence tolerance threshold."
+    },
+    {
+      "description": "Residual plot showing fit quality for Vp and Vs data",
+      "axes": "x-axis: pressure [GPa], y-axis: residual (observed - predicted) / sigma",
+      "key_features": "Normalized residuals should scatter randomly around zero for a good fit. Different symbols for Vp and Vs residuals. Horizontal dashed lines at +/- 1 and +/- 2 sigma. Systematic trends indicate model inadequacy."
+    },
+    {
+      "description": "Parameter uncertainty as a function of dataset size",
+      "axes": "x-axis: number of P-V data points, y-axis: 1-sigma uncertainty in K0 [GPa] and K' [dimensionless]",
+      "key_features": "Show that uncertainties decrease approximately as 1/sqrt(N). Compare the effect of adding data at low pressure vs. high pressure. Demonstrate that the pressure range matters more than the number of points for constraining K'."
+    },
+    {
+      "description": "Comparison of P-V data with best-fit BM3 curve and uncertainty band",
+      "axes": "x-axis: Volume [cm3/mol], y-axis: Pressure [GPa]",
+      "key_features": "Data points with error bars, best-fit BM3 curve, shaded 1-sigma confidence band computed from the full covariance matrix. Show that the confidence band is narrower at intermediate pressures (where the data constrain the curve best) and wider at extrapolated pressures."
+    }
+  ],
+
+  "historical_context": "The Levenberg-Marquardt algorithm has its roots in two independent contributions. Kenneth Levenberg in 1944 proposed augmenting the Gauss-Newton equations with a damping term proportional to the identity matrix, providing global convergence at the cost of slower local convergence. Donald Marquardt in 1963 made the crucial improvement of using the diagonal of J^T*J as the damping matrix instead of the identity, which provides implicit scaling of the parameter space and greatly improves performance when parameters have different magnitudes. This modification was particularly important for geophysical applications where parameters like bulk modulus (hundreds of GPa) and its pressure derivative (dimensionless, order 4) coexist in the same optimization.\n\nIn mineral physics, systematic fitting of equation-of-state parameters became standard practice in the 1980s-1990s as diamond anvil cell and multi-anvil experiments produced increasing volumes of high-pressure data. The F-f plot methodology, popularized by Ross Angel and others, provided both a diagnostic tool and initial parameter estimates for nonlinear fitting. The extension to thermoelastic parameter fitting became critical with the development of comprehensive thermodynamic databases such as Stixrude and Lithgow-Bertelloni (2005, 2011), which required simultaneous fitting of multiple parameters to diverse experimental datasets (P-V compression, acoustic velocity, calorimetric, and spectroscopic data).\n\nModern implementations, including the one in ThermoElasticCalculator, benefit from robust linear algebra libraries (here MathNet.Numerics) and fast forward models. The shift toward Bayesian methods (MCMC sampling) in the 2010s-2020s has complemented rather than replaced Levenberg-Marquardt: the LM algorithm remains the workhorse for point estimation and uncertainty quantification when the parameter space is modest (fewer than ~10 parameters) and the chi-squared surface is well-behaved, while MCMC methods are preferred for high-dimensional problems or when the posterior distribution is multi-modal.",
+
+  "uncertain": []
+}

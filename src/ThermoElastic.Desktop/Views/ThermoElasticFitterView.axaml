@@ -1,0 +1,93 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ThermoElastic.Desktop.ViewModels"
+             x:Class="ThermoElastic.Desktop.Views.ThermoElasticFitterView"
+             x:DataType="vm:ThermoElasticFitterViewModel">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="Thermoelastic Parameter Fitter" FontWeight="Bold" FontSize="18" Margin="0,0,0,8" />
+
+        <!-- Top section: Mineral selection + Initial parameters with checkboxes -->
+        <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Load from SLB2011:" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding MineralNames}" SelectedItem="{Binding SelectedMineralName}" Width="250" />
+                <Button Content="Fit" Command="{Binding FitCommand}" />
+            </StackPanel>
+
+            <!-- Parameter grid with checkboxes -->
+            <TextBlock Text="Parameters (check = fit, uncheck = fixed):" FontWeight="SemiBold" FontSize="12" Margin="0,4,0,2" />
+            <WrapPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,4">
+                    <CheckBox IsChecked="{Binding FitV0}" VerticalAlignment="Center" />
+                    <TextBlock Text="V0:" VerticalAlignment="Center" Width="30" />
+                    <NumericUpDown Value="{Binding V0}" Minimum="1" Maximum="200" Increment="0.01" Width="110" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,4">
+                    <CheckBox IsChecked="{Binding FitK0}" VerticalAlignment="Center" />
+                    <TextBlock Text="K0:" VerticalAlignment="Center" Width="30" />
+                    <NumericUpDown Value="{Binding K0}" Minimum="1" Maximum="1000" Increment="0.1" Width="110" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,4">
+                    <CheckBox IsChecked="{Binding FitK1Prime}" VerticalAlignment="Center" />
+                    <TextBlock Text="K':" VerticalAlignment="Center" Width="30" />
+                    <NumericUpDown Value="{Binding K1Prime}" Minimum="0" Maximum="20" Increment="0.01" Width="110" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,4">
+                    <CheckBox IsChecked="{Binding FitG0}" VerticalAlignment="Center" />
+                    <TextBlock Text="G0:" VerticalAlignment="Center" Width="30" />
+                    <NumericUpDown Value="{Binding G0}" Minimum="0" Maximum="500" Increment="0.1" Width="110" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,4">
+                    <CheckBox IsChecked="{Binding FitG1Prime}" VerticalAlignment="Center" />
+                    <TextBlock Text="G':" VerticalAlignment="Center" Width="30" />
+                    <NumericUpDown Value="{Binding G1Prime}" Minimum="0" Maximum="20" Increment="0.01" Width="110" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,4">
+                    <CheckBox IsChecked="{Binding FitDebyeTemp}" VerticalAlignment="Center" />
+                    <TextBlock Text="θ0:" VerticalAlignment="Center" Width="30" />
+                    <NumericUpDown Value="{Binding DebyeTemp0}" Minimum="100" Maximum="3000" Increment="1" Width="110" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,4">
+                    <CheckBox IsChecked="{Binding FitGamma}" VerticalAlignment="Center" />
+                    <TextBlock Text="γ0:" VerticalAlignment="Center" Width="30" />
+                    <NumericUpDown Value="{Binding Gamma0}" Minimum="0" Maximum="10" Increment="0.01" Width="110" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,4">
+                    <CheckBox IsChecked="{Binding FitQ}" VerticalAlignment="Center" />
+                    <TextBlock Text="q0:" VerticalAlignment="Center" Width="30" />
+                    <NumericUpDown Value="{Binding Q0}" Minimum="0" Maximum="10" Increment="0.01" Width="110" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,4">
+                    <CheckBox IsChecked="{Binding FitEtaS}" VerticalAlignment="Center" />
+                    <TextBlock Text="ηS0:" VerticalAlignment="Center" Width="30" />
+                    <NumericUpDown Value="{Binding EtaS0}" Minimum="0" Maximum="20" Increment="0.01" Width="110" />
+                </StackPanel>
+            </WrapPanel>
+
+            <!-- Additional mineral info -->
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="n (atoms):" VerticalAlignment="Center" />
+                    <NumericUpDown Value="{Binding NumAtoms}" Minimum="1" Maximum="100" Increment="1" Width="80" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="M (g/mol):" VerticalAlignment="Center" />
+                    <NumericUpDown Value="{Binding MolarWeight}" Minimum="1" Maximum="2000" Increment="0.01" Width="110" />
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Data Input -->
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+            <TextBlock Text="Data: T[K], P[GPa], Vp[m/s], Vs[m/s] or T[K], P[GPa], V[cm³/mol]" FontSize="11" Foreground="#666" />
+            <TextBox Text="{Binding DataText}" AcceptsReturn="True" Height="180" FontFamily="Consolas,Courier New,monospace" FontSize="11" />
+        </StackPanel>
+
+        <!-- Status -->
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Margin="0,8,0,0" />
+
+        <!-- Results -->
+        <TextBox Text="{Binding ResultText}" IsReadOnly="True" AcceptsReturn="True"
+                 FontFamily="Consolas,Courier New,monospace" FontSize="11" />
+    </DockPanel>
+</UserControl>

@@ -109,6 +109,35 @@ public class MineralParams
         return term1 * (GZero + term2 + term3);
     }
 
+    public MineralParams Clone()
+    {
+        return new MineralParams
+        {
+            MineralName = MineralName,
+            PaperName = PaperName,
+            NumAtoms = NumAtoms,
+            MolarVolume = MolarVolume,
+            MolarWeight = MolarWeight,
+            KZero = KZero,
+            K1Prime = K1Prime,
+            K2Prime = K2Prime,
+            GZero = GZero,
+            G1Prime = G1Prime,
+            G2Prime = G2Prime,
+            DebyeTempZero = DebyeTempZero,
+            GammaZero = GammaZero,
+            QZero = QZero,
+            EhtaZero = EhtaZero,
+            RefTemp = RefTemp,
+            F0 = F0,
+            Tc0 = Tc0,
+            VD = VD,
+            SD = SD,
+            SpinQuantumNumber = SpinQuantumNumber,
+            MagneticAtomCount = MagneticAtomCount,
+        };
+    }
+
     public string ParamSymbol => $"{MineralName} ({PaperName})";
 
     public string ExportJson()

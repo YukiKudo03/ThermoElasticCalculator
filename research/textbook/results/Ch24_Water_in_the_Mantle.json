@@ -1,0 +1,275 @@
+{
+  "chapter_summary": "Water (hydrogen) in Earth's mantle is predominantly stored not in hydrous phases but in nominally anhydrous minerals (NAMs) such as olivine, wadsleyite, ringwoodite, garnet, and bridgmanite. Although each mineral individually holds only tens to thousands of ppm H2O by weight, the enormous volume of the mantle means that NAMs collectively constitute a reservoir potentially exceeding the mass of the surface oceans. The incorporation mechanism involves hydrogen substituting for cations (Mg, Si) at point defect sites, charge-balanced by vacancies, with the solubility depending sensitively on pressure, temperature, oxygen fugacity, and coexisting phases. The transition zone (410-660 km depth) is uniquely important because wadsleyite can dissolve up to approximately 3.3 wt% H2O and ringwoodite up to approximately 2.7 wt%, compared with only approximately 0.1-0.2 wt% for upper-mantle olivine and even less for lower-mantle bridgmanite. This dramatic contrast in storage capacity drives hypotheses about water filtering at the 410 km and 660 km discontinuities.\n\nWater profoundly affects the physical properties relevant to seismology and geodynamics. For elastic velocities, experimental studies (Mao et al. 2012, Inoue et al. 2010) show that 1 wt% H2O in wadsleyite reduces Vs by approximately 1.2% and Vp by approximately 0.5%, while decreasing density by approximately 0.3%. These modest but measurable reductions arise because hydrogen weakens the Si-O and Mg-O bonds that control elastic moduli. For attenuation, water enhances grain-boundary diffusion, shortening relaxation times and lowering the quality factor Q. The effect enters through the scaling Q_wet^{-1} = Q_dry^{-1} * (C_OH / C_ref)^{r*alpha}, where r is approximately 1 and alpha is the frequency exponent (approximately 0.27). At mantle-relevant water contents of 100-1000 ppm H/Si, this can reduce Q by factors of 2-5 relative to dry conditions, producing significant additional velocity reduction through anelastic dispersion.\n\nThe WaterContentEstimator class in this codebase implements the inverse problem: given an observed fractional velocity reduction (dlnVs) relative to a dry reference model, it estimates the water content by dividing dlnVs by the empirical sensitivity coefficient (-0.012 per wt% H2O for Vs). The forward problem computes hydrous velocities and density by applying linear perturbation factors to dry Mie-Gruneisen EOS results. The WaterQCorrector decorator wraps any IAnelasticityModel and applies the water-dependent Q correction before recomputing anelastic velocities, preserving the full relaxed-modulus physics from the Extended Burgers or Andrade base models. Together, these tools allow construction of hydrous velocity profiles through the transition zone for comparison with seismic tomography.\n\nRheologically, water has an even larger effect than on elastic properties. Even small amounts of dissolved hydrogen (tens of ppm) can reduce mantle viscosity by 1-2 orders of magnitude through enhanced dislocation climb and diffusion creep. This controls convective vigor, the coupling between plates and underlying mantle, and the dynamics of subducting slabs that carry water to depth. The Pearson et al. (2014) discovery of hydrous ringwoodite in a diamond inclusion from the transition zone provided direct evidence for significant water storage at depth, transforming this from a theoretical prediction to an observational constraint.",
+  "prerequisite_knowledge": [
+    "Elasticity theory: bulk modulus K, shear modulus G, and seismic velocities Vp and Vs (Ch04)",
+    "Mie-Gruneisen equation of state: computing mineral properties at high P-T (Ch06)",
+    "SLB2011 mineral database: endmember parameters for olivine polymorphs (Ch07)",
+    "Anelasticity and Q: quality factor, frequency exponent, anelastic velocity corrections (Ch16)",
+    "Phase transitions in the mantle: olivine-wadsleyite (410 km) and ringwoodite-bridgmanite (660 km) transitions (Ch08, Ch13)",
+    "Crystal chemistry fundamentals: point defects, vacancies, and substitution mechanisms",
+    "PREM and radial Earth models: reference velocity and density profiles (Ch15)",
+    "Basic infrared spectroscopy concepts for measuring OH in minerals"
+  ],
+  "key_equations": [
+    {
+      "equation": "V_s^{\\text{wet}} = V_s^{\\text{dry}} \\left(1 + \\frac{\\partial \\ln V_s}{\\partial C_{\\text{H}_2\\text{O}}} \\cdot C_{\\text{H}_2\\text{O}}\\right)",
+      "name": "Hydrous Velocity Perturbation (Linear Approximation)",
+      "variables": {
+        "V_s^{\\text{wet}}": "Shear velocity of hydrous mineral [m/s]",
+        "V_s^{\\text{dry}}": "Shear velocity of anhydrous mineral [m/s]",
+        "\\partial \\ln V_s / \\partial C_{\\text{H}_2\\text{O}}": "Empirical sensitivity coefficient (-0.012 per wt% for wadsleyite, Mao et al. 2012)",
+        "C_{\\text{H}_2\\text{O}}": "Water content [wt%]"
+      },
+      "interpretation": "A first-order linear perturbation approach: each wt% of dissolved water reduces Vs by approximately 1.2% in wadsleyite. The sensitivity coefficient is determined experimentally from Brillouin spectroscopy on hydrous single crystals. Analogous expressions hold for Vp (sensitivity -0.005 per wt%) and density (sensitivity -0.003 per wt%). Implemented in WaterContentEstimator.ComputeHydrousProperties()."
+    },
+    {
+      "equation": "C_{\\text{H}_2\\text{O}} = \\frac{\\delta \\ln V_s}{\\partial \\ln V_s / \\partial C_{\\text{H}_2\\text{O}}}",
+      "name": "Water Content Inversion from Velocity Anomaly",
+      "variables": {
+        "C_{\\text{H}_2\\text{O}}": "Estimated water content [wt%]",
+        "\\delta \\ln V_s": "Observed fractional Vs anomaly relative to dry model (negative for slow anomalies)",
+        "\\partial \\ln V_s / \\partial C_{\\text{H}_2\\text{O}}": "Sensitivity coefficient (-0.012 per wt%)"
+      },
+      "interpretation": "The inverse of the forward perturbation: a -2% Vs anomaly implies approximately 1.67 wt% H2O if the anomaly is entirely attributed to water. In practice, temperature anomalies must be separated, typically using Vp/Vs ratios since water and temperature have different Vp/Vs signatures. Implemented in WaterContentEstimator.EstimateWaterContent()."
+    },
+    {
+      "equation": "Q_S^{-1}(\\text{wet}) = Q_S^{-1}(\\text{dry}) \\cdot \\left(\\frac{C_{\\text{OH}}}{C_{\\text{ref}}}\\right)^{r \\cdot \\alpha}",
+      "name": "Water-Dependent Attenuation Correction",
+      "variables": {
+        "Q_S^{-1}(\\text{wet})": "Attenuation of hydrous mineral",
+        "Q_S^{-1}(\\text{dry})": "Attenuation of reference (nominally dry) mineral",
+        "C_{\\text{OH}}": "Water content [ppm H/Si]",
+        "C_{\\text{ref}}": "Reference water content (50 ppm H/Si, calibration condition)",
+        "r": "Water exponent for relaxation time scaling (approximately 1.0)",
+        "\\alpha": "Frequency exponent (approximately 0.27)"
+      },
+      "interpretation": "Water enhances grain-boundary diffusion, shifting relaxation times to shorter values. The Q reduction scales as a power law in water content, with the exponent being the product of the water sensitivity r and the frequency exponent alpha. For 500 ppm H/Si vs. a 50 ppm reference, the Q enhancement factor is (500/50)^{0.27} = 1.88, nearly doubling the attenuation. Implemented in WaterQCorrector.ComputeQS()."
+    },
+    {
+      "equation": "C_{\\text{H}_2\\text{O}}^{\\text{max}} = A \\cdot f_{\\text{O}_2}^{n} \\cdot \\exp\\left(-\\frac{\\Delta H}{RT}\\right) \\cdot P^{m}",
+      "name": "Water Solubility in NAMs (Parameterized Form)",
+      "variables": {
+        "C_{\\text{H}_2\\text{O}}^{\\text{max}}": "Maximum water solubility [wt% or ppm]",
+        "A": "Pre-exponential constant (mineral-dependent)",
+        "f_{\\text{O}_2}": "Oxygen fugacity",
+        "n": "Fugacity exponent",
+        "\\Delta H": "Enthalpy of hydration [kJ/mol]",
+        "P": "Pressure [GPa]",
+        "m": "Pressure exponent (approximately 1-2)"
+      },
+      "interpretation": "The equilibrium water storage capacity of each mineral depends on thermodynamic conditions. For wadsleyite, solubility peaks at approximately 3.3 wt% near 15 GPa and 1400 K. For olivine, it increases with pressure up to approximately 0.1-0.9 wt% at 12 GPa. The strong mineral-dependence of solubility creates 'water filters' at phase boundaries where changes in storage capacity force dehydration or hydration."
+    },
+    {
+      "equation": "\\dot{\\varepsilon} \\propto C_{\\text{OH}}^{r_{\\text{creep}}} \\cdot \\sigma^n \\cdot \\exp\\left(-\\frac{E^* + PV^*}{RT}\\right)",
+      "name": "Water-Weakened Creep Law",
+      "variables": {
+        "\\dot{\\varepsilon}": "Strain rate [s^{-1}]",
+        "C_{\\text{OH}}": "Hydroxyl concentration [ppm H/Si]",
+        "r_{\\text{creep}}": "Water exponent for creep (approximately 1.0-1.2 for olivine dislocation creep)",
+        "\\sigma": "Differential stress [Pa]",
+        "n": "Stress exponent (3.0-3.5 for dislocation creep)",
+        "E^*": "Activation energy [kJ/mol]",
+        "V^*": "Activation volume [cm^3/mol]"
+      },
+      "interpretation": "Dissolved water dramatically enhances creep rates by facilitating dislocation climb through enhanced Si diffusion. Even 100 ppm H/Si can increase strain rates by a factor of 10 relative to dry conditions, reducing effective viscosity by an order of magnitude. This controls plate-mantle coupling and convective style."
+    }
+  ],
+  "physical_concepts": [
+    {
+      "concept": "Nominally Anhydrous Minerals (NAMs)",
+      "definition": "Minerals whose stoichiometric chemical formula contains no hydrogen or hydroxyl, yet which can dissolve trace to percent-level amounts of water as hydrogen defects in their crystal structure.",
+      "physical_intuition": "Think of NAMs as a sponge with microscopic pores: the crystal structure has vacant sites (cation vacancies, interstitials) where hydrogen can be accommodated, charge-balanced by the missing cation. The amount of water depends on how many suitable defect sites exist, which varies enormously between mineral structures. Wadsleyite has partially occupied cation sites that create abundant hydrogen-bonding opportunities, while bridgmanite's dense perovskite structure has far fewer.",
+      "common_misconceptions": "A common error is assuming NAMs contain no water because the name says 'anhydrous.' In fact, even 0.01 wt% H2O in the entire mantle volume constitutes a vast reservoir. Another misconception is that water in NAMs exists as molecular H2O; it is actually dissolved as OH groups or even as isolated H+ at specific crystallographic sites."
+    },
+    {
+      "concept": "Water Storage Capacity vs. Actual Water Content",
+      "definition": "Storage capacity is the maximum amount of water a mineral can dissolve under given P-T-fO2 conditions at water saturation. Actual water content depends on the bulk water budget available and may be far below the storage capacity.",
+      "physical_intuition": "Storage capacity is like the size of a glass; actual content is how much water is in the glass. The transition zone minerals (wadsleyite, ringwoodite) have very large glasses (up to 3.3 wt%), but whether these glasses are full, half-full, or nearly empty depends on how much water has been delivered by subduction and how much has been lost by upwelling and dehydration.",
+      "common_misconceptions": "Equating storage capacity with actual content is a serious error. Early estimates that the transition zone holds multiple ocean masses of water assumed near-saturation, but seismic and electrical conductivity data suggest actual contents may be 0.1-1 wt%, still significant but well below saturation in many regions."
+    },
+    {
+      "concept": "Water Filter at the 410 km Discontinuity",
+      "definition": "The concept that the sharp drop in water storage capacity from wadsleyite (up to 3.3 wt%) to olivine (0.1-0.2 wt%) at the 410 km boundary forces upwelling mantle to dehydrate, potentially producing a thin partial melt layer.",
+      "physical_intuition": "As hydrous transition-zone material rises past 410 km and transforms from wadsleyite to olivine, it is like squeezing water from a large sponge into a small one: the excess water that cannot fit into the olivine structure is expelled as a free fluid phase or partial melt. This dehydration melting hypothesis (Bercovici and Karato, 2003) predicts a low-velocity layer just above 410 km, which has been observed in some seismic studies.",
+      "common_misconceptions": "The water filter does not mean all water is trapped in the transition zone. The filter only operates when actual water content exceeds olivine's storage capacity. If the transition zone is only slightly hydrous, water can pass through without dehydration."
+    },
+    {
+      "concept": "Velocity Reduction from Dissolved Water",
+      "definition": "Hydrogen defects in NAMs reduce elastic moduli (and hence seismic velocities) by weakening inter-atomic bonds, with the magnitude proportional to water content.",
+      "physical_intuition": "When H+ replaces Mg2+ at an octahedral site (with a compensating vacancy), the local bonding environment becomes weaker because one strong Mg-O bond is replaced by a weaker O-H...O hydrogen bond. Averaged over the crystal, this softens the bulk and shear moduli. The effect on shear modulus (and Vs) is larger than on bulk modulus (and Vp) because hydrogen preferentially weakens the shear resistance of the structure.",
+      "common_misconceptions": "The velocity reduction is not due to free water or pore fluid (as in crustal rocks) but to a solid-state chemical effect. Also, the linear perturbation approximation used in the WaterContentEstimator breaks down at very high water contents (above approximately 2 wt%) where non-linear effects and structural changes become important."
+    },
+    {
+      "concept": "Hydrolytic Weakening",
+      "definition": "The dramatic reduction in creep strength and viscosity of silicate minerals caused by trace amounts of dissolved hydrogen, which enhances diffusion of Si and O along dislocations and grain boundaries.",
+      "physical_intuition": "Silicon-oxygen bonds are the strongest bonds in silicate minerals and control their strength. When hydrogen is present, it can break Si-O-Si bridges through the reaction Si-O-Si + H2O -> 2 Si-OH (hydrolysis). This makes it much easier for atoms to rearrange during deformation, effectively lubricating the crystal. The effect is extremely nonlinear: the first 100 ppm of water has a much larger weakening effect than going from 1000 to 1100 ppm.",
+      "common_misconceptions": "Hydrolytic weakening is sometimes confused with pore pressure effects in rocks. The mechanism is fundamentally different: it operates at the atomic scale within the crystal lattice, not through mechanical pore pressure. Also, 'wet' in the NAM context means tens to hundreds of ppm, not the percent-level water contents that define hydrous minerals."
+    }
+  ],
+  "key_references": [
+    {
+      "author": "Bercovici, D. and Karato, S.",
+      "year": 2003,
+      "title": "Whole-mantle convection and the transition-zone water filter",
+      "journal": "Nature, 425, 39-44",
+      "why_essential": "Proposed the influential water filter hypothesis at 410 km, which motivates much of the seismic investigation of water in the transition zone and provides the conceptual framework for interpreting low-velocity layers above 410 km."
+    },
+    {
+      "author": "Mao, Z., Jacobsen, S.D., Jiang, F., Smyth, J.R., Holl, C.M., and Duffy, T.S.",
+      "year": 2012,
+      "title": "Elasticity of hydrous wadsleyite to 12 GPa: Implications for Earth's transition zone",
+      "journal": "Geophysical Research Letters, 39, L09312",
+      "why_essential": "Provided the key experimental constraints on how water affects elastic moduli and velocities of wadsleyite, yielding the empirical sensitivity coefficients (-1.2% Vs per wt% H2O) used in the WaterContentEstimator class."
+    },
+    {
+      "author": "Inoue, T., Wada, T., Sasaki, R., and Yurimoto, H.",
+      "year": 2010,
+      "title": "Water partitioning in the Earth's mantle",
+      "journal": "Physics of the Earth and Planetary Interiors, 183, 245-251",
+      "why_essential": "Established water partitioning coefficients between coexisting mantle phases, essential for understanding how water redistributes across phase boundaries at 410 km and 660 km."
+    },
+    {
+      "author": "Pearson, D.G., Brenker, F.E., Nestola, F., et al.",
+      "year": 2014,
+      "title": "Hydrous mantle transition zone indicated by ringwoodite included within diamond",
+      "journal": "Nature, 507, 221-224",
+      "why_essential": "First direct natural sample evidence for hydrous ringwoodite in the transition zone, confirming decades of theoretical predictions about water storage at 520-660 km depth."
+    },
+    {
+      "author": "Karato, S.",
+      "year": 2011,
+      "title": "Water distribution across the mantle transition zone and its implications for global material circulation",
+      "journal": "Earth and Planetary Science Letters, 301, 413-423",
+      "why_essential": "Comprehensive review linking water storage capacity, seismic observations, and rheological effects to build a self-consistent model of water cycling through the mantle."
+    },
+    {
+      "author": "Aizawa, Y., Barnhoorn, A., Faul, U.H., Fitz Gerald, J.D., Jackson, I., and Kovacs, I.",
+      "year": 2008,
+      "title": "Seismic properties of Anita Bay dunite: An exploratory study of the effect of water",
+      "journal": "Journal of Petrology, 49, 2063-2080",
+      "why_essential": "Provided experimental calibration of how water content affects seismic attenuation (Q) in olivine, underlying the water-Q correction relationship implemented in WaterQCorrector."
+    },
+    {
+      "author": "Smyth, J.R. and Jacobsen, S.D.",
+      "year": 2006,
+      "title": "Nominally anhydrous minerals and Earth's deep water cycle",
+      "journal": "Earth's Deep Water Cycle, AGU Geophysical Monograph 168, 1-11",
+      "why_essential": "Authoritative review of water incorporation mechanisms, storage capacities, and spectroscopic measurement techniques for all major mantle NAMs."
+    }
+  ],
+  "worked_examples": [
+    {
+      "problem_statement": "Seismic tomography reveals a -2% Vs anomaly in the transition zone at 500 km depth (approximately 17 GPa, 1600 K) relative to a dry wadsleyite model. Estimate the water content assuming the anomaly is entirely due to dissolved hydrogen.",
+      "solution_approach": "Use the WaterContentEstimator inverse method. The observed dlnVs = -0.02. The empirical sensitivity is -0.012 per wt% H2O (Mao et al. 2012). Water content = dlnVs / (dVs/dC) = -0.02 / (-0.012) = 1.67 wt% H2O.",
+      "numerical_values": "Input: dlnVs = -0.02, sensitivity = -0.012 per wt%. Result: C_H2O = 1.67 wt%. This corresponds to approximately 16,700 ppm H2O by weight, or roughly 2600 ppm H/Si in the wadsleyite structure. This is about 50% of the maximum storage capacity (3.3 wt%).",
+      "interpretation": "The estimated 1.67 wt% is significant but below saturation, consistent with a partially hydrated transition zone. However, this is an upper bound because part of the Vs anomaly may come from elevated temperature. A 100 K temperature excess would account for approximately -0.5% of the anomaly, reducing the water estimate to approximately 1.25 wt%. The Vp/Vs ratio helps discriminate: water reduces Vs more than Vp (Vp/Vs increases), while temperature reduces both comparably."
+    },
+    {
+      "problem_statement": "Compute the effect of 500 ppm H/Si on the quality factor Q_S of olivine at 200 km depth (6.5 GPa, 1600 K, 0.02 Hz seismic frequency), given dry Q_S = 120.",
+      "solution_approach": "Apply the WaterQCorrector formula: Q_wet^{-1} = Q_dry^{-1} * (C_OH / C_ref)^{r*alpha}. With C_OH = 500 ppm, C_ref = 50 ppm, r = 1.0, alpha = 0.27: enhancement factor = (500/50)^{1.0*0.27} = 10^{0.27} = 1.862. Then Q_wet = Q_dry / enhancement = 120 / 1.862 = 64.4.",
+      "numerical_values": "Input: Q_dry = 120, C_OH = 500 ppm H/Si, C_ref = 50 ppm, r = 1.0, alpha = 0.27. Enhancement factor = 1.862. Result: Q_wet = 64.4. The additional anelastic Vs correction: dV/V = -cot(pi*0.27/2) / (2*64.4) = -0.0055, or -0.55% velocity reduction beyond the elastic water effect.",
+      "interpretation": "Water nearly doubles the attenuation at 500 ppm H/Si, a plausible upper-mantle water content near subduction zones. The combined effect of elastic softening and enhanced attenuation means water produces a total Vs reduction larger than either mechanism alone. At these Q values, the anelastic contribution (-0.55%) is comparable to the elastic hydration effect, emphasizing that both mechanisms must be considered for accurate water content estimation."
+    },
+    {
+      "problem_statement": "Compare the water storage capacity of the upper mantle (olivine-dominated, 200-410 km) with the transition zone (wadsleyite + ringwoodite, 410-660 km) in terms of ocean-mass equivalents.",
+      "solution_approach": "Estimate the mass of each region using PREM densities and shell volumes, then multiply by the maximum water storage capacity. Upper mantle (200-410 km): average density approximately 3.5 g/cm3, volume approximately 1.7e11 km3, mass approximately 6.0e23 kg, olivine storage approximately 0.15 wt%, water mass = 9.0e20 kg. Transition zone (410-660 km): average density approximately 3.8 g/cm3, volume approximately 1.3e11 km3, mass approximately 5.0e23 kg, average storage approximately 2.0 wt% (weighted mean of wadsleyite and ringwoodite), water mass = 1.0e22 kg. One ocean mass approximately 1.4e21 kg.",
+      "numerical_values": "Upper mantle (200-410 km): maximum approximately 0.6 ocean masses at olivine saturation. Transition zone (410-660 km): maximum approximately 7 ocean masses at wadsleyite/ringwoodite saturation. Total potential storage: approximately 7.6 ocean masses. Actual content is estimated at 0.1-1 ocean masses based on geophysical constraints.",
+      "interpretation": "The transition zone dominates Earth's deep water budget due to the enormous storage capacity of its constituent minerals, holding potentially 10 times more water than the upper mantle even though it is thinner. This asymmetry in storage capacity is the thermodynamic driving force behind the water filter hypothesis and makes the transition zone the key target for constraining Earth's water budget through seismic observations."
+    }
+  ],
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch04 Elastic Moduli and Seismic Velocities",
+      "nature": "prerequisite",
+      "explanation": "The elastic moduli K and G that water modifies are defined and computed in Ch04. Understanding how Vp and Vs depend on these moduli is essential for interpreting the velocity perturbation coefficients used in WaterContentEstimator."
+    },
+    {
+      "related_chapter": "Ch06 Mie-Gruneisen Equation of State Solver",
+      "nature": "prerequisite",
+      "explanation": "WaterContentEstimator.ComputeHydrousProperties() first calls MieGruneisenEOSOptimizer to compute dry mineral properties at the target P-T, then applies water perturbation corrections. The dry EOS solution is the baseline for all hydrous calculations."
+    },
+    {
+      "related_chapter": "Ch07 SLB2011 Mineral Database",
+      "nature": "prerequisite",
+      "explanation": "The MineralParams for wadsleyite (mw, fw), ringwoodite (mrw, frw), and olivine (fo, fa) come from the SLB2011 database. The accuracy of dry reference velocities depends entirely on the quality of these endmember parameters."
+    },
+    {
+      "related_chapter": "Ch08 Landau Phase Transitions",
+      "nature": "extension",
+      "explanation": "Water affects phase transition pressures and temperatures (e.g., the olivine-wadsleyite transition is depressed by approximately 1 GPa per wt% H2O), which modifies the depth of the 410 km discontinuity. The Landau framework can be extended to include composition-dependent transition parameters."
+    },
+    {
+      "related_chapter": "Ch13 Phase Diagrams and Boundaries",
+      "nature": "extension",
+      "explanation": "Water shifts phase boundaries in the olivine system, broadening the two-phase region at 410 km and potentially creating new stability fields for hydrous phases like superhydrous phase B at high water contents."
+    },
+    {
+      "related_chapter": "Ch16 Anelasticity and Q",
+      "nature": "prerequisite",
+      "explanation": "The WaterQCorrector is a decorator that wraps the anelasticity models from Ch16 (Karato parametric, Extended Burgers, Andrade). The base Q computation and anelastic velocity correction framework must be understood before adding the water modification layer."
+    },
+    {
+      "related_chapter": "Ch18 Composition Inversion",
+      "nature": "application",
+      "explanation": "Water content is an additional unknown in the composition inversion problem. The sensitivity kernels must include dV/dC_H2O alongside dV/dT and dV/dX_Fe, making the inversion more underdetermined but also more realistic."
+    },
+    {
+      "related_chapter": "Ch19 Subducting Slabs",
+      "nature": "application",
+      "explanation": "Subducting slabs are the primary mechanism for transporting water into the deep mantle. The hydrous minerals in the slab dehydrate progressively with depth, releasing water into the surrounding mantle and potentially hydrating the transition zone."
+    }
+  ],
+  "computational_methods": "The WaterContentEstimator uses a straightforward two-step approach: (1) compute dry mineral properties at target P-T using the MieGruneisenEOSOptimizer (Newton-Raphson volume solver from Ch06), then (2) apply linear perturbation factors to Vp, Vs, and density. The perturbation is multiplicative: V_wet = V_dry * (1 + dV/dC * C), with empirical coefficients from Mao et al. (2012). The inverse problem (EstimateWaterContent) is a simple division: C = dlnVs / (dVs_per_wtPercent), which is instantaneous but assumes the velocity anomaly is entirely due to water.\n\nThe WaterQCorrector implements the decorator pattern around IAnelasticityModel, allowing it to wrap any base attenuation model (Karato, Extended Burgers, Andrade). It first delegates to the base model's ApplyCorrection() to compute the dry anelastic result with full relaxed-modulus physics, then recalculates Q_S with the water enhancement factor (C_OH/C_ref)^{r*alpha} and reapplies the velocity correction via AnelasticCorrectionHelper.Apply(). When WaterContent_ppm = 0, the decorator passes through unchanged results, adding zero overhead. The reference water content C_ref = 50 ppm H/Si reflects the baseline hydration state of the laboratory samples used to calibrate the dry Q model.\n\nFor profile construction, the QProfileBuilder (Ch16) can be wrapped with WaterQCorrector to produce depth-dependent hydrous Q and velocity profiles. A water content profile C_OH(z) is specified (e.g., 100 ppm in the upper mantle, 1000 ppm in the transition zone, 10 ppm in the lower mantle), and at each depth step the combined elastic + anelastic + water corrections are applied. Performance is dominated by the EOS solver at each depth point (approximately 5-10 Newton-Raphson iterations per point), with the water corrections adding negligible cost. A typical 100-point profile computes in under 100 ms.",
+  "open_questions": [
+    "What is the actual water content of Earth's transition zone? Estimates range from 0.1 to 2 wt% depending on the geophysical observable and region, and no consensus has been reached.",
+    "Does a global partial melt layer exist above 410 km as predicted by the water filter hypothesis, or is dehydration melting localized to regions of upwelling?",
+    "How does water partition between coexisting phases at the 660 km discontinuity (ringwoodite to bridgmanite + ferropericlase), and does this create a second water filter?",
+    "What is the water storage capacity of bridgmanite under lower-mantle conditions? Recent experimental results (up to 0.2 wt%) suggest it may be higher than previously thought, potentially making the lower mantle a significant water reservoir.",
+    "How do the combined effects of water, iron spin state, and aluminum substitution on elastic properties interact in the transition zone? Current models treat these perturbations independently, but cross-coupling terms may be significant.",
+    "Can electrical conductivity measurements provide independent constraints on water content to complement seismic approaches, and how should the two datasets be jointly inverted?",
+    "What role does water play in the rheological contrast at the 660 km discontinuity that may partially impede whole-mantle convection?",
+    "How reliable are the linear perturbation coefficients at water contents approaching saturation (above 2 wt%), where structural changes in wadsleyite may produce nonlinear elastic effects?"
+  ],
+  "exercise_suggestions": [
+    "Basic: Using the WaterContentEstimator, compute Vp, Vs, and density for Mg-wadsleyite at 15 GPa, 1500 K with water contents of 0, 0.5, 1.0, and 2.0 wt%. Plot the results and discuss the trends.",
+    "Basic: A seismic study reports Vs = 5.05 km/s at 500 km depth, while your dry wadsleyite model predicts Vs = 5.15 km/s. Estimate the water content. What assumptions are implicit in this estimate?",
+    "Intermediate: Construct a water storage capacity profile through the upper mantle and transition zone (100-700 km depth) by computing the maximum H2O for olivine (0-410 km), wadsleyite (410-520 km), and ringwoodite (520-660 km). At what depths do sharp changes in storage capacity occur?",
+    "Intermediate: Using WaterQCorrector, compute Q_S profiles for the upper mantle (100-410 km) at 0, 100, 500, and 1000 ppm H/Si. How does the depth at which Q_S drops below 80 change with water content?",
+    "Intermediate: Combine the elastic water effect (WaterContentEstimator) and the anelastic water effect (WaterQCorrector) to compute total Vs reduction at 300 km depth for 200 ppm H/Si. Which mechanism dominates?",
+    "Advanced: Implement a joint temperature-water inversion: given observed dlnVp and dlnVs anomalies, solve the 2x2 system using the different sensitivities of Vp and Vs to temperature versus water content. Test with synthetic data.",
+    "Advanced: The Pearson et al. (2014) ringwoodite diamond inclusion contained approximately 1.5 wt% H2O. Using the WaterContentEstimator with ringwoodite parameters, compute what Vs anomaly this would produce relative to dry ringwoodite at 550 km depth conditions. Is this detectable by seismic tomography?",
+    "Research-level: Extend the WaterContentEstimator to include nonlinear terms (quadratic corrections) at high water contents. Calibrate against the full dataset of Mao et al. (2012) and assess when the linear approximation breaks down."
+  ],
+  "figure_suggestions": [
+    {
+      "description": "Water storage capacity as a function of depth through the mantle (0-2900 km). Y-axis: maximum H2O in wt% (log scale). X-axis: depth in km. Show curves for olivine, wadsleyite, ringwoodite, bridgmanite, and ferropericlase. Highlight the dramatic increase at 410 km and decrease at 660 km. Mark the water filter zones with shaded bands.",
+      "axes": "X: Depth [km], Y: Maximum H2O storage [wt%, log scale]",
+      "key_features": "Step-function-like increase at 410 km (olivine to wadsleyite), maintained through 520 km (wadsleyite to ringwoodite), sharp decrease at 660 km (ringwoodite to bridgmanite + ferropericlase). Annotate each mineral phase field."
+    },
+    {
+      "description": "Velocity perturbation plot: dlnVs and dlnVp as a function of water content in wadsleyite at 15 GPa, 1500 K. Show both elastic effect only and combined elastic + anelastic effect. Include horizontal dashed lines for typical seismic detection thresholds.",
+      "axes": "X: Water content [wt% H2O], Y: Velocity perturbation dlnV [%]",
+      "key_features": "Linear trends for elastic effect (Vs steeper than Vp). Steeper curves for combined elastic + anelastic. Shaded region showing typical tomographic resolution (approximately 0.5-1%). Show that approximately 0.5-1 wt% H2O is needed for seismic detectability."
+    },
+    {
+      "description": "Q_S as a function of depth for different water content profiles. Compare dry reference (50 ppm), moderately hydrous (200 ppm), and wet (1000 ppm) upper mantle / transition zone. Show PREM Q profile as reference.",
+      "axes": "X: Depth [km] (100-800 km), Y: Q_S [dimensionless]",
+      "key_features": "All profiles show Q decreasing with depth in the upper mantle (increasing T), minimum near 410 km, recovery in the lower mantle. Higher water content shifts Q curves downward. PREM low-Q zone at 80-220 km may require approximately 200-500 ppm H/Si to explain."
+    },
+    {
+      "description": "Schematic cross-section of the mantle water cycle showing subduction input, dehydration reactions, transition zone storage, and upwelling-driven dehydration at 410 km. Include approximate water content annotations for each region.",
+      "axes": "Spatial cross-section: X = horizontal distance, Y = depth (0-1000 km)",
+      "key_features": "Subducting slab with progressive dehydration (blue arrows). Hydrated wedge above slab. Transition zone reservoir (blue shading). Partial melt layer above 410 km in upwelling regions. Annotate water contents: slab surface (2-5 wt%), mantle wedge (0.1-0.5 wt%), transition zone (0.1-1 wt%), ambient upper mantle (50-200 ppm)."
+    },
+    {
+      "description": "Comparison of WaterContentEstimator output with Mao et al. (2012) experimental data. Plot computed vs. measured Vs for hydrous wadsleyite at varying water contents to validate the linear empirical model.",
+      "axes": "X: Water content [wt% H2O] (0-3), Y: Vs [km/s]",
+      "key_features": "Linear model prediction as a line, experimental data points with error bars. Deviation from linearity at high water content (above 2 wt%) if present. Confidence band on the linear fit."
+    }
+  ],
+  "historical_context": "The study of water in the mantle has its roots in Griggs's (1967) discovery that trace water dramatically weakens quartz crystals ('hydrolytic weakening'), which was extended to olivine by Chopra and Paterson (1984). These experimental observations suggested that even small amounts of water could profoundly affect mantle rheology, but the question of how much water the mantle actually contains remained open for decades.\n\nThe modern framework began with Smyth (1987), who predicted on crystallographic grounds that wadsleyite should have exceptionally high water solubility due to a non-silicate oxygen site available for protonation. This was confirmed experimentally by Inoue et al. (1995) and Kohlstedt et al. (1996), who demonstrated that wadsleyite can incorporate up to 3.3 wt% H2O. The discovery that ringwoodite has comparably high storage capacity (approximately 2.7 wt%) established the transition zone as Earth's primary deep water reservoir.\n\nBercovici and Karato (2003) synthesized these findings into the 'transition zone water filter' hypothesis, proposing that the sharp contrast in water storage capacity between transition zone minerals and olivine drives dehydration melting at 410 km. This hypothesis motivated extensive seismic searches for low-velocity layers above the 410 km discontinuity, with mixed results.\n\nThe experimental side advanced through Brillouin spectroscopy measurements of hydrous mineral elastic properties by Jacobsen, Mao, and colleagues (2004-2012), which provided the quantitative velocity-water sensitivity coefficients now used in seismic interpretation and implemented in this codebase. The definitive moment came in 2014 when Pearson et al. reported a hydrous ringwoodite inclusion in a diamond from Juina, Brazil, providing the first direct evidence from a natural sample that the transition zone indeed contains significant water.\n\nCurrent research focuses on refining water content estimates through joint seismic-electromagnetic inversion, understanding water's role in the rheological stratification of the mantle, and exploring whether the lower mantle (bridgmanite) holds more water than previously assumed.",
+  "uncertain": [
+    "key_equations[3].variables.n",
+    "key_equations[4].variables.r_{creep}"
+  ]
+}

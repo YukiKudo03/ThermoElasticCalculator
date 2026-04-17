@@ -1,0 +1,165 @@
+{
+  "summary": "Ab initio anelasticity refers to first-principles and atomistic simulation approaches for computing anelastic (dissipative) properties of mantle minerals from the atomic scale up. These methods include density functional theory (DFT) calculations of point-defect relaxation strengths and migration barriers, classical and ab initio molecular dynamics (MD) simulations of grain-boundary sliding and diffusion, and phase-field or kinetic Monte Carlo models that bridge atomic-scale mechanisms to macroscopic Q values. The field aims to predict attenuation and velocity dispersion without relying on empirical fits to laboratory data, thereby enabling extrapolation to conditions (pressure, composition, defect chemistry) that are difficult to access experimentally.",
+
+  "key_papers": [
+    {
+      "author": "Cline, C. J., Faul, U. H., David, E. C., Berry, A. J., & Jackson, I.",
+      "year": 2018,
+      "title": "Redox-influenced seismic properties of upper-mantle olivine",
+      "journal": "Nature",
+      "volume": 555,
+      "pages": "355-358",
+      "doi": "10.1038/nature25764"
+    },
+    {
+      "author": "Ghosh, D. B. & Karki, B. B.",
+      "year": 2016,
+      "title": "First-principles molecular dynamics simulations of anorthite (CaAl2Si2O8) and diopside (CaMgSi2O6) liquids at high pressure",
+      "journal": "Physics and Chemistry of Minerals",
+      "volume": 43,
+      "pages": "347-361",
+      "doi": "10.1007/s00269-015-0798-0"
+    },
+    {
+      "author": "Stackhouse, S., Stixrude, L., & Karki, B. B.",
+      "year": 2010,
+      "title": "Determination of the high-pressure properties of fayalite from first-principles calculations",
+      "journal": "Earth and Planetary Science Letters",
+      "volume": 289,
+      "pages": "449-456",
+      "doi": "10.1016/j.epsl.2009.11.033"
+    },
+    {
+      "author": "Karki, B. B. & Stixrude, L.",
+      "year": 2010,
+      "title": "Viscosity of MgSiO3 liquid at Earth's mantle conditions: Implications for an early magma ocean",
+      "journal": "Science",
+      "volume": 328,
+      "pages": "740-742",
+      "doi": "10.1126/science.1188327"
+    },
+    {
+      "author": "Brodholt, J. P., Helffrich, G., & Trampert, J.",
+      "year": 2007,
+      "title": "Chemical versus thermal heterogeneity in the lower mantle: The most likely role of anelasticity",
+      "journal": "Earth and Planetary Science Letters",
+      "volume": 262,
+      "pages": "429-437",
+      "doi": "10.1016/j.epsl.2007.07.054"
+    },
+    {
+      "author": "Walker, A. M., Woodley, S. M., Slater, B., & Wright, K.",
+      "year": 2009,
+      "title": "A computational study of magnesium point defects and diffusion in forsterite",
+      "journal": "Physics of the Earth and Planetary Interiors",
+      "volume": 172,
+      "pages": "20-27",
+      "doi": "10.1016/j.pepi.2008.04.001"
+    },
+    {
+      "author": "Mei, S. & Kohlstedt, D. L.",
+      "year": 2000,
+      "title": "Influence of water on plastic deformation of olivine aggregates: 2. Dislocation creep regime",
+      "journal": "Journal of Geophysical Research",
+      "volume": 105,
+      "pages": "21471-21481",
+      "doi": "10.1029/2000JB900180"
+    },
+    {
+      "author": "Verma, A. K. & Karki, B. B.",
+      "year": 2019,
+      "title": "First-principles study of self-diffusion and viscous flow in diopside (CaMgSi2O6) liquid",
+      "journal": "American Mineralogist",
+      "volume": 104,
+      "pages": "1643-1651",
+      "doi": "10.2138/am-2019-6929"
+    }
+  ],
+
+  "physical_mechanism": "Ab initio approaches target the atomic-scale mechanisms responsible for anelastic dissipation. The principal mechanisms investigated include: (1) Point-defect relaxation: DFT calculations determine the formation energies, migration barriers, and relaxation strengths of vacancies (e.g., Mg and O vacancies in olivine and bridgmanite), interstitials, and substitutional impurities (e.g., Fe2+/Fe3+, H/OH). Each defect type produces a Debye-like relaxation peak at a characteristic frequency determined by its migration enthalpy. The superposition of many defect species broadens the relaxation into a quasi-continuous absorption band. (2) Grain-boundary sliding and diffusion: MD simulations model the atomic-scale sliding of grain boundaries and compute the associated viscosity and relaxation time. Ab initio parameterized interatomic potentials allow simulation of realistic olivine and perovskite grain boundaries, yielding grain-boundary diffusion coefficients and sliding mobilities that feed into mesoscale anelasticity models. (3) Dislocation core structure and mobility: DFT and atomistic simulations compute the Peierls stress, kink formation and migration energies for dislocations in olivine and bridgmanite. These parameters determine the dislocation-damping contribution to Q at high stress or high temperature. (4) Phonon-phonon interactions: First-principles lattice dynamics and perturbation theory quantify intrinsic (phonon) attenuation at very high frequencies, providing the baseline anharmonic contribution upon which defect-mediated relaxation is superimposed.",
+
+  "mathematical_formulation": "Ab initio anelasticity does not provide a single closed-form Q(T,P,f,d) formula but rather computes the ingredients for such models from first principles. Key relations include:\n\n(1) Defect relaxation strength: delta_J/J_U = (c_d * Omega_d * lambda_d^2) / (k_B * T), where c_d is the defect concentration, Omega_d is the defect volume, lambda_d is the elastic dipole tensor (strain coupling), k_B is Boltzmann's constant. DFT provides Omega_d and lambda_d.\n\n(2) Relaxation time for a single defect species: tau_d = tau_0 * exp(H_m / (k_B * T)), where H_m is the migration enthalpy computed from DFT nudged elastic band (NEB) calculations, and tau_0 is the attempt frequency from phonon calculations (~10^(-13) s).\n\n(3) Debye peak for each defect: Q_d^(-1)(omega) = delta_d * (omega * tau_d) / (1 + (omega * tau_d)^2).\n\n(4) Grain-boundary viscosity from MD: eta_GB = (sigma_xy) / (d_epsilon_xy/dt), computed from non-equilibrium MD shear simulations. This maps to a Maxwell relaxation time tau_GB = eta_GB / G_U.\n\n(5) Dislocation damping (string model): Q_disl^(-1) = (rho_d * b^2 * B) / (omega * C_line), where rho_d is dislocation density, b is Burgers vector, B is the drag coefficient (from MD phonon-dislocation scattering), and C_line is the line tension.\n\n(6) Total Q^(-1) is summed over all mechanisms: Q^(-1)(omega,T,P) = sum_d Q_d^(-1) + Q_GB^(-1) + Q_disl^(-1) + Q_phonon^(-1).\n\nVelocity dispersion follows from the Kramers-Kronig relation: delta_V/V = -(1/pi) * integral of Q^(-1)(omega') / omega' d(omega'), or for narrow peaks: delta_V/V ~ -(1/2) * Q^(-1) * cot(pi*alpha/2). [uncertain]",
+
+  "experimental_conditions": "Ab initio calculations are not experiments in the traditional sense, but the computational conditions and validation targets are as follows. DFT calculations: performed at pressures 0-150 GPa and temperatures 0-4000 K (via static calculations with quasi-harmonic approximation or finite-temperature DFT-MD). Supercell sizes typically range from 50 to 500 atoms for defect calculations, up to ~10,000 atoms for grain-boundary models using classical potentials parameterized against DFT. MD simulations: run for 10-1000 ps at temperatures 1000-3000 K and pressures 0-130 GPa, using timesteps of 1-2 fs. Frequencies accessible to direct MD are typically >10 GHz (limited by simulation length), far above seismic frequencies, requiring extrapolation via activation parameters. Validation against experimental Q values is done by comparing with forced-oscillation data (0.001-1 Hz, 800-1300 deg C) from Jackson & Faul (2010) for olivine, and with ultrasonic attenuation measurements at MHz frequencies. [uncertain]",
+
+  "key_parameters": [
+    {
+      "name": "Vacancy migration enthalpy (Mg in olivine)",
+      "symbol": "H_m(V_Mg)",
+      "value": "2.5-3.5 [uncertain]",
+      "unit": "eV",
+      "description": "DFT-computed migration barrier for Mg vacancy hopping in forsterite, depending on crystallographic direction and charge state"
+    },
+    {
+      "name": "Vacancy migration enthalpy (O in olivine)",
+      "symbol": "H_m(V_O)",
+      "value": "1.5-2.5 [uncertain]",
+      "unit": "eV",
+      "description": "DFT-computed migration barrier for oxygen vacancy in forsterite"
+    },
+    {
+      "name": "Vacancy formation energy (Mg in olivine)",
+      "symbol": "E_f(V_Mg)",
+      "value": "5-8 [uncertain]",
+      "unit": "eV",
+      "description": "Formation energy of isolated Mg vacancy in forsterite from DFT; depends on chemical potential reference and charge state"
+    },
+    {
+      "name": "Attempt frequency",
+      "symbol": "nu_0",
+      "value": "~10^13",
+      "unit": "Hz (s^-1)",
+      "description": "Characteristic phonon frequency setting the pre-exponential factor for thermally activated processes; from DFT phonon calculations"
+    },
+    {
+      "name": "Elastic dipole tensor (point defect)",
+      "symbol": "lambda_d",
+      "value": "0.1-1.0 [uncertain]",
+      "unit": "dimensionless (strain)",
+      "description": "Coupling between defect orientation/migration and macroscopic strain, determining relaxation strength; computed from DFT supercell relaxation"
+    },
+    {
+      "name": "Grain-boundary diffusion coefficient (Mg in olivine)",
+      "symbol": "D_GB",
+      "value": "~10^(-10) to 10^(-8) at 1500 K [uncertain]",
+      "unit": "m^2/s",
+      "description": "Diffusion coefficient along grain boundaries from MD simulations with DFT-fitted potentials"
+    },
+    {
+      "name": "Kink formation energy (dislocation in olivine [100](010))",
+      "symbol": "E_kink",
+      "value": "1.0-2.0 [uncertain]",
+      "unit": "eV",
+      "description": "Energy to form a kink pair on a dislocation, determining dislocation mobility; from atomistic simulations"
+    },
+    {
+      "name": "Phonon linewidth (intrinsic attenuation)",
+      "symbol": "Gamma_phonon",
+      "value": "0.01-0.1 at 1500 K",
+      "unit": "THz",
+      "description": "Phonon-phonon scattering rate from perturbation theory, representing the intrinsic anharmonic attenuation floor"
+    }
+  ],
+
+  "velocity_correction_magnitude": "Ab initio predictions of anelastic velocity corrections are still in their infancy and highly dependent on assumed defect concentrations and grain-boundary structures. For olivine at upper-mantle conditions (1200-1400 deg C, 3-10 GPa, seismic frequencies 0.01-1 Hz): Point-defect relaxation alone is predicted to produce Vs corrections of -0.1% to -1%, much smaller than the total observed anelastic correction of -2% to -5%, suggesting that point defects are not the dominant mechanism at seismic frequencies. Grain-boundary sliding modeled by MD yields Vs corrections of -1% to -4% when extrapolated to seismic frequencies using activation parameters, broadly consistent with experimental observations. Dislocation damping may contribute an additional -0.5% to -2% in Vs in regions of high dislocation density (e.g., post-deformation asthenosphere). Vp corrections are predicted to be roughly 1/3 to 1/2 of the Vs correction magnitude. The combined ab initio prediction for total Vs correction is -2% to -5%, consistent with experimentally calibrated models, but individual mechanism contributions remain poorly partitioned. For the lower mantle (bridgmanite), ab initio predictions suggest smaller anelastic corrections of -0.5% to -2% in Vs due to higher activation energies and lower homologous temperatures, but this is highly uncertain. [uncertain]",
+
+  "implications_for_composition": "Ab initio anelasticity studies have several important implications for compositional interpretation of seismic velocities. (1) Mechanism identification: By decomposing Q into contributions from specific defect types, grain-boundary processes, and dislocations, first-principles methods reveal which mechanisms dominate under which conditions. This matters for composition because different mechanisms have different sensitivities to chemistry (e.g., Fe content affects vacancy concentrations, water affects both point-defect and dislocation mobility). (2) Composition-dependent Q: DFT calculations show that Fe3+/Fe2+ ratio (redox state) strongly influences vacancy concentrations in olivine and bridgmanite, and hence the defect-mediated component of attenuation. This means Q itself carries compositional information, not just thermal information. Neglecting this coupling leads to biased temperature estimates. (3) Water sensitivity: Ab initio calculations of hydrogen defect energetics predict that even tens of ppm H2O can enhance vacancy concentrations by orders of magnitude, significantly increasing attenuation and reducing velocities. If this effect is not properly modeled, water-rich regions may be misinterpreted as hotter or more iron-rich. (4) Lower mantle: For bridgmanite and ferropericlase, where experimental attenuation data are virtually nonexistent, ab initio methods provide the only theoretical constraints on anelasticity, affecting how seismic tomography anomalies in the deep mantle are interpreted in terms of thermal versus compositional heterogeneity.",
+
+  "limitations": "1. The frequencies accessible to direct MD simulation (~GHz-THz) are many orders of magnitude higher than seismic frequencies (~mHz-Hz). Bridging this gap requires extrapolation using activation parameters (migration enthalpies, activation volumes), introducing large uncertainties. 2. Defect concentrations in the real mantle are poorly known and strongly depend on oxygen fugacity, water content, and bulk composition; DFT provides formation energies but the actual concentrations require thermodynamic modeling with uncertain inputs. 3. Grain-boundary structures in mantle minerals are highly variable; MD simulations typically model idealized bicrystal geometries that may not represent the full complexity of natural polycrystals. 4. System sizes in DFT calculations (hundreds of atoms) are too small to model realistic grain boundaries or dislocation networks; classical potentials introduce their own approximation errors. 5. Exchange-correlation functional uncertainties in DFT can lead to errors of 0.2-0.5 eV in migration barriers, translating to order-of-magnitude uncertainties in relaxation times. 6. No ab initio study has yet produced a complete, self-consistent Q(T,P,f,d) model that can be directly used for seismic interpretation; current results provide individual mechanistic ingredients rather than integrated models. 7. The contribution of each mechanism to the total Q is highly sensitive to assumptions about defect populations, dislocation densities, and grain sizes, none of which are independently constrained for the deep Earth. 8. Temperature-dependent anharmonic elastic properties computed from DFT (the 'anharmonic' baseline) still carry uncertainties of 1-3% in velocity, comparable to the anelastic corrections themselves.",
+
+  "implementation_notes": "Implementing ab initio anelasticity in ThermoElasticCalculator would be a long-term, modular effort: (1) Near-term (feasible now): Store a database of DFT-computed defect parameters (migration enthalpies, formation energies, elastic dipole tensors) for key mantle minerals (olivine, wadsleyite, ringwoodite, bridgmanite, ferropericlase). Allow users to specify defect concentrations (or compute them from thermodynamic equilibrium given fO2 and water content) and calculate the point-defect contribution to Q using the Debye peak formalism. (2) Medium-term: Incorporate grain-boundary sliding parameters from MD simulations as a look-up table indexed by mineral phase and P-T conditions. Combine with the point-defect contribution for a multi-mechanism Q model. (3) Integration with existing models: The ab initio defect parameters could be used to augment the Extended Burgers or Andrade models by providing physics-based constraints on activation energies and their pressure/composition dependence, rather than treating these as free fitting parameters. (4) Inputs needed: T (K), P (GPa), frequency f (Hz), grain size d (m), mineral phase, Fe content (Mg#), water content (ppm H2O), oxygen fugacity (log fO2). (5) Outputs: Q_defect, Q_GB, Q_total, delta_Vs/Vs, delta_Vp/Vp for each mineral phase. (6) Acceptable approximations: For the near-term, treating anelasticity as a post-processing correction to unrelaxed velocities (rather than self-consistently coupling elastic and anelastic responses) is adequate. The Kramers-Kronig velocity correction can be applied using the approximate formula delta_V/V ~ -(1/2) * Q^(-1) * cot(pi*alpha/2).",
+
+  "relevance_score": 2,
+
+  "uncertain": [
+    "mathematical_formulation (Kramers-Kronig velocity dispersion formula applicability to summed multi-mechanism Q)",
+    "experimental_conditions (validation targets and accessible frequency ranges are approximate)",
+    "key_parameters[0] (Vacancy migration enthalpy Mg in olivine)",
+    "key_parameters[1] (Vacancy migration enthalpy O in olivine)",
+    "key_parameters[2] (Vacancy formation energy Mg in olivine)",
+    "key_parameters[4] (Elastic dipole tensor)",
+    "key_parameters[5] (Grain-boundary diffusion coefficient)",
+    "key_parameters[6] (Kink formation energy)",
+    "velocity_correction_magnitude (predictions are model-dependent and mechanism partitioning is uncertain)"
+  ]
+}

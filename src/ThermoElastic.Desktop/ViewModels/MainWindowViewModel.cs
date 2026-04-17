@@ -26,6 +26,7 @@ public partial class MainWindowViewModel : ObservableObject
     // === EOS & Shock ===
     private readonly HugoniotViewModel _hugoniotViewModel = new();
     private readonly EOSFitterViewModel _eosFitterViewModel = new();
+    private readonly ThermoElasticFitterViewModel _thermoElasticFitterViewModel = new();
     private readonly VerificationDashboardViewModel _verificationDashboardViewModel = new();
 
     // === Phase Equilibria ===
@@ -37,6 +38,7 @@ public partial class MainWindowViewModel : ObservableObject
     // === Mantle & Deep Earth ===
     private readonly SensitivityKernelViewModel _sensitivityKernelViewModel = new();
     private readonly AnelasticityViewModel _anelasticityViewModel = new();
+    private readonly QProfileViewModel _qProfileViewModel = new();
     private readonly LLSVPViewModel _llsvpViewModel = new();
     private readonly ULVZViewModel _ulvzViewModel = new();
     private readonly SlabModelViewModel _slabModelViewModel = new();
@@ -75,6 +77,7 @@ public partial class MainWindowViewModel : ObservableObject
     // === EOS & Shock Commands ===
     [RelayCommand] private void ShowHugoniot() => CurrentView = _hugoniotViewModel;
     [RelayCommand] private void ShowEOSFitter() => CurrentView = _eosFitterViewModel;
+    [RelayCommand] private void ShowThermoElasticFitter() => CurrentView = _thermoElasticFitterViewModel;
     [RelayCommand] private void ShowVerificationDashboard() => CurrentView = _verificationDashboardViewModel;
 
     // === Phase Equilibria Commands ===
@@ -86,6 +89,7 @@ public partial class MainWindowViewModel : ObservableObject
     // === Mantle & Deep Earth Commands ===
     [RelayCommand] private void ShowSensitivityKernel() => CurrentView = _sensitivityKernelViewModel;
     [RelayCommand] private void ShowAnelasticity() => CurrentView = _anelasticityViewModel;
+    [RelayCommand] private void ShowQProfile() => CurrentView = _qProfileViewModel;
     [RelayCommand] private void ShowLLSVP() => CurrentView = _llsvpViewModel;
     [RelayCommand] private void ShowULVZ() => CurrentView = _ulvzViewModel;
     [RelayCommand] private void ShowSlabModel() => CurrentView = _slabModelViewModel;

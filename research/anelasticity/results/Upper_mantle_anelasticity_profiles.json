@@ -1,0 +1,173 @@
+{
+  "summary": "Upper mantle anelasticity profiles describe the depth-dependent variation of seismic attenuation (Q) and the resulting anelastic velocity corrections from the Moho to the 660-km discontinuity. Radial Q profiles are constructed by combining mineral physics calculations of anharmonic velocities with laboratory-calibrated Q(T,P,f,d) models along geothermal profiles, enabling comparison with seismological reference models such as PREM, QL6, and QR19. The approach, pioneered by Cammarano et al. (2003, 2009) and Stixrude & Lithgow-Bertelloni (2005), is essential for self-consistent interpretation of seismic tomography in terms of upper mantle temperature and composition.",
+
+  "key_papers": [
+    {
+      "author": "Cammarano, F., Goes, S., Vacher, P., and Giardini, D.",
+      "year": 2003,
+      "journal": "Physics of the Earth and Planetary Interiors",
+      "title": "Inferring upper-mantle temperatures from seismic velocities",
+      "doi": "10.1016/S0031-9201(03)00156-0"
+    },
+    {
+      "author": "Cammarano, F., Goes, S., Deuss, A., and Giardini, D.",
+      "year": 2005,
+      "journal": "Journal of Geophysical Research",
+      "title": "Is a pyrolitic adiabatic mantle compatible with seismic data?",
+      "doi": "10.1029/2004JB003293"
+    },
+    {
+      "author": "Cammarano, F. and Romanowicz, B.",
+      "year": 2008,
+      "journal": "Geochemistry, Geophysics, Geosystems",
+      "title": "Radial profiles of seismic attenuation in the upper mantle based on physical models",
+      "doi": "10.1029/2008GC002045"
+    },
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2005,
+      "journal": "Geophysical Journal International",
+      "title": "Thermodynamics of mantle minerals - I. Physical properties",
+      "doi": "10.1111/j.1365-246X.2005.02642.x"
+    },
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2011,
+      "journal": "Geophysical Journal International",
+      "title": "Thermodynamics of mantle minerals - II. Phase equilibria",
+      "doi": "10.1111/j.1365-246X.2010.04890.x"
+    },
+    {
+      "author": "Cobden, L., Goes, S., Cammarano, F., and Connolly, J.A.D.",
+      "year": 2008,
+      "journal": "Journal of Geophysical Research",
+      "title": "Thermochemical interpretation of one-dimensional seismic reference models for the upper mantle: Evidence for bias due to heterogeneity",
+      "doi": "10.1029/2007JB005409"
+    },
+    {
+      "author": "Dziewonski, A.M. and Anderson, D.L.",
+      "year": 1981,
+      "journal": "Physics of the Earth and Planetary Interiors",
+      "title": "Preliminary reference Earth model",
+      "doi": "10.1016/0031-9201(81)90046-7"
+    },
+    {
+      "author": "Jackson, I. and Faul, U.H.",
+      "year": 2010,
+      "journal": "Physics of the Earth and Planetary Interiors",
+      "title": "Grainsize-sensitive viscoelastic relaxation in olivine: Towards a robust laboratory-based model for seismological application",
+      "doi": "10.1016/j.pepi.2009.09.006"
+    },
+    {
+      "author": "Dalton, C.A., Ekström, G., and Dziewonski, A.M.",
+      "year": 2008,
+      "journal": "Journal of Geophysical Research",
+      "title": "The global attenuation structure of the upper mantle",
+      "doi": "10.1029/2007JB005429"
+    },
+    {
+      "author": "Abers, G.A., Fischer, K.M., Hirth, G., and Wiens, D.A.",
+      "year": 2014,
+      "journal": "Geochemistry, Geophysics, Geosystems",
+      "title": "Reconciling mantle attenuation-temperature relationships from seismology, petrology, and laboratory measurements",
+      "doi": "10.1002/2014GC005444"
+    },
+    {
+      "author": "Romanowicz, B. and Mitchell, B.J.",
+      "year": 2015,
+      "journal": "Treatise on Geophysics, 2nd edition",
+      "title": "Deep Earth structure: Q of the Earth from crust to core",
+      "doi": "10.1016/B978-0-444-53802-4.00021-X [uncertain]"
+    },
+    {
+      "author": "Yamauchi, H. and Takei, Y.",
+      "year": 2016,
+      "journal": "Journal of Geophysical Research: Solid Earth",
+      "title": "Polycrystal anelasticity at near-solidus temperatures",
+      "doi": "10.1002/2016JB013316"
+    }
+  ],
+
+  "physical_mechanism": "Upper mantle anelasticity profiles arise from thermally activated viscoelastic relaxation processes in polycrystalline mantle rocks (dominantly olivine at these depths). The primary mechanism is diffusion-assisted grain-boundary sliding, supplemented by dislocation-mediated relaxation in regions of high stress or strain rate. Along a mantle geotherm, the efficiency of these mechanisms varies strongly with depth due to the competing effects of temperature (which activates relaxation, lowering Q) and pressure (which suppresses relaxation, raising Q). In the lithosphere (Moho to ~80-100 km), temperatures are below the threshold for significant anelastic relaxation (~900-1000 C for olivine at seismic frequencies), so Q is high (>200) and anelastic corrections are negligible. In the asthenosphere (~100-250 km), temperatures approach or exceed the solidus, grain-boundary relaxation is strongly activated, and Q reaches its minimum (50-100 for Q_mu), producing the largest anelastic velocity reductions. With increasing depth beyond ~250 km, the pressure effect progressively stabilizes grain boundaries and suppresses diffusion, causing Q to increase. The transition zone (410-660 km) involves phase transformations to wadsleyite and ringwoodite, whose anelastic properties are less well known but are expected to have higher Q than olivine at equivalent homologous temperatures. The PREM model captures this general pattern with Q_mu = 600 in the lithosphere (0-80 km), Q_mu = 80 in the low-Q zone (80-220 km), and Q_mu = 143 at greater depths (220-670 km).",
+
+  "mathematical_formulation": "The construction of radial anelasticity profiles involves three steps:\n\n(1) Geotherm specification: T(z) and P(z) along a 1D depth profile. This can be an adiabat (potential temperature T_p = 1300-1400 C plus adiabatic gradient ~0.3-0.5 K/km), a continental or oceanic geotherm from plate cooling models, or extracted from a thermal model.\n\n(2) Q profile computation: At each depth, compute Q_mu(T,P,f) using one of several parameterizations:\n- Cammarano et al. (2003) parameterization: Q_mu(T,P,f) = A * f^alpha * exp[alpha * (E* + P*V*) / (R*T)], where A and alpha are calibrated to match PREM Q structure along an assumed geotherm. Typical parameters: alpha = 0.15, E* = 500 kJ/mol, V* = 20 cm^3/mol (pressure suppression), A calibrated to give Q_mu ~ 80 in the asthenosphere.\n- Stixrude & Lithgow-Bertelloni (2005) approach: Uses a homologous temperature scaling, Q_mu = A * f^alpha * exp[alpha * g * T_m(P) / T], where T_m(P) is the solidus (or an effective melting temperature) at pressure P, and g is a dimensionless scaling factor (~20-40). This automatically accounts for the pressure effect through the pressure-dependent solidus.\n- Laboratory-based models (Jackson & Faul 2010): Q_mu computed from extended Burgers or Andrade model with explicit grain-size dependence, then evaluated along the geotherm with assumed mantle grain size (1-10 mm).\n\n(3) Velocity correction at each depth: V_s(z,f) = V_s_anh(z) * [1 - cot(pi*alpha/2) / (2*Q_mu(z))], V_p(z,f) = V_p_anh(z) * [1 - (2/3)*(G/M)*cot(pi*alpha/2)/(2*Q_mu(z))], where M = K + 4G/3 is the P-wave modulus and G, K are shear and bulk moduli from mineral physics.\n\nComparison with seismological Q: The computed Q_mu(z) profile is compared with PREM (Dziewonski & Anderson 1981), QL6 (Durek & Ekström 1996), QRFSI12 (Dalton et al. 2008), and regional attenuation models. Misfits help constrain the geotherm, composition, and Q model parameters.",
+
+  "experimental_conditions": "This topic integrates laboratory, seismological, and computational constraints rather than being a single experimental measurement: (1) Laboratory calibration: Forced-oscillation experiments on polycrystalline olivine (Fo90) aggregates at T = 800-1350 C, P = 0.2-0.3 GPa, f = 0.001-1 Hz, grain sizes 3-165 micrometers (Jackson & Faul, ANU laboratory). These provide the fundamental Q(T,f,d) relationships that are extrapolated to mantle conditions. (2) Seismological constraints: Global Q models derived from surface wave attenuation (0.003-0.05 Hz), body wave t* measurements (0.1-2 Hz), and normal mode decay (0.0003-0.01 Hz). PREM provides a reference 1D Q structure: Q_mu = 600 (0-80 km), 80 (80-220 km), 143 (220-670 km). Lateral Q variations from attenuation tomography (Dalton et al. 2008) show Q_mu varying from ~50 beneath mid-ocean ridges to ~300+ beneath old continental cratons in the 100-200 km depth range. (3) Mineral physics calculations: Anharmonic velocities computed using thermodynamic databases (Stixrude & Lithgow-Bertelloni 2011, Holland & Powell) for pyrolite, harzburgite, and other compositional models, at conditions spanning 0-25 GPa and 300-2000 K. (4) Geotherms: Plate cooling models for oceanic lithosphere (ages 0-180 Ma), continental geotherms from surface heat flow, and mantle adiabats (T_p = 1280-1450 C).",
+
+  "key_parameters": [
+    {
+      "name": "T_p (mantle potential temperature)",
+      "typical_value": "1300 - 1400 C (normal mantle); 1450-1600 C (hotspots)",
+      "units": "C",
+      "description": "Reference potential temperature defining the mantle adiabat. Controls the depth at which anelastic effects become significant."
+    },
+    {
+      "name": "alpha (frequency exponent)",
+      "typical_value": "0.10 - 0.30 (commonly 0.15 for Cammarano; 0.26-0.33 for Andrade-based)",
+      "units": "dimensionless",
+      "description": "Frequency exponent governing Q^{-1} ~ omega^{-alpha} and velocity dispersion magnitude through cot(pi*alpha/2)."
+    },
+    {
+      "name": "E* (activation energy)",
+      "typical_value": "424 - 505 kJ/mol (olivine grain-boundary sliding)",
+      "units": "kJ/mol",
+      "description": "Activation energy for the dissipation mechanism. Controls the temperature at which Q drops below ~200."
+    },
+    {
+      "name": "V* (activation volume)",
+      "typical_value": "6 - 24 cm^3/mol [uncertain]",
+      "units": "cm^3/mol",
+      "description": "Activation volume controlling pressure suppression of anelasticity. Poorly constrained; Cammarano et al. (2003) used ~10-20 cm^3/mol. Determines how rapidly Q increases with depth."
+    },
+    {
+      "name": "g (homologous temperature factor)",
+      "typical_value": "20 - 40 [uncertain]",
+      "units": "dimensionless",
+      "description": "Scaling factor in the solidus-based parameterization Q ~ exp(g*T_m/T). Used by Stixrude & Lithgow-Bertelloni (2005) and related approaches."
+    },
+    {
+      "name": "d (mantle grain size)",
+      "typical_value": "1 - 10 mm (upper mantle average estimate)",
+      "units": "mm",
+      "description": "Grain size of upper mantle rocks. Affects Q through grain-size-sensitive relaxation in lab-based models. Poorly constrained in situ."
+    },
+    {
+      "name": "Q_mu PREM values (reference)",
+      "typical_value": "600 (lid, 0-80 km), 80 (LVZ, 80-220 km), 143 (220-670 km)",
+      "units": "dimensionless",
+      "description": "PREM Q_mu structure used as reference for calibration and comparison of computed Q profiles."
+    },
+    {
+      "name": "Q_K (bulk quality factor)",
+      "typical_value": "57823 (PREM, effectively infinite); often set to infinity",
+      "units": "dimensionless",
+      "description": "Bulk attenuation factor. In most upper mantle models, Q_K >> Q_mu, so bulk attenuation contributes minimally to velocity corrections."
+    },
+    {
+      "name": "f (seismic frequency)",
+      "typical_value": "0.01 - 1 Hz (body waves); 0.003-0.03 Hz (surface waves)",
+      "units": "Hz",
+      "description": "Seismic frequency at which the Q profile and velocity correction are evaluated. Lower frequencies give lower Q and larger corrections."
+    }
+  ],
+
+  "velocity_correction_magnitude": "The anelastic velocity correction varies systematically with depth along an upper mantle profile: (1) Lithosphere (0-80 km): Q_mu > 300-600, DeltaVs/Vs < 0.3%, DeltaVp/Vp < 0.1%. Corrections are negligible and anharmonic velocities suffice. (2) Asthenosphere / Low-Velocity Zone (80-220 km): Q_mu ~ 50-100, DeltaVs/Vs ~ 2-5% at 0.03 Hz, DeltaVp/Vp ~ 0.5-2%. This is the region of maximum correction and corresponds to the seismologically observed low-velocity zone. At 1 Hz, corrections are roughly 30-50% smaller. The Cammarano et al. (2003) approach with alpha=0.15 and Q_mu=80 gives DeltaVs/Vs ~ 1.3%, while the Jackson-Faul (2010) Burgers model with appropriate grain size gives DeltaVs/Vs ~ 2-4% at 0.03 Hz. (3) Below 220 km to 410 km: Q_mu ~ 120-200, DeltaVs/Vs ~ 0.5-1.5%, DeltaVp/Vp ~ 0.2-0.5%. Pressure increasingly suppresses anelasticity. (4) Transition zone (410-660 km): Q_mu ~ 140-300 (PREM gives 143), DeltaVs/Vs ~ 0.5-1.2%. Phase transitions to wadsleyite and ringwoodite may modify Q, but available data are limited. The total integrated effect on travel times along a radial path through the upper mantle amounts to ~0.5-1.5 s for S-waves and ~0.2-0.5 s for P-waves, which is comparable to the signal from thermal anomalies of 100-200 K. Near mid-ocean ridges or hotspots where T approaches the solidus, the Yamauchi-Takei (2016) parameterization predicts DeltaVs/Vs up to 8-10% locally.",
+
+  "implications_for_composition": "Accurate radial Q profiles are indispensable for extracting upper mantle composition from seismic data: (1) Temperature-composition trade-off: Without proper anelastic corrections, low seismic velocities in the asthenosphere are overattributed to high temperature or compositional enrichment (higher Fe content, more fertile mantle). Cammarano et al. (2003) showed that applying anelastic corrections to a pyrolite model along a 1350 C adiabat produces velocities compatible with PREM without requiring exotic compositions, whereas neglecting anelasticity requires ~100-200 K excess temperature or ~2-3% increase in Fe/(Fe+Mg) to match the same data. (2) Composition discrimination: Cobden et al. (2008) demonstrated that the choice of Q model affects whether seismic data favor pyrolite vs. a more depleted (harzburgitic) or enriched composition for the upper mantle. A 1% change in the Vs correction (due to different Q models) maps to roughly 50-100 K in temperature or 1-2 mol% in Mg# at 150 km depth. (3) Comparison with PREM: The PREM low-Q zone (Q_mu=80, 80-220 km) can be reproduced by pyrolite at T_p = 1300-1350 C using the Cammarano et al. (2003) Q model, or at T_p = 1280-1300 C using the Jackson-Faul model with 5 mm grain size. These different Q models thus yield a ~50 K range in inferred potential temperature. (4) Lateral variations: Attenuation tomography (Dalton et al. 2008) shows factor-of-5 lateral Q variations in the upper 200 km. These must be accounted for when converting regional tomographic models to temperature and composition maps. (5) Stixrude & Lithgow-Bertelloni (2005) approach with solidus-based Q scaling self-consistently handles phase transitions and their effect on Q, which is important for the transition zone where mineral assemblage changes significantly.",
+
+  "limitations": "1. Activation volume (V*) uncertainty: V* controls how Q increases with depth. Values of 6-24 cm^3/mol are used in different studies, leading to factor-of-2 uncertainty in Q (and hence ~1-2% in DeltaVs/Vs) below 200 km. The PREM Q structure alone cannot uniquely constrain V* because of trade-offs with geotherm and composition. 2. Geotherm dependence: Computed Q profiles are highly sensitive to the assumed geotherm. A 50 K change in potential temperature changes Q_mu by ~20-40% in the asthenosphere, comparable to the difference between competing Q models. 3. Phase transition effects: The anelastic properties of wadsleyite and ringwoodite are poorly constrained by laboratory data. Most profiles assume olivine rheology throughout, or use ad hoc scaling at phase boundaries. 4. Composition dependence: Laboratory Q calibrations are almost exclusively on pure olivine (Fo90). The effect of pyroxene, garnet, and minor phases on the aggregate Q of a realistic mantle assemblage is uncertain. Voigt, Reuss, or Hashin-Shtrikman averaging of Q for multiphase aggregates introduces additional model dependence. 5. Water and melt effects: Hydrogen concentration in nominally anhydrous minerals can reduce Q by factors of 2-5, yet most radial profiles assume dry mantle. Similarly, trace amounts of melt in the LVZ dramatically affect Q but are not included in standard parameterizations. 6. Grain size assumptions: Laboratory-based models require grain size as input, but in situ upper mantle grain size is poorly known and likely varies with depth, lithology, and tectonic setting. 7. Non-uniqueness of 1D profiles: Different combinations of geotherm, composition, Q model, and grain size can produce equally good fits to PREM or other 1D reference models, making unique interpretation impossible without additional constraints. 8. Limited lateral averaging: 1D radial profiles represent global or regional averages, but the upper mantle is highly heterogeneous laterally, particularly in the top 300 km. 9. Frequency band mismatch: Seismological Q is measured at different frequencies by different techniques (normal modes vs surface waves vs body waves), and reconciling these into a single Q(z) profile requires frequency-dependent models.",
+
+  "implementation_notes": "For ThermoElasticCalculator, upper mantle anelasticity profiles should be implemented as follows: (1) INPUTS: Depth (or pressure) array, temperature profile T(z) — either a user-specified geotherm or an adiabat from a given T_p, bulk composition (e.g., pyrolite), seismic frequency f, and Q model selection. (2) WORKFLOW: Step A: Compute the anharmonic velocity profile V_s_anh(z), V_p_anh(z) using the existing mineral physics engine (EoS + mixing) for the specified composition along T(z), P(z). Step B: At each depth point, evaluate Q_mu(T,P,f) using the selected Q model. Provide at least two options: (a) Parameterized exponential model (Cammarano et al. 2003): Q_mu = A * f^alpha * exp[alpha*(E*+P*V*)/(R*T)] with default parameters {A, alpha=0.15, E*=500 kJ/mol, V*=20 cm^3/mol}; (b) Homologous temperature model (Stixrude & Lithgow-Bertelloni 2005): Q_mu = A * f^alpha * exp[alpha*g*T_solidus(P)/T] where T_solidus(P) is from the thermodynamic database; (c) Laboratory-based Burgers/Andrade model (use parameters from Extended_Burgers_Model.json and Andrade_Model.json). Step C: Apply the velocity correction: Vs_corr(z) = Vs_anh(z) * [1 - cot(pi*alpha/2)/(2*Q_mu(z))], Vp_corr(z) = Vp_anh(z) * [1 - (2G/(3M)) * cot(pi*alpha/2)/(2*Q_mu(z))]. Step D: Output arrays: depth, T, P, Vs_anh, Vs_corr, Vp_anh, Vp_corr, Q_mu, DeltaVs/Vs(%), DeltaVp/Vp(%). (3) VISUALIZATION: Plot corrected and uncorrected velocity profiles alongside PREM or other reference models. Plot the Q_mu(z) profile alongside PREM Q. (4) COMPARISON MODULE: Include PREM Q values as a built-in reference for comparison. Allow overlay of user-provided Q profiles from seismological studies. (5) PARAMETER SENSITIVITY: Provide a mode to sweep over key uncertain parameters (V*, grain size, T_p) and display the resulting envelope of velocity profiles, highlighting the uncertainty introduced by Q model choice. (6) APPROXIMATIONS: Setting Q_K^{-1} = 0 is acceptable as default. The simple cot(pi*alpha/2) correction is adequate for Q > 50; for lower Q near the solidus, the full complex modulus approach (Tier 2) should be used.",
+
+  "relevance_score": 5,
+
+  "uncertain": [
+    "V* (activation volume) typical range (6-24 cm^3/mol)",
+    "g (homologous temperature factor) typical range",
+    "key_papers[10] (Romanowicz & Mitchell 2015 DOI uncertain)",
+    "Anelastic properties of wadsleyite and ringwoodite in the transition zone",
+    "Grain size distribution in the upper mantle",
+    "Effect of polyphase aggregate on Q averaging",
+    "Exact magnitude of near-solidus corrections (Yamauchi-Takei regime)"
+  ]
+}

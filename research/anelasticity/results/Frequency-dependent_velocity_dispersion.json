@@ -1,0 +1,150 @@
+{
+  "summary": "Frequency-dependent velocity dispersion refers to the systematic variation of elastic wave velocities with frequency, arising from viscoelastic (anelastic) relaxation processes in rocks. Ultrasonic laboratory measurements (MHz) yield near-unrelaxed velocities, while seismic waves (mHz-Hz) sample partially relaxed moduli, producing velocities that are 1-5% lower for Vs and 0.3-2% lower for Vp under upper-mantle conditions. Quantifying this dispersion is essential for meaningful comparison of laboratory elasticity data with seismic observations, and the Kramers-Kronig relations provide the fundamental link between attenuation (Q^{-1}) and velocity dispersion.",
+
+  "key_papers": [
+    {
+      "author": "Karato, S.",
+      "year": 1993,
+      "journal": "Pure and Applied Geophysics",
+      "title": "Importance of anelasticity in the interpretation of seismic tomography",
+      "doi": "10.1007/BF00998245"
+    },
+    {
+      "author": "Jackson, I. and Faul, U.H.",
+      "year": 2010,
+      "journal": "Physics of the Earth and Planetary Interiors",
+      "title": "Grainsize-sensitive viscoelastic relaxation in olivine: Towards a robust laboratory-based model for seismological application",
+      "doi": "10.1016/j.pepi.2009.09.006"
+    },
+    {
+      "author": "Liu, H.P., Anderson, D.L., and Kanamori, H.",
+      "year": 1976,
+      "journal": "Geophysical Journal of the Royal Astronomical Society",
+      "title": "Velocity dispersion due to anelasticity; implications for seismology and mantle composition",
+      "doi": "10.1111/j.1365-246X.1976.tb01261.x"
+    },
+    {
+      "author": "Minster, J.B. and Anderson, D.L.",
+      "year": 1981,
+      "journal": "Philosophical Transactions of the Royal Society of London A",
+      "title": "A model of dislocation-controlled rheology for the mantle",
+      "doi": "10.1098/rsta.1981.0025"
+    },
+    {
+      "author": "Faul, U.H. and Jackson, I.",
+      "year": 2005,
+      "journal": "Earth and Planetary Science Letters",
+      "title": "The seismological signature of temperature and grain size variations in the upper mantle",
+      "doi": "10.1016/j.epsl.2005.04.027"
+    },
+    {
+      "author": "Takei, Y., Karasawa, F., and Yamauchi, H.",
+      "year": 2014,
+      "journal": "Journal of Geophysical Research: Solid Earth",
+      "title": "Temperature, grain size, and chemical controls on polycrystal anelasticity over a broad frequency range extending into the seismic range",
+      "doi": "10.1002/2014JB011146"
+    },
+    {
+      "author": "Abers, G.A., Fischer, K.M., Hirth, G., Wiens, D.A., Plank, T., Holtzman, B.K., McCarthy, C., and Gazel, E.",
+      "year": 2014,
+      "journal": "Earth and Planetary Science Letters",
+      "title": "Reconciling mantle attenuation-temperature relationships from seismology, petrology, and laboratory measurements",
+      "doi": "10.1016/j.epsl.2014.06.036"
+    },
+    {
+      "author": "Cline, C.J., Faul, U.H., David, E.C., Berry, A.J., and Jackson, I.",
+      "year": 2018,
+      "journal": "Journal of Geophysical Research: Solid Earth",
+      "title": "Redox-influenced seismic properties of upper-mantle olivine",
+      "doi": "10.1002/2017JB015157"
+    },
+    {
+      "author": "Yamauchi, H. and Takei, Y.",
+      "year": 2016,
+      "journal": "Journal of Geophysical Research: Solid Earth",
+      "title": "Polycrystal anelasticity at near-solidus temperatures",
+      "doi": "10.1002/2016JB013316"
+    },
+    {
+      "author": "Lau, H.C.P. and Holtzman, B.K.",
+      "year": 2019,
+      "journal": "Geophysical Research Letters",
+      "title": "Measures of dissipation in viscoelastic media extended: Toward continuous characterization across very broad geophysical time scales",
+      "doi": "10.1029/2019GL083529"
+    }
+  ],
+
+  "physical_mechanism": "Velocity dispersion arises because anelastic relaxation processes (grain-boundary sliding, dislocation damping, diffusion-assisted viscoelastic creep, melt squirt flow) operate on characteristic timescales. When a seismic wave has a period comparable to or longer than a relaxation time, the material partially relaxes during each wave cycle, reducing the effective elastic modulus and hence the wave velocity. At ultrasonic frequencies (MHz), wave periods are far shorter than any relaxation time, so the material responds with its unrelaxed (instantaneous) modulus. At seismic frequencies (mHz to Hz), partial relaxation lowers the effective modulus. The dispersion is thus a direct physical consequence of attenuation: energy dissipation and velocity reduction are coupled through causality, formalized by the Kramers-Kronig relations. The absorption band model posits that a distribution of relaxation times (arising from a range of grain sizes, defect populations, and boundary configurations) produces a broad frequency band over which Q^{-1} is approximately constant or slowly varying, resulting in a logarithmic dependence of velocity on frequency within the band.",
+
+  "mathematical_formulation": "Kramers-Kronig (causality) relation: The real and imaginary parts of any linear causal response function are Hilbert transform pairs. For the complex modulus M*(omega) = M_1(omega) + i*M_2(omega), the dispersion and attenuation are linked by: M_1(omega) - M_1(omega_ref) = (2/pi) * integral from 0 to infinity of [omega' * M_2(omega') / (omega'^2 - omega^2)] d(omega').\n\nFor a constant-Q (frequency-independent Q) absorption band between frequencies omega_1 and omega_2: V(omega) = V(omega_ref) * [1 + (1/(pi*Q)) * ln(omega/omega_ref)] (valid within the absorption band). This gives a logarithmic velocity-frequency relationship.\n\nMore generally, for a power-law Q dependence Q^{-1}(omega) ~ omega^{-alpha} (0 < alpha < 1): V(omega)/V(omega_ref) = 1 + (cot(alpha*pi/2))/(2*Q(omega)) for small Q^{-1}.\n\nRelating velocity at lab (ultrasonic) and seismic frequencies: V_seismic / V_lab = 1 - (cot(alpha*pi/2))/(2*Q_seismic) * [1 - (f_seismic/f_lab)^alpha], which for f_lab >> f_seismic simplifies to: Delta_V/V ~ -(cot(alpha*pi/2))/(2*Q).\n\nFull viscoelastic treatment via complex compliance J*(omega): V_s(omega) = 1/sqrt(rho * Re[J*(omega)]), where J*(omega) comes from Andrade, Burgers, or other rheological models. The frequency dependence of J* automatically encodes the dispersion-attenuation coupling consistent with Kramers-Kronig.",
+
+  "experimental_conditions": "Forced oscillation experiments: 0.001-1 Hz, temperatures 900-1350 C, confining pressure 0.2-0.3 GPa, grain sizes 3-165 micrometers (sol-gel or hot-pressed olivine aggregates), using gas-medium Paterson-type apparatus (ANU, Brown University). These directly measure both modulus dispersion G(f) and attenuation Q^{-1}(f) simultaneously, providing the key data for calibrating dispersion models. Ultrasonic measurements: MHz frequencies, ambient to high P-T, on single crystals or dense polycrystals, giving unrelaxed elastic moduli. Seismological observations: 0.001-50 Hz (body and surface waves), providing in-situ Q and velocity at mantle conditions but with limited resolution on the frequency dependence. Resonance experiments: 0.1-10 kHz, bridging the gap between forced oscillation and ultrasonics, but limited data exist in this range for mantle minerals. The critical frequency gap between ~1 Hz (highest forced oscillation) and ~1 MHz (ultrasonics) remains poorly sampled experimentally.",
+
+  "key_parameters": [
+    {
+      "name": "alpha (frequency exponent)",
+      "typical_value": "0.1 - 0.5 (commonly ~0.2-0.35)",
+      "units": "dimensionless",
+      "description": "Power-law exponent for the frequency dependence of Q^{-1} ~ omega^{-alpha}. Controls the slope of velocity dispersion with frequency."
+    },
+    {
+      "name": "Q (quality factor at seismic frequencies)",
+      "typical_value": "Q_mu ~ 50-300 in the upper mantle (strongly T-dependent)",
+      "units": "dimensionless",
+      "description": "Shear quality factor at seismic frequencies; lower Q means more attenuation and larger velocity dispersion."
+    },
+    {
+      "name": "f_lab (laboratory ultrasonic frequency)",
+      "typical_value": "~1-50 MHz",
+      "units": "Hz",
+      "description": "Frequency of ultrasonic laboratory measurements, representing the unrelaxed reference."
+    },
+    {
+      "name": "f_seismic (target seismic frequency)",
+      "typical_value": "0.001-50 Hz (body waves ~0.1-1 Hz, surface waves ~0.003-0.05 Hz)",
+      "units": "Hz",
+      "description": "Frequency at which seismic velocities are sampled; the dispersion correction depends on this."
+    },
+    {
+      "name": "E* (activation energy)",
+      "typical_value": "300-600 kJ/mol",
+      "units": "kJ/mol",
+      "description": "Activation energy for the relaxation processes that control Q and its temperature dependence."
+    },
+    {
+      "name": "V* (activation volume)",
+      "typical_value": "6-15 cm^3/mol [uncertain]",
+      "units": "cm^3/mol",
+      "description": "Activation volume for pressure dependence of relaxation times. Poorly constrained experimentally for attenuation."
+    },
+    {
+      "name": "d (grain size)",
+      "typical_value": "~1 mm - 1 cm in upper mantle (assumed); 3-165 micrometers in lab",
+      "units": "m",
+      "description": "Grain size affects relaxation times and hence the frequency at which dispersion is significant."
+    },
+    {
+      "name": "omega_1, omega_2 (absorption band limits)",
+      "typical_value": "omega_1 ~ 10^{-12} to 10^{-8} rad/s (low), omega_2 ~ 10^{6} to 10^{9} rad/s (high) [uncertain]",
+      "units": "rad/s",
+      "description": "Lower and upper frequency bounds of the absorption band; within this band Q is approximately constant or slowly varying."
+    }
+  ],
+
+  "velocity_correction_magnitude": "The magnitude of velocity dispersion between ultrasonic (MHz) and seismic (Hz) frequencies depends strongly on Q, which in turn depends on temperature, pressure, grain size, and composition. At upper-mantle conditions (T ~ 1200-1400 C, P ~ 3-10 GPa): Vs correction (DeltaVs/Vs): -1% to -5% for Q_mu ~ 50-200. Near the solidus or in the asthenospheric low-velocity zone (Q_mu ~ 40-80), the correction can reach -5% to -8%. At subsolidus cooler lithospheric temperatures (Q_mu > 500), the correction is small (<0.5%). Vp correction (DeltaVp/Vp): typically -0.3% to -2%, because bulk attenuation Q_K^{-1} is much smaller than shear attenuation (often Q_K >> Q_mu, so the bulk modulus dispersion is minor). For the commonly used approximation with alpha ~ 0.3 and Q_mu ~ 100: DeltaVs/Vs ~ -cot(0.3*pi/2)/(2*100) ~ -1.5%. Between forced-oscillation frequencies (mHz) and seismic frequencies (Hz), the dispersion is much smaller (~0.1-0.5%) because these frequencies are relatively close within the absorption band.",
+
+  "implications_for_composition": "Velocity dispersion is one of the most important corrections when using laboratory elasticity data to interpret seismic observations in terms of mantle composition and temperature. Key implications: (1) If ultrasonic lab velocities are directly compared with seismic data without dispersion correction, inferred temperatures will be systematically too high by 100-300 K (because the observed lower seismic velocities are partially attributed to temperature effects rather than to anelastic relaxation). (2) This temperature bias propagates into compositional estimates: overpredicted temperature leads to underestimation of iron content (Mg#) and/or overestimation of the proportion of low-velocity phases (e.g., garnet, melt). (3) In regions with strong lateral Q variations (e.g., cratons vs. oceanic asthenosphere), neglecting dispersion introduces spatially variable biases in compositional mapping. (4) The dispersion correction is frequency-dependent, so different seismic datasets (body waves vs. surface waves) require different corrections; failure to account for this leads to apparent inconsistencies between datasets. (5) Near the solidus, dispersion effects are amplified, and failure to correct for them can lead to overestimation of melt fraction needed to explain low-velocity anomalies by a factor of 2-3.",
+
+  "limitations": "1. Frequency gap: A gap of several orders of magnitude between forced-oscillation experiments (~1 Hz) and ultrasonic measurements (~MHz) remains experimentally unsampled; the assumption that a single absorption band model spans this range is unverified. 2. Constant-Q assumption: The absorption band model assumes Q is approximately constant or follows a simple power law across the seismic band; laboratory data suggest Q^{-1}(omega) may have more complex frequency structure (e.g., superimposed relaxation peaks). 3. Kramers-Kronig approximations: Simplified dispersion formulas (e.g., the 1/piQ*ln(f/f_ref) relation) assume small Q^{-1} and may be inaccurate for strongly attenuating regions (Q < 50). 4. Pressure dependence: The activation volume V* for anelastic processes is poorly constrained, making extrapolation to deep mantle pressures uncertain. 5. Compositional effects: Most dispersion models are calibrated on melt-free Fo90 olivine; effects of water, partial melt, minor phases (pyroxene, garnet), and iron content on the dispersion relation are not well characterized. 6. Non-uniqueness: Different rheological models (Andrade, extended Burgers, Sundberg-Cooper) predict different frequency dependences of dispersion, leading to model-dependent corrections that can differ by 0.5-1% in velocity. 7. Grain-size extrapolation: Laboratory grain sizes (micrometers) must be scaled to mantle grain sizes (mm-cm), introducing uncertainty in the frequency location of the absorption band. 8. The assumption that bulk attenuation Q_K^{-1} is negligible is convenient but not rigorously established for all mantle conditions [uncertain].",
+
+  "implementation_notes": "For ThermoElasticCalculator, implementing frequency-dependent velocity dispersion requires the following approach: INPUTS: (1) Unrelaxed elastic moduli (K_U, G_U) at target P,T from the existing mineral physics EoS database (these correspond to ultrasonic/infinite-frequency values). (2) Target seismic frequency f (user-specified, default could be 0.1 Hz for teleseismic body waves or 0.01 Hz for surface waves). (3) Attenuation model parameters: alpha (frequency exponent), E* (activation energy), V* (activation volume), d (grain size), reference Q or model-specific parameters (Andrade n and beta, or Burgers relaxation time distribution). CALCULATION: Two approaches of increasing complexity: (A) Simple correction: DeltaV/V = -cot(alpha*pi/2)/(2*Q(T,P,f,d)), applied to Vs (and optionally Vp via Q_K). This requires a Q model (e.g., parameterized as Q(T,P,f,d) from Jackson & Faul 2010 or Yamauchi & Takei 2016). (B) Full viscoelastic approach: Compute J*(omega) from a rheological model (Andrade or extended Burgers), then G_relaxed = 1/Re[J*], Q_mu = Re[J*]/Im[J*], and Vs = sqrt(G_relaxed/rho). Approach B is more rigorous and automatically ensures Kramers-Kronig consistency. OUTPUTS: Corrected Vs, Vp, Q_mu, Q_K at the specified frequency. RECOMMENDATIONS: (1) Implement approach B using the Andrade model as the default, with extended Burgers as an alternative. (2) Allow the user to choose the seismic frequency. (3) Provide both corrected and uncorrected velocities so users can assess the magnitude of the dispersion correction. (4) For bulk modulus correction, use Q_K^{-1} = 0 as default with an option to specify finite Q_K.",
+
+  "relevance_score": 5,
+
+  "uncertain": [
+    "V* (activation volume)",
+    "omega_1, omega_2 (absorption band limits)",
+    "Q_K^{-1} negligibility assumption",
+    "key_papers entries - exact DOIs for older papers (Liu et al. 1976, Minster & Anderson 1981) may have minor formatting variations"
+  ]
+}

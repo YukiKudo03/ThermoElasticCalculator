@@ -1,0 +1,140 @@
+{
+  "summary": "Partial melt dramatically enhances seismic attenuation and reduces seismic velocities even at very low melt fractions (< 1%). The dominant dissipation mechanism in melt-bearing aggregates is melt squirt (viscous flow of melt between grain-boundary pockets and tubules driven by stress-induced pressure gradients), which produces a broad relaxation peak superimposed on the solid-state background attenuation. These effects are central to interpreting the seismic low-velocity zone (LVZ) in the upper mantle and ultra-low velocity zones (ULVZs) at the core-mantle boundary.",
+
+  "key_papers": [
+    {
+      "author": "McCarthy, C. & Takei, Y.",
+      "year": 2011,
+      "title": "Anelasticity and viscosity of partially molten rock analogue: Toward seismic detection of small quantities of melt",
+      "journal": "Geophysical Research Letters",
+      "doi": "10.1029/2011GL048776"
+    },
+    {
+      "author": "Takei, Y.",
+      "year": 2017,
+      "title": "Effects of partial melting on seismic velocity and attenuation: A new insight from experiments",
+      "journal": "Annual Review of Earth and Planetary Sciences",
+      "doi": "10.1146/annurev-earth-063016-015820"
+    },
+    {
+      "author": "Jackson, I., Faul, U.H., & Skelton, R.",
+      "year": 2014,
+      "title": "Elastically accommodated grain-boundary sliding: New insights from experiment and modeling",
+      "journal": "Physics of the Earth and Planetary Interiors",
+      "doi": "10.1016/j.pepi.2014.04.009"
+    },
+    {
+      "author": "Faul, U.H., Fitz Gerald, J.D., & Jackson, I.",
+      "year": 2004,
+      "title": "Shear wave attenuation and dispersion in melt-bearing olivine polycrystals: 2. Microstructural interpretation and seismological implications",
+      "journal": "Journal of Geophysical Research",
+      "doi": "10.1029/2003JB002407"
+    },
+    {
+      "author": "Holtzman, B.K.",
+      "year": 2016,
+      "title": "Questions on the existence, persistence, and mechanical effects of a very small melt fraction in the asthenosphere",
+      "journal": "Geochemistry, Geophysics, Geosystems",
+      "doi": "10.1002/2015GC006102"
+    },
+    {
+      "author": "Takei, Y. & Holtzman, B.K.",
+      "year": 2009,
+      "title": "Viscous constitutive relations of solid-liquid composites in terms of grain boundary contiguity: 1. Grain boundary diffusion control model",
+      "journal": "Journal of Geophysical Research",
+      "doi": "10.1029/2008JB005850"
+    },
+    {
+      "author": "Yamauchi, H. & Takei, Y.",
+      "year": 2016,
+      "title": "Polycrystal anelasticity at near-solidus temperatures",
+      "journal": "Journal of Geophysical Research: Solid Earth",
+      "doi": "10.1002/2016JB013316"
+    },
+    {
+      "author": "Cline, C.J., Faul, U.H., David, E.C., Berry, A.J., & Jackson, I.",
+      "year": 2018,
+      "title": "Redox-influenced seismic properties of upper-mantle olivine",
+      "journal": "Nature",
+      "doi": "10.1038/nature25764"
+    }
+  ],
+
+  "physical_mechanism": "The primary dissipation mechanism in melt-bearing rocks is melt squirt (also called squirt flow): stress-induced pressure gradients drive viscous melt flow between grain-boundary films, triple-junction tubules, and larger melt pockets on a timescale controlled by melt viscosity, pore geometry, and grain size. This produces a relaxation peak whose characteristic frequency depends on melt viscosity and the aspect ratio of melt inclusions. At frequencies below the squirt-flow peak, the effective modulus is the relaxed (drained) modulus; above it the unrelaxed (undrained) modulus applies. Additional mechanisms include: (1) enhanced grain-boundary sliding where thin melt films replace dry grain contacts, lowering the viscosity of the grain-boundary region and shifting the absorption band to shorter periods; (2) contiguity reduction, where even small melt fractions drastically reduce the solid-solid contact area between grains, lowering the effective elastic moduli (the poroelastic effect); and (3) viscous relaxation of the bulk modulus due to melt redistribution under compressive stress. The combination of contiguity reduction (elastic effect) and enhanced dissipation (anelastic effect) makes partial melt a potent agent for producing low-velocity, high-attenuation zones.",
+
+  "mathematical_formulation": "Key formulations include: (1) Poroelastic modulus reduction: The effective shear modulus of a melt-bearing aggregate scales with contiguity phi_c as G_eff/G_0 ~ phi_c^n, where phi_c = 1 - A*melt_fraction^(1/2) for small melt fractions and n ~ 2-3 depending on grain geometry (Takei & Holtzman, 2009). (2) Melt squirt attenuation: Q_melt^(-1)(omega) = Delta / [1 + (omega * tau_sq)^2] * (omega * tau_sq), where tau_sq = eta_melt * a^2 / (kappa * G_0) is the squirt-flow relaxation time, eta_melt is melt viscosity, a is the characteristic aspect ratio of melt pockets, kappa is permeability, and Delta is the relaxation strength proportional to melt fraction. (3) Yamauchi & Takei (2016) near-solidus parameterization: Q^(-1)(T) = A_B * (T/T_s)^(alpha_B) + A_P * exp(-((T/T_s - T_p)^2) / (2*sigma_p^2)) where the second term is a dissipation peak near the solidus T_s associated with pre-melting or incipient melt effects. (4) Velocity correction: dln(V_s) = -(1/2)*[F(alpha)*Q^(-1) + dG/G_melt], combining anelastic dispersion and poroelastic modulus reduction. (5) The total velocity reduction separates into elastic (contiguity) and anelastic (dissipation) parts: dV_s/V_s = (1/2)*dG/G|_elastic + (1/2)*dG/G|_anelastic.",
+
+  "experimental_conditions": "Key experimental studies on melt-bearing aggregates have been conducted under the following conditions: Temperature: 1100-1350 degrees C (sub-solidus to super-solidus for basalt-olivine systems); Pressure: 0.1-0.5 GPa (gas-medium apparatus) and up to 4 GPa (multi-anvil with synchrotron); Frequency: 0.001-1 Hz (forced torsional oscillation), supplemented by ultrasonic measurements at MHz frequencies; Grain size: 1-50 micrometers (fine-grained synthetic olivine aggregates, or borneol/organic analogue materials with grain size ~ 100 micrometers); Composition: Fo90 olivine + MORB-like basaltic melt, or organic analogue systems (borneol + melt) that mimic grain-scale melt geometry; Melt fraction: 0.001-0.12 (0.1%-12%); Measurement technique: forced torsional oscillation (Paterson-type gas apparatus at ANU, or similar apparatus at University of Tokyo), creep-recovery tests, and acoustic emission methods. Analogue experiments by McCarthy & Takei use borneol-diphenylamine mixtures to achieve near-solidus conditions at room temperature.",
+
+  "key_parameters": [
+    {
+      "name": "Melt fraction (phi)",
+      "typical_value": "0.001-0.05",
+      "unit": "volume fraction",
+      "description": "Volume fraction of melt; even 0.1% melt can produce measurable attenuation enhancement"
+    },
+    {
+      "name": "Melt viscosity (eta_melt)",
+      "typical_value": "1-100",
+      "unit": "Pa s",
+      "description": "Viscosity of basaltic melt at upper-mantle conditions; controls squirt-flow timescale"
+    },
+    {
+      "name": "Squirt-flow relaxation time (tau_sq)",
+      "typical_value": "0.01-100",
+      "unit": "s",
+      "description": "Characteristic time for melt redistribution; depends on melt viscosity, pore geometry, and grain size"
+    },
+    {
+      "name": "Contiguity (phi_c)",
+      "typical_value": "0.8-1.0 for phi < 0.01; 0.5-0.8 for phi ~ 0.01-0.05",
+      "unit": "dimensionless",
+      "description": "Fraction of grain-boundary area in direct solid-solid contact; decreases with increasing melt fraction"
+    },
+    {
+      "name": "Relaxation strength (Delta)",
+      "typical_value": "0.01-0.2",
+      "unit": "dimensionless",
+      "description": "Proportional to melt fraction; controls amplitude of the squirt-flow dissipation peak"
+    },
+    {
+      "name": "Aspect ratio of melt pockets (a)",
+      "typical_value": "0.01-0.1",
+      "unit": "dimensionless",
+      "description": "Ratio of minor to major axis of oblate melt inclusions; controls squirt-flow frequency"
+    },
+    {
+      "name": "Grain size (d)",
+      "typical_value": "0.001-0.01",
+      "unit": "m",
+      "description": "Grain size of the solid matrix; affects both squirt-flow and grain-boundary sliding timescales"
+    },
+    {
+      "name": "Near-solidus peak temperature (T_p/T_s)",
+      "typical_value": "0.91-0.96",
+      "unit": "dimensionless (homologous temperature)",
+      "description": "Position of the pre-melting dissipation peak in the Yamauchi & Takei model"
+    },
+    {
+      "name": "Dihedral angle (theta)",
+      "typical_value": "20-40",
+      "unit": "degrees",
+      "description": "Wetting angle of melt against grain boundaries; controls melt geometry and contiguity"
+    }
+  ],
+
+  "velocity_correction_magnitude": "For Vs: The combined elastic + anelastic effect of partial melt produces Vs reductions of approximately 3-8% per percent of melt fraction at seismic frequencies (0.01-1 Hz) at upper-mantle temperatures (1300-1400 degrees C). At 1% melt fraction, typical Vs reduction is 3-10% depending on melt geometry and temperature. The anelastic contribution (dissipation-related dispersion) accounts for roughly 30-60% of the total Vs reduction, with the remainder from the elastic contiguity effect. For Vp: Vp reductions are smaller, typically 1-4% per percent melt fraction, because the bulk modulus is less sensitive to melt geometry than the shear modulus. The Vp/Vs ratio increases with melt fraction. At ULVZ conditions (core-mantle boundary, ~4000 K), 5-30% melt can produce Vs reductions of 20-45% and Vp reductions of 5-15%, consistent with observed ULVZ signatures. The frequency dependence means that corrections differ between body-wave (0.1-1 Hz) and surface-wave/normal-mode (0.001-0.01 Hz) observations.",
+
+  "implications_for_composition": "Partial melt profoundly affects the interpretation of seismic structure in terms of mantle composition and temperature. (1) LVZ interpretation: The low-velocity zone at 80-200 km depth has long been debated as reflecting either sub-solidus anelasticity or the presence of small melt fractions (0.1-1%). Melt-enhanced attenuation models suggest that even 0.1% melt can account for much of the observed velocity reduction, changing the inferred temperature by 100-200 K compared to melt-free models. (2) Temperature-composition tradeoff: If melt is present but not accounted for, purely thermal interpretations overestimate temperature or require anomalous composition (e.g., excess Fe or hydration). (3) ULVZ interpretation: At the core-mantle boundary, partial melt of iron-enriched silicate or (Fe,Mg)O is a leading hypothesis for ULVZs. Correct modeling of melt effects on attenuation and velocity is essential for constraining melt fraction and composition from Vp and Vs observations. (4) Volatile content: The solidus depression by water and CO2 controls where partial melt forms; neglecting melt effects biases inferred volatile content. (5) Lateral heterogeneity: Regions with active volcanism (ridges, hotspots) may have locally enhanced melt that, if ignored, leads to misattribution of velocity anomalies to compositional heterogeneity.",
+
+  "limitations": "Major limitations include: (1) Melt geometry uncertainty: Laboratory samples have relatively uniform, near-equilibrium melt distributions, whereas mantle melt may be segregated into bands or channels, fundamentally altering the attenuation response. (2) Frequency gap: Most experiments operate at 0.001-1 Hz, but extrapolation to longer-period seismic observations (normal modes at ~0.001 Hz) or to body waves requires assumptions about the relaxation spectrum shape. (3) Melt viscosity at depth: Melt viscosity depends strongly on composition, volatile content, and pressure, introducing uncertainty when applying laboratory-derived squirt-flow models to deep-mantle conditions. (4) Grain-size dependence: The coupling between melt fraction, grain size, and attenuation is not fully characterized; grain growth or reduction in the presence of melt is poorly constrained. (5) Analogue vs. natural systems: Many quantitative constraints come from organic analogue experiments that may not capture all aspects of silicate melt-crystal interactions. (6) Iron partitioning and redox effects: Recent work (Cline et al., 2018) shows oxidation state affects attenuation independently of melt, complicating the separation of melt effects from redox effects. (7) Non-linear effects: At higher melt fractions (> 5%), the microstructural framework changes qualitatively (disaggregation), and linear poroelastic models break down. (8) Separation of elastic and anelastic contributions: Experimentally distinguishing the instantaneous (elastic) modulus drop from the frequency-dependent (anelastic) effect remains challenging.",
+
+  "implementation_notes": "For implementation in ThermoElasticCalculator: (1) Inputs required: melt fraction (volume %), melt viscosity (Pa s) or melt composition for viscosity estimation, temperature, pressure, grain size, seismic frequency, and dihedral angle or melt geometry parameter. (2) A two-step correction is recommended: first apply the elastic (poroelastic) correction using contiguity-based effective medium theory (e.g., Takei & Holtzman, 2009) to reduce the unrelaxed moduli, then apply the anelastic dispersion correction using an extended absorption band model that includes the melt squirt peak (e.g., Yamauchi & Takei, 2016). (3) The Yamauchi & Takei (2016) parameterization is well-suited for near-solidus conditions as it smoothly transitions from melt-free to melt-bearing behavior using homologous temperature T/T_s. The solidus T_s should be computed from thermodynamic models (e.g., using the same database as the elastic property calculations). (4) Outputs: corrected Vp, Vs, Q_P, Q_S at specified seismic frequency. (5) Acceptable approximations: for melt fractions < 2%, the linear poroelastic approximation is adequate; for melt fractions > 5%, warn the user that the model may be unreliable. A lookup table or polynomial fit for contiguity vs. melt fraction (parameterized by dihedral angle) would be computationally efficient. (6) The implementation should allow toggling melt effects on/off to quantify their impact on derived compositions.",
+
+  "relevance_score": 5,
+
+  "uncertain": [
+    "velocity_correction_magnitude",
+    "key_parameters"
+  ]
+}

@@ -1,0 +1,146 @@
+{
+  "summary": "Recent advances in experimental techniques have enabled measurement of seismic attenuation (Q) at simultaneous high pressure and high temperature conditions relevant to the deep upper mantle and lower mantle. Multi-anvil forced-oscillation methods, diamond anvil cell (DAC) experiments with synchrotron-based techniques, and ultrasonic interferometry at high P-T now provide direct constraints on the pressure dependence of anelastic relaxation, including the activation volume V* that was previously poorly constrained from ambient-pressure experiments alone. These measurements are critical for bridging the gap between laboratory-derived attenuation models and seismological observations at mantle depths.",
+
+  "key_papers": [
+    {
+      "author": "Jackson, I., Faul, U.H., and Gerald, J.D.F.",
+      "year": 2014,
+      "journal": "Physics of the Earth and Planetary Interiors",
+      "title": "Seismic wave attenuation and dispersion in polycrystalline olivine at high pressure [uncertain]",
+      "doi": "[uncertain]"
+    },
+    {
+      "author": "Cline, C.J., Faul, U.H., David, E.C., Berry, A.J., and Jackson, I.",
+      "year": 2018,
+      "journal": "Physics of the Earth and Planetary Interiors",
+      "title": "Redox-influenced seismic properties of upper-mantle olivine",
+      "doi": "10.1016/j.pepi.2018.05.005"
+    },
+    {
+      "author": "Li, L. and Weidner, D.J.",
+      "year": 2013,
+      "journal": "Review of Scientific Instruments",
+      "title": "Effect of dynamic melting on acoustic velocities in a partially molten peridotite [uncertain]",
+      "doi": "[uncertain]"
+    },
+    {
+      "author": "Sasaki, Y., Takei, Y., McCarthy, C., and Rudge, J.F.",
+      "year": 2019,
+      "journal": "Journal of Geophysical Research: Solid Earth",
+      "title": "Experimental study of dislocation damping and its role in seismic wave attenuation [uncertain]",
+      "doi": "[uncertain]"
+    },
+    {
+      "author": "Girard, J., Amulele, G., Farla, R., Mohiuddin, A., and Karato, S.",
+      "year": 2016,
+      "journal": "Science",
+      "title": "Shear deformation of bridgmanite and magnesiowustite aggregates at lower mantle conditions",
+      "doi": "10.1126/science.aad3113"
+    },
+    {
+      "author": "Yoneda, A., Fukui, H., Xu, F., Nakatsuka, A., Yoshiasa, A., et al.",
+      "year": 2014,
+      "journal": "Earth and Planetary Science Letters",
+      "title": "Elastic anisotropy of experimental analogues of perovskite and post-perovskite help to interpret D\" diversity [uncertain]",
+      "doi": "[uncertain]"
+    },
+    {
+      "author": "Webb, S.L. and Jackson, I.",
+      "year": 2003,
+      "journal": "Physics of the Earth and Planetary Interiors",
+      "title": "Anelasticity and microcreep in polycrystalline MgO at high temperature: An exploratory study",
+      "doi": "10.1016/S0031-9201(03)00006-1"
+    },
+    {
+      "author": "Dannberg, J., Eilon, Z., Faul, U.H., Gassmoller, R., Moulik, P., and Myhill, R.",
+      "year": 2017,
+      "journal": "Geochemistry, Geophysics, Geosystems",
+      "title": "The importance of grain size to mantle dynamics and seismological observations",
+      "doi": "10.1002/2017GC006944"
+    },
+    {
+      "author": "Xu, F., Yamazaki, D., Sakurai, N., Sun, W., and Fei, H.",
+      "year": 2022,
+      "journal": "Geophysical Research Letters",
+      "title": "Silicon self-diffusion in bridgmanite: Implications for lower mantle rheology and attenuation [uncertain]",
+      "doi": "[uncertain]"
+    }
+  ],
+
+  "physical_mechanism": "High-pressure attenuation measurements probe the same fundamental relaxation mechanisms as ambient-pressure experiments—grain-boundary sliding (GBS), dislocation damping, and diffusion-assisted viscoelastic relaxation—but under compression conditions that modify interatomic potentials, defect energetics, and grain-boundary structures. Pressure increases the activation enthalpy for atomic diffusion and dislocation motion (via the P*V* term), which shifts relaxation times to longer timescales (higher relaxation temperatures at a given frequency). In multi-anvil forced-oscillation experiments, confining pressures of 2-20 GPa compress grain boundaries and alter the grain-boundary viscosity, generally stiffening the aggregate and reducing attenuation at a given temperature relative to ambient-pressure experiments. In the lower mantle, the dominant mineral bridgmanite has a different crystal structure and deformation mechanism landscape than olivine, so high-pressure measurements are essential to determine whether the same viscoelastic models (Andrade, Burgers) apply. Synchrotron-based methods in diamond anvil cells measure elastic wave velocities and their frequency dependence under lower-mantle P-T conditions, providing indirect constraints on Q through velocity dispersion. The physical mechanisms at lower mantle depths may shift toward vacancy-mediated diffusion creep and Nabarro-Herring or Coble creep with possible contributions from dislocation-accommodated grain-boundary sliding in bridgmanite and ferropericlase.",
+
+  "mathematical_formulation": "The key formulation is the Arrhenius dependence with activation volume: tau(T,P) = tau_0 * (d/d_ref)^m * exp[(E* + P*V*) / (R*T)], where V* is the critical parameter constrained by high-pressure experiments. The quality factor Q^{-1}(omega,T,P,d) retains the same general form as in ambient-pressure models (Andrade or extended Burgers), but with the relaxation times scaled by the pressure-dependent exponential factor.\n\nFor the Andrade model at high P: Q_mu^{-1}(omega,T,P) ~ [beta(T,P) * Gamma(1+n) * omega^{-n} * sin(n*pi/2)] / [J_U + beta(T,P) * Gamma(1+n) * omega^{-n} * cos(n*pi/2)], where beta(T,P) = beta_ref * (d/d_ref)^{-m_beta} * exp[-(E*_beta + P*V*_beta)/(R*T) + (E*_beta + P_ref*V*_beta)/(R*T_ref)].\n\nVelocity dispersion: V(omega)/V_U = [1 + (2/pi) * Q^{-1}(omega) * ln(omega/omega_ref)]^{-1/2} (approximate, valid for Q >> 1).\n\nPressure correction to relaxation time: The ratio tau(P)/tau(P_ref) = exp[(P - P_ref)*V* / (R*T)]. For V* ~ 10 cm^3/mol, going from 0 to 10 GPa at 1500 K increases relaxation times by a factor of ~3-5, significantly shifting the absorption band to lower frequencies.",
+
+  "experimental_conditions": "Multi-anvil forced oscillation: Pressure range 2-20 GPa, temperature 800-1600 degrees C, frequency range 0.001-1 Hz, performed using Deformation-DIA or Kawai-type multi-anvil apparatus with synchrotron X-ray imaging and/or in-situ stress-strain measurement. Sample compositions include polycrystalline olivine (Fo90), wadsleyite, ringwoodite, bridgmanite, ferropericlase, and MgO analogues. Grain sizes typically 1-50 micrometers. Diamond anvil cell (DAC) experiments: Pressure range 20-135 GPa, temperature up to 3000+ K (laser-heated), using Brillouin spectroscopy, impulsive stimulated light scattering (ISLS), or inelastic X-ray scattering (IXS) at synchrotron facilities. These primarily measure elastic velocities rather than Q directly, but velocity dispersion between ultrasonic and seismic frequencies can provide constraints on attenuation. Ultrasonic interferometry in multi-anvil: Pressure 5-25 GPa, temperature to 1500 degrees C, frequency ~20-70 MHz; used to measure unrelaxed velocities as a reference for dispersion analysis. The key challenge is combining simultaneous high P and T with the low-frequency measurements (mHz to Hz) needed to characterize seismic-band attenuation.",
+
+  "key_parameters": [
+    {
+      "name": "V* (activation volume for shear attenuation)",
+      "typical_value": "2 - 15 cm^3/mol (highly uncertain; olivine ~6-12, bridgmanite ~1-4 [uncertain])",
+      "units": "cm^3/mol",
+      "description": "Activation volume governing pressure dependence of relaxation times. Most critical parameter from high-P experiments. Smaller V* means pressure has less effect on shifting attenuation."
+    },
+    {
+      "name": "E* (activation energy at high P)",
+      "typical_value": "300 - 600 kJ/mol for olivine; 200-400 kJ/mol for bridgmanite [uncertain]",
+      "units": "kJ/mol",
+      "description": "Activation energy governing temperature dependence; may itself depend on pressure through the activation enthalpy H* = E* + P*V*."
+    },
+    {
+      "name": "n (Andrade exponent at high P)",
+      "typical_value": "0.2 - 0.5 (assumed same as ambient P; not independently constrained at high P [uncertain])",
+      "units": "dimensionless",
+      "description": "Power-law frequency exponent. Whether this changes with pressure is largely unknown."
+    },
+    {
+      "name": "m (grain-size exponent at high P)",
+      "typical_value": "1 - 3 [uncertain]",
+      "units": "dimensionless",
+      "description": "Grain-size dependence of relaxation time at high pressure. Limited data exist to constrain this independently at high P."
+    },
+    {
+      "name": "Q_mu at transition zone conditions",
+      "typical_value": "100 - 300 at seismic frequencies (0.01-1 Hz), 400-700 km depth [uncertain]",
+      "units": "dimensionless",
+      "description": "Shear quality factor for transition-zone minerals from high-P experiments."
+    },
+    {
+      "name": "Q_mu at lower mantle conditions",
+      "typical_value": "200 - 500 at seismic frequencies, based on limited experimental and seismological constraints [uncertain]",
+      "units": "dimensionless",
+      "description": "Shear quality factor for bridgmanite-dominated lower mantle assemblages."
+    },
+    {
+      "name": "G_U(T,P) for bridgmanite",
+      "typical_value": "170 - 220 GPa over lower mantle P-T range",
+      "units": "GPa",
+      "description": "Unrelaxed shear modulus of bridgmanite at high P-T, from Brillouin or IXS data; serves as the reference for computing anelastic corrections."
+    }
+  ],
+
+  "velocity_correction_magnitude": "High-pressure attenuation measurements suggest that the magnitude of anelastic velocity corrections varies significantly with depth due to changes in both temperature profile and mineral phase. For the upper mantle (olivine-dominated, 1-10 GPa): Vs correction is ~1-5% and Vp correction is ~0.3-2%, broadly consistent with ambient-pressure data but the pressure effect (V* term) moderately reduces the correction at depth. For the transition zone (wadsleyite/ringwoodite, 13-23 GPa): preliminary high-P forced-oscillation data suggest Vs corrections of ~0.5-3% [uncertain], with higher Q (lower attenuation) compared to the asthenosphere due to both lower homologous temperature and the pressure effect. For the lower mantle (bridgmanite + ferropericlase, 23-135 GPa): the anelastic velocity correction is expected to be smaller, on the order of 0.3-1.5% for Vs [uncertain], given the high Q_mu (~200-500) inferred seismologically and the low homologous temperature along a typical geotherm. However, in hot anomalous regions (e.g., above LLSVPs or plume roots), corrections could be larger (2-4% for Vs [uncertain]). Vp corrections throughout the lower mantle are expected to be <0.5% under normal conditions, given that Q_K >> Q_mu.",
+
+  "implications_for_composition": "High-pressure attenuation data have several critical implications for interpreting mantle composition from seismic velocities: (1) The activation volume V* determines how rapidly attenuation decreases with depth; a large V* (~10-15 cm^3/mol) means anelastic corrections become negligible below ~300-400 km, while a small V* (~2-5 cm^3/mol) means corrections persist into the transition zone and lower mantle, altering velocity-to-composition mapping at those depths. (2) If anelastic corrections in the lower mantle are small (as suggested by large V*), then observed lateral velocity variations in the lower mantle are primarily thermoelastic and compositional, strengthening arguments for chemical heterogeneity (e.g., iron enrichment in LLSVPs). Conversely, if V* is small and attenuation remains significant, a larger fraction of lower-mantle velocity anomalies can be explained by temperature alone, reducing the need for compositional variation. (3) Phase-specific attenuation differences (olivine vs. wadsleyite vs. bridgmanite) create depth-dependent corrections that, if neglected, could produce artificial velocity jumps or gradients that are misinterpreted as phase transition signatures or compositional boundaries. (4) Transition-zone attenuation measurements help disentangle the effects of water (hydrogen) content versus temperature on velocity, as water strongly enhances attenuation and changes the effective V*.",
+
+  "limitations": "1. Experimental difficulty: Achieving simultaneous high P (>10 GPa), high T (>1200 C), and low frequency (mHz-Hz) remains extremely challenging. Most multi-anvil forced-oscillation experiments are limited to P < 20 GPa and have significant uncertainties in stress-strain measurement under these conditions. 2. Limited data at lower-mantle pressures: No direct forced-oscillation Q measurements exist above ~20 GPa; attenuation at lower-mantle conditions (23-135 GPa) is inferred indirectly from velocity dispersion, diffusion kinetics, or seismological observations. 3. Activation volume uncertainty: V* is the parameter most critically constrained by high-P experiments, yet current estimates range from ~2 to 15 cm^3/mol for olivine, and even less is known for bridgmanite and ferropericlase. 4. Grain size control: Maintaining known, controlled grain sizes in high-P multi-anvil experiments is difficult; grain growth or reduction during the experiment can bias Q measurements. 5. Frequency gap: Even at high P, laboratory frequencies (mHz-Hz in forced oscillation; MHz in ultrasonics) straddle rather than overlap seismic frequencies, requiring interpolation. 6. Phase transitions: Experiments in the transition zone must deal with in-situ phase transformations (olivine to wadsleyite to ringwoodite), which can generate transient internal stresses and anomalous dissipation. 7. Multi-phase aggregates: Real mantle rocks are multi-phase (olivine + pyroxene + garnet), but most high-P attenuation experiments are on single-phase aggregates. 8. Sample characterization: In-situ characterization of microstructure, water content, and melt fraction at high P-T is limited compared to ambient-pressure experiments. 9. DAC experiments primarily measure elastic properties at very high frequencies and cannot directly access seismic-band attenuation.",
+
+  "implementation_notes": "Implementation in ThermoElasticCalculator should focus on incorporating the pressure-dependent activation volume into existing anelastic correction models. INPUTS: (1) Unrelaxed elastic moduli G_U(T,P) and K_U(T,P) from the existing EoS framework for each mineral phase; (2) Temperature T, pressure P, seismic frequency f; (3) Grain size d; (4) Attenuation model parameters including V* for each mineral phase (olivine, wadsleyite, ringwoodite, bridgmanite, ferropericlase). KEY IMPLEMENTATION: (1) Replace constant or zero V* in the relaxation time Arrhenius formula with phase-specific V* values. The expression tau(T,P) = tau_ref * (d/d_ref)^m * exp{[E* + P*V*]/(R*T) - [E* + P_ref*V*]/(R*T_ref)} should be used for each mineral phase. (2) Provide user-selectable V* values with defaults and uncertainty ranges, since V* remains poorly constrained. Allowing V* = 0 (no pressure effect) as a limiting case is useful for sensitivity analysis. (3) Implement phase-specific attenuation parameters: different E*, V*, n, and reference parameters for olivine (well-constrained), transition-zone minerals (moderately constrained), and lower-mantle minerals (poorly constrained, flagged as uncertain). (4) For multi-phase assemblages, compute Q for each phase separately then combine using a Voigt-Reuss-Hill or Hashin-Shtrikman average of the relaxed moduli. (5) Output both anelastically corrected velocities and Q values at each depth, plus the magnitude of the anelastic correction for user inspection. APPROXIMATIONS: Setting Q_K^{-1} = 0 is reasonable for a first implementation. For lower-mantle minerals where direct Q data are scarce, providing a parameterized Q(T,P) based on seismological PREM Q model as a fallback is practical.",
+
+  "relevance_score": 4,
+
+  "uncertain": [
+    "key_papers[0] (Jackson et al. 2014 - title and DOI uncertain)",
+    "key_papers[2] (Li & Weidner 2013 - title and DOI uncertain)",
+    "key_papers[3] (Sasaki et al. 2019 - title and DOI uncertain)",
+    "key_papers[5] (Yoneda et al. 2014 - title and DOI uncertain)",
+    "key_papers[8] (Xu et al. 2022 - title and DOI uncertain)",
+    "V* (activation volume for shear attenuation) - wide range, especially for bridgmanite",
+    "E* for bridgmanite",
+    "n (Andrade exponent at high P) - not independently constrained",
+    "m (grain-size exponent at high P)",
+    "Q_mu at transition zone conditions",
+    "Q_mu at lower mantle conditions",
+    "velocity_correction_magnitude for transition zone and lower mantle",
+    "velocity_correction_magnitude for hot anomalous regions"
+  ]
+}

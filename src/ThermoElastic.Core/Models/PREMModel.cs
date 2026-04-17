@@ -104,6 +104,21 @@ public static class PREMModel
         return profile;
     }
 
+    /// <summary>
+    /// Get PREM shear quality factor QS at a given depth [km].
+    /// Dziewonski &amp; Anderson (1981) radial Q model.
+    /// </summary>
+    public static double GetQSAtDepth(double depth_km)
+    {
+        if (depth_km < 24.4) return 600.0;       // Crust/Lid
+        if (depth_km < 80.0) return 600.0;        // Lithospheric mantle
+        if (depth_km < 220.0) return 80.0;        // Low-velocity zone (LVZ)
+        if (depth_km < 400.0) return 143.0;       // Upper mantle below LVZ
+        if (depth_km < 670.0) return 143.0;       // Transition zone
+        if (depth_km <= 2891.0) return 312.0;     // Lower mantle
+        return 312.0;
+    }
+
     private static double Lerp(double a, double b, double t) => a + (b - a) * t;
 }
 

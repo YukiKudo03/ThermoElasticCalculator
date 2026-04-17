@@ -1,0 +1,301 @@
+{
+  "chapter_summary": "Thermal and electrical conductivity of mantle minerals are fundamental transport properties that control heat flow through the Earth's interior and the response of the mantle to electromagnetic sounding. Unlike elastic moduli, which describe the propagation of mechanical waves, transport properties describe the steady-state or quasi-steady-state flow of energy (heat) or charge (current) through a polycrystalline aggregate. Both properties depend strongly on temperature, pressure, composition, and volatile content, making them sensitive probes of mantle state that complement seismic observations.\n\nLattice thermal conductivity arises from phonon transport: heat is carried by lattice vibrations that scatter off grain boundaries, point defects, and other phonons. The Hofmeister (1999) phonon gas model provides a practical parameterization: k_lat(P,T) = k0 * (rho/rho0)^g * (T0/T), where k0 is the ambient reference conductivity, g is a density exponent typically between 4 and 6 reflecting the strong dependence on interatomic spacing, and the 1/T factor captures the high-temperature regime where Umklapp phonon-phonon scattering dominates. Pressure increases conductivity by compressing the lattice and enhancing phonon group velocities, while temperature reduces it by increasing scattering rates. At temperatures above approximately 1500 K, radiative heat transfer through partially transparent minerals provides an additional contribution that scales as T^3, though its magnitude in the lower mantle remains debated due to uncertain absorption spectra of iron-bearing silicates and oxides.\n\nElectrical conductivity in mantle minerals follows Arrhenius behavior: sigma = sigma0 * exp(-H/(RT)), where H is the activation enthalpy for charge carrier migration. For dry olivine, small polarons (electron holes localized on Fe sites) dominate conduction with activation energies around 150 kJ/mol. Water dissolved as hydrogen point defects dramatically enhances conductivity by providing protons as additional charge carriers with lower activation energies (approximately 90 kJ/mol). The hydrous contribution scales as sigma_wet = sigma0_wet * C_H2O^r * exp(-H_wet/(RT)) with r approximately 0.62. Pressure affects conductivity through the activation volume term PV* in the activation enthalpy. For multi-mineral aggregates, the Hashin-Shtrikman bounds or geometric mean mixing provide estimates of the effective bulk conductivity from individual phase conductivities.\n\nThese transport properties find direct application in two geophysical contexts. Thermal conductivity enters the heat conduction equation and controls the thermal structure of the lithosphere, subducting slabs, and plume conduits; it determines cooling rates and the depth-dependent geotherm. Electrical conductivity is probed by magnetotelluric (MT) sounding, where natural electromagnetic field variations induce telluric currents whose depth-dependent response functions reveal conductivity structure. High-conductivity anomalies in the upper mantle (asthenosphere, back-arc regions) are interpreted in terms of elevated temperature, partial melt, or enhanced water content, providing constraints complementary to seismic tomography.",
+  "prerequisite_knowledge": [
+    "Thermodynamics of solids at high pressure: equations of state and density as a function of P and T (Ch01, Ch05-06)",
+    "Crystal structure and lattice dynamics: phonon dispersion, Debye model, Gruneisen parameter (Ch02-03)",
+    "Mineral database and endmember parameters: SLB2011 mineral properties used in EOS calculations (Ch07)",
+    "Water in nominally anhydrous minerals: hydrogen solubility and its effects on material properties (Ch24)",
+    "Solid-state physics fundamentals: charge carriers (polarons, protons), Arrhenius kinetics, and diffusion",
+    "Electromagnetic theory basics: Maxwell's equations, skin depth, induction in conducting media"
+  ],
+  "key_equations": [
+    {
+      "equation": "k_{\\text{lat}}(P,T) = k_0 \\left(\\frac{\\rho(P,T)}{\\rho_0}\\right)^g \\cdot \\frac{T_0}{T}",
+      "name": "Hofmeister (1999) Lattice Thermal Conductivity",
+      "variables": {
+        "k_{\\text{lat}}": "Lattice thermal conductivity [W/m/K]",
+        "k_0": "Reference conductivity at ambient conditions [W/m/K] (default 50 in codebase)",
+        "\\rho(P,T)": "Density at current P-T conditions [kg/m^3], computed from Mie-Gruneisen EOS",
+        "\\rho_0": "Reference density at ambient conditions (0.0001 GPa, 300 K) [kg/m^3]",
+        "g": "Density exponent, typically 4-6 (default 5.0 in codebase)",
+        "T_0": "Reference temperature, 300 K",
+        "T": "Temperature [K]"
+      },
+      "interpretation": "The density ratio raised to a power g captures the pressure enhancement of thermal conductivity: compression shortens interatomic distances, increasing phonon group velocities and mean free paths. The 1/T dependence represents Umklapp scattering dominance at high temperature. The density is obtained self-consistently from the Mie-Gruneisen EOS via MieGruneisenEOSOptimizer. Implemented in ThermalConductivityCalculator.ComputeLatticeConductivity()."
+    },
+    {
+      "equation": "\\sigma_{\\text{dry}} = \\sigma_{0,\\text{dry}} \\cdot \\exp\\left(-\\frac{H_{\\text{dry}}}{R T}\\right)",
+      "name": "Dry Olivine Arrhenius Conductivity (Karato 1990)",
+      "variables": {
+        "\\sigma_{\\text{dry}}": "Dry electrical conductivity [S/m]",
+        "\\sigma_{0,\\text{dry}}": "Pre-exponential factor, 100 S/m in codebase",
+        "H_{\\text{dry}}": "Activation enthalpy for dry conduction, 150 kJ/mol (small polaron hopping)",
+        "R": "Gas constant, 8.31477 J/(mol K)",
+        "T": "Temperature [K]"
+      },
+      "interpretation": "The Arrhenius form reflects thermally activated hopping of small polarons (electron holes on Fe^{2+}/Fe^{3+} sites). The activation enthalpy H_dry sets the temperature sensitivity: conductivity increases by roughly one order of magnitude for every 200 K increase near 1400 K. Implemented as the dry term in ElectricalConductivityCalculator.ComputeConductivity()."
+    },
+    {
+      "equation": "\\sigma_{\\text{wet}} = \\sigma_{0,\\text{wet}} \\cdot C_{\\text{H}_2\\text{O}}^r \\cdot \\exp\\left(-\\frac{H_{\\text{wet}}}{R T}\\right)",
+      "name": "Hydrous Contribution to Electrical Conductivity (Yoshino et al. 2009)",
+      "variables": {
+        "\\sigma_{0,\\text{wet}}": "Pre-exponential factor for hydrous term, 1000 S/m in codebase",
+        "C_{\\text{H}_2\\text{O}}": "Water content as weight fraction (ppm/1e6)",
+        "r": "Water content exponent, 0.62",
+        "H_{\\text{wet}}": "Activation enthalpy for proton conduction, 90 kJ/mol",
+        "R": "Gas constant, 8.31477 J/(mol K)",
+        "T": "Temperature [K]"
+      },
+      "interpretation": "Dissolved hydrogen provides protons as mobile charge carriers with lower activation energy than polarons. The sub-linear exponent r = 0.62 indicates diminishing enhancement per unit water added. At 1400 K and 1000 ppm H2O, this term enhances total conductivity by a factor of 5-30 over dry olivine. Implemented as the wet term in ElectricalConductivityCalculator.ComputeConductivity()."
+    },
+    {
+      "equation": "\\sigma_{\\text{total}} = (\\sigma_{\\text{dry}} + \\sigma_{\\text{wet}}) \\cdot \\exp\\left(\\frac{P V^*}{R T}\\right)",
+      "name": "Total Electrical Conductivity with Pressure Correction",
+      "variables": {
+        "\\sigma_{\\text{total}}": "Total electrical conductivity [S/m]",
+        "P": "Pressure [GPa], converted to Pa internally",
+        "V^*": "Activation volume, 1.0e-6 m^3/mol (1 cm^3/mol) in codebase",
+        "R": "Gas constant",
+        "T": "Temperature [K]"
+      },
+      "interpretation": "The pressure correction factor exp(PV*/(RT)) accounts for the effect of pressure on the activation enthalpy for charge carrier migration. Unlike thermal conductivity where pressure always increases k, the sign of the pressure effect on electrical conductivity depends on the mechanism: for small polarons the activation volume is small and positive, giving a modest increase with pressure. Implemented in ElectricalConductivityCalculator.ComputeConductivity()."
+    },
+    {
+      "equation": "\\sigma_{\\text{agg}} = \\exp\\left(\\sum_i f_i \\ln \\sigma_i\\right)",
+      "name": "Geometric Mean Aggregate Conductivity",
+      "variables": {
+        "\\sigma_{\\text{agg}}": "Aggregate electrical conductivity [S/m]",
+        "f_i": "Volume fraction of phase i (must sum to 1)",
+        "\\sigma_i": "Electrical conductivity of phase i [S/m]"
+      },
+      "interpretation": "The geometric mean provides a practical approximation of the Hashin-Shtrikman bounds for electrical conductivity of a multi-phase aggregate. It guarantees that the aggregate conductivity lies between the minimum and maximum of the individual phase conductivities. This is appropriate when phase geometry is roughly isotropic and no percolation threshold effects dominate. Implemented in ElectricalConductivityCalculator.ComputeAggregateConductivity()."
+    },
+    {
+      "equation": "k_{\\text{rad}} = \\frac{16 n^2 \\sigma_B T^3}{3 \\alpha_{\\text{abs}}}",
+      "name": "Radiative Thermal Conductivity (Rosseland Approximation)",
+      "variables": {
+        "k_{\\text{rad}}": "Radiative contribution to thermal conductivity [W/m/K]",
+        "n": "Refractive index of the mineral (approximately 1.7 for silicates)",
+        "\\sigma_B": "Stefan-Boltzmann constant, 5.67e-8 W/(m^2 K^4)",
+        "T": "Temperature [K]",
+        "\\alpha_{\\text{abs}}": "Mean absorption coefficient [m^{-1}]"
+      },
+      "interpretation": "At high temperatures, photon transport through partially transparent minerals contributes to heat transfer. The T^3 dependence means this term becomes significant above approximately 1500 K. However, iron-bearing minerals have high absorption coefficients that suppress the radiative contribution. The magnitude in the lower mantle remains uncertain and is not currently implemented in the codebase. [uncertain]"
+    }
+  ],
+  "physical_concepts": [
+    {
+      "name": "Phonon Scattering and Lattice Thermal Conductivity",
+      "definition": "Heat conduction in crystalline solids occurs through propagation of quantized lattice vibrations (phonons). The thermal conductivity depends on phonon mean free path, group velocity, and heat capacity.",
+      "physical_intuition": "Think of heat transport as a relay race: phonons carry energy packets from hot to cold regions. At high temperatures, phonons scatter off each other more frequently (Umklapp processes), shortening the mean free path and reducing conductivity. Compression increases the spring constants between atoms, speeding up phonon propagation and enhancing conductivity.",
+      "common_misconceptions": [
+        "That thermal conductivity is constant throughout the mantle. In fact, it varies by a factor of 2-3 due to P-T effects.",
+        "That higher temperature always means less efficient heat transfer. Radiative transfer increases with T^3 and can partially compensate the 1/T lattice term at deep mantle conditions."
+      ]
+    },
+    {
+      "name": "Pressure Enhancement of Thermal Conductivity",
+      "definition": "Compression increases lattice thermal conductivity because denser packing raises phonon velocities and reduces interatomic distances, captured by the (rho/rho0)^g term with g typically 4-6.",
+      "physical_intuition": "Squeezing atoms closer together makes the lattice stiffer, so vibrations travel faster. The large exponent g = 5 means a 10% density increase roughly doubles the conductivity.",
+      "common_misconceptions": [
+        "That the density exponent g is a universal constant. It varies by mineral and must be calibrated experimentally.",
+        "That pressure effects are small. Across the mantle pressure range (0-136 GPa), pressure can increase conductivity by a factor of 3-5."
+      ]
+    },
+    {
+      "name": "Small Polaron Conduction",
+      "definition": "The dominant electrical conduction mechanism in dry mantle minerals, where electron holes localized on iron sites (Fe^{2+} to Fe^{3+}) hop between neighboring sites through thermally activated jumps.",
+      "physical_intuition": "Imagine electrons hopping between iron atoms in the crystal lattice. Each hop requires overcoming an energy barrier (the activation enthalpy). Higher temperature provides more thermal energy for hopping, exponentially increasing the number of successful jumps per second and hence the conductivity.",
+      "common_misconceptions": [
+        "That mantle minerals are insulators. While conductivities are low (1e-4 to 0.01 S/m), they are sufficient to produce detectable electromagnetic responses over mantle length and time scales.",
+        "That conduction is purely electronic. In hydrous minerals, proton conduction contributes significantly."
+      ]
+    },
+    {
+      "name": "Water Enhancement of Electrical Conductivity",
+      "definition": "Hydrogen dissolved in nominally anhydrous minerals provides protons as additional mobile charge carriers with lower activation energy than polarons, dramatically increasing bulk conductivity.",
+      "physical_intuition": "Water dissociates in the crystal, and the freed protons are small and mobile. They hop along oxygen sublattice sites with a lower energy barrier (90 kJ/mol vs 150 kJ/mol for polarons). Even modest water contents (100-1000 ppm) can increase conductivity by an order of magnitude.",
+      "common_misconceptions": [
+        "That water must be present as a free fluid to enhance conductivity. In fact, structurally bound hydrogen in NAMs is sufficient.",
+        "That the enhancement is linear in water content. The sub-linear exponent r = 0.62 means doubling water content increases the hydrous contribution by only about 54%."
+      ]
+    },
+    {
+      "name": "Hashin-Shtrikman Bounds and Geometric Mean Mixing",
+      "definition": "For a multiphase aggregate, the effective conductivity (thermal or electrical) lies between rigorous Hashin-Shtrikman upper and lower bounds. The geometric mean provides a practical intermediate estimate.",
+      "physical_intuition": "The HS bounds bracket the possible conductivities by imagining the most conductive phase forming either a connected network (upper bound) or isolated inclusions (lower bound). The geometric mean, being the exponential of the volume-weighted average of log-conductivities, naturally interpolates between these extremes for approximately equant grain geometries.",
+      "common_misconceptions": [
+        "That arithmetic averaging is appropriate for conductivity mixing. Arithmetic mean overestimates because it effectively assumes parallel conduction paths.",
+        "That Hashin-Shtrikman bounds are always tight. For phases with conductivities differing by orders of magnitude, the bounds can span a wide range."
+      ]
+    },
+    {
+      "name": "Magnetotelluric Sounding",
+      "definition": "A geophysical method that measures natural electromagnetic field variations at Earth's surface to infer the electrical conductivity structure of the interior, sensitive to temperature, water content, and melt.",
+      "physical_intuition": "Time-varying magnetic fields from solar wind and lightning induce electric currents in the conducting mantle. Lower-frequency signals penetrate deeper (skin depth proportional to 1/sqrt(frequency * conductivity)). By measuring the ratio of electric to magnetic fields over a range of frequencies, one can reconstruct the conductivity as a function of depth.",
+      "common_misconceptions": [
+        "That MT can only detect large conductivity contrasts. Modern array techniques can resolve lateral variations of a factor of 2-3.",
+        "That MT resolution is as good as seismic resolution. MT has inherently lower spatial resolution due to diffusive wave propagation."
+      ]
+    }
+  ],
+  "key_references": [
+    {
+      "author": "Hofmeister, A. M.",
+      "year": 1999,
+      "title": "Mantle values of thermal conductivity and the geotherm from phonon lifetimes",
+      "journal": "Science, 283, 1699-1706",
+      "why_essential": "Foundational paper establishing the phonon gas model for lattice thermal conductivity with the (rho/rho0)^g * (T0/T) parameterization used in ThermalConductivityCalculator."
+    },
+    {
+      "author": "Karato, S.",
+      "year": 1990,
+      "title": "The role of hydrogen in the electrical conductivity of the upper mantle",
+      "journal": "Nature, 347, 272-273",
+      "why_essential": "Seminal paper proposing that hydrogen enhances mantle electrical conductivity and providing the Arrhenius framework for dry olivine conductivity used in ElectricalConductivityCalculator."
+    },
+    {
+      "author": "Yoshino, T., Matsuzaki, T., Shatskiy, A., and Katsura, T.",
+      "year": 2009,
+      "title": "The effect of water on the electrical conductivity of olivine aggregates and its implications for the electrical structure of the upper mantle",
+      "journal": "Earth and Planetary Science Letters, 288, 291-300",
+      "why_essential": "Key experimental calibration of the hydrous conductivity term with water content exponent and activation enthalpy values used in the codebase."
+    },
+    {
+      "author": "Xu, Y., Shankland, T. J., Linhardt, S., Rubie, D. C., Langenhorst, F., and Klasinski, K.",
+      "year": 2004,
+      "title": "Thermal diffusivity and conductivity of olivine, wadsleyite and ringwoodite to 20 GPa and 1373 K",
+      "journal": "Physics of the Earth and Planetary Interiors, 143-144, 321-336",
+      "why_essential": "Comprehensive experimental dataset for thermal conductivity of upper mantle and transition zone minerals at high P-T, validating the Hofmeister model."
+    },
+    {
+      "author": "Goncharov, A. F., Haugen, B. D., Struzhkin, V. V., Beck, P., and Jacobsen, S. D.",
+      "year": 2008,
+      "title": "Radiative conductivity in the Earth's lower mantle",
+      "journal": "Nature, 456, 231-234",
+      "why_essential": "Important study on the radiative contribution to thermal conductivity in the lower mantle, addressing the role of iron absorption."
+    },
+    {
+      "author": "Constable, S.",
+      "year": 2006,
+      "title": "SEO3: A new model of olivine electrical conductivity",
+      "journal": "Geophysical Journal International, 166, 435-437",
+      "why_essential": "Standard reference model for olivine electrical conductivity reconciling multiple experimental datasets. [uncertain]"
+    }
+  ],
+  "worked_examples": [
+    {
+      "problem": "Calculate the lattice thermal conductivity of forsterite at 10 GPa and 1500 K, given k0 = 50 W/m/K, g = 5, ambient density rho0 = 3222 kg/m^3, and density at (10 GPa, 1500 K) rho = 3450 kg/m^3.",
+      "solution_approach": "Apply the Hofmeister formula: k = k0 * (rho/rho0)^g * (300/T). Compute the density ratio, raise to power g, multiply by the temperature factor.",
+      "numerical_values": "rho/rho0 = 3450/3222 = 1.0708. (rho/rho0)^5 = 1.0708^5 = 1.408. Temperature factor = 300/1500 = 0.2. k = 50 * 1.408 * 0.2 = 14.08 W/m/K.",
+      "interpretation": "Despite the pressure enhancement factor of 1.41, the 1/T reduction at 1500 K (factor 0.2) dominates, yielding a conductivity well below the ambient reference value. This illustrates why the deep mantle, despite being at high pressure, can have thermal conductivity comparable to or even lower than surface values, depending on the temperature."
+    },
+    {
+      "problem": "Compare the electrical conductivity of dry olivine versus olivine with 500 ppm H2O at 1400 K and 5 GPa.",
+      "solution_approach": "Use the Arrhenius model with codebase parameters. Compute sigma_dry, then sigma_wet for 500 ppm, add them, and apply the pressure correction.",
+      "numerical_values": "sigma_dry = 100 * exp(-150000 / (8.315 * 1400)) = 100 * exp(-12.88) = 100 * 2.53e-6 = 2.53e-4 S/m. For wet term: C = 500/1e6 = 5e-4. sigma_wet = 1000 * (5e-4)^0.62 * exp(-90000/(8.315*1400)) = 1000 * 0.01076 * exp(-7.73) = 10.76 * 4.40e-4 = 4.73e-3 S/m. Total before pressure correction = 2.53e-4 + 4.73e-3 = 4.98e-3 S/m. Pressure correction = exp(5e9 * 1e-6 / (8.315*1400)) = exp(0.429) = 1.536. sigma_total = 4.98e-3 * 1.536 = 7.65e-3 S/m. Dry with pressure: 2.53e-4 * 1.536 = 3.89e-4 S/m. Enhancement ratio = 7.65e-3 / 3.89e-4 = 19.7.",
+      "interpretation": "Water at 500 ppm enhances conductivity by a factor of approximately 20 at these conditions. The hydrous term dominates the total conductivity despite the modest water content. This level of enhancement is detectable by magnetotelluric sounding and could explain high-conductivity anomalies beneath volcanic arcs and mid-ocean ridges."
+    },
+    {
+      "problem": "Compute the aggregate electrical conductivity for a pyrolite upper mantle assemblage: 60% olivine (sigma = 0.001 S/m), 25% orthopyroxene (sigma = 0.0005 S/m), 15% clinopyroxene+garnet (sigma = 0.005 S/m).",
+      "solution_approach": "Apply the geometric mean formula: sigma_agg = exp(sum of f_i * ln(sigma_i)).",
+      "numerical_values": "sum = 0.60 * ln(0.001) + 0.25 * ln(0.0005) + 0.15 * ln(0.005) = 0.60 * (-6.908) + 0.25 * (-7.601) + 0.15 * (-5.298) = -4.145 + (-1.900) + (-0.795) = -6.840. sigma_agg = exp(-6.840) = 1.07e-3 S/m.",
+      "interpretation": "The aggregate conductivity (1.07e-3 S/m) is close to the olivine value (0.001 S/m) because olivine dominates the volume fraction. The garnet+cpx component, despite being more conductive, has only 15% volume fraction and cannot strongly pull the geometric mean upward. This result is within the Hashin-Shtrikman bounds [5e-4, 5e-3]."
+    }
+  ],
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch01 Thermodynamics of Solids at High Pressure",
+      "nature": "prerequisite",
+      "explanation": "The Mie-Gruneisen equation of state provides the density rho(P,T) needed for the thermal conductivity calculation. The EOS solver is called internally by ThermalConductivityCalculator."
+    },
+    {
+      "related_chapter": "Ch06 Mie-Gruneisen Equation of State Solver",
+      "nature": "prerequisite",
+      "explanation": "MieGruneisenEOSOptimizer is directly invoked to compute density at reference and current P-T conditions within ComputeLatticeConductivity()."
+    },
+    {
+      "related_chapter": "Ch07 SLB2011 Mineral Database",
+      "nature": "prerequisite",
+      "explanation": "Mineral parameters (V0, K0, K', Gruneisen parameter, etc.) from the SLB2011 database are required inputs for the EOS calculation underlying thermal conductivity."
+    },
+    {
+      "related_chapter": "Ch16 Anelasticity and Q",
+      "nature": "extension",
+      "explanation": "Both thermal/electrical conductivity and anelastic attenuation depend on Arrhenius-activated processes and share the same thermodynamic framework. The activation enthalpy formalism is common to both Q and electrical conductivity models."
+    },
+    {
+      "related_chapter": "Ch24 Water in the Mantle",
+      "nature": "prerequisite",
+      "explanation": "Water content estimation and the understanding of hydrogen solubility in NAMs directly feed into the hydrous electrical conductivity calculation. Ch24 provides the physical basis for why and how much water is stored in mantle minerals."
+    },
+    {
+      "related_chapter": "Ch10 Elastic Mixing Models",
+      "nature": "extension",
+      "explanation": "The geometric mean aggregate conductivity calculation parallels the Voigt-Reuss-Hill and Hashin-Shtrikman mixing schemes for elastic moduli. The same bounding philosophy applies to transport property mixing."
+    },
+    {
+      "related_chapter": "Ch19 Subducting Slabs",
+      "nature": "application",
+      "explanation": "Thermal conductivity controls the thermal evolution of subducting slabs. The rate at which cold slab material heats up depends directly on the P-T-dependent lattice conductivity computed here."
+    },
+    {
+      "related_chapter": "Ch15 PREM and Radial Earth Models",
+      "nature": "application",
+      "explanation": "Radial conductivity profiles constructed using these calculators can be compared with conductivity models derived from magnetotelluric observations, providing independent constraints on mantle temperature and composition."
+    }
+  ],
+  "computational_methods": "The ThermalConductivityCalculator follows a two-step EOS approach: (1) solve the Mie-Gruneisen EOS at ambient conditions (0.0001 GPa, 300 K) via MieGruneisenEOSOptimizer to obtain the reference density rho0, then (2) solve again at the target P-T to obtain the current density rho. The Hofmeister formula is then evaluated analytically. Each EOS solve involves Newton-Raphson iteration on the volume to match the target pressure, with convergence typically achieved in 5-15 iterations to relative precision better than 1e-10. The overall thermal conductivity computation is fast (sub-millisecond) and numerically stable for all reasonable P-T conditions.\n\nThe ElectricalConductivityCalculator is purely analytical with no iterative solver: the Arrhenius exponentials and pressure correction are evaluated directly. The ComputeAggregateConductivity method validates input arrays (equal length, positive conductivities, volume fractions summing to 1 within tolerance of 0.01) before computing the geometric mean. Both calculators are stateless and thread-safe, making them suitable for batch calculations over P-T grids.\n\nThe UI integration through ThermalConductivityViewModel and ElectricalConductivityViewModel exposes mineral selection (from SLB2011 endmember database), P-T input, and tunable parameters (k0, g for thermal; water content for electrical). Results are displayed in real time with formatted status messages. Performance is adequate for interactive use.",
+  "open_questions": [
+    "What is the true magnitude of radiative thermal conductivity in the lower mantle? Iron absorption in bridgmanite and ferropericlase may suppress radiative transfer, but experimental constraints at simultaneous high P-T remain sparse.",
+    "How does spin crossover in ferropericlase (around 40-70 GPa) affect both thermal and electrical conductivity? The change in iron electronic configuration may alter phonon scattering rates and charge carrier concentrations.",
+    "What are the correct activation parameters (E*, V*, sigma0) for electrical conductivity of lower mantle minerals (bridgmanite, post-perovskite, ferropericlase)? Most experimental data are for olivine; extrapolation to deep mantle phases is poorly constrained. [uncertain]",
+    "How does grain size affect lattice thermal conductivity in the mantle? At grain sizes below a few micrometers, grain boundary scattering can reduce conductivity, but this effect is likely small for typical mantle grain sizes (mm to cm).",
+    "Can anisotropy of thermal or electrical conductivity in textured mantle rocks be detected by geophysical observations? Olivine single crystals show conductivity anisotropy of a factor of 2-3, which could be preserved in deformed mantle.",
+    "What is the role of mixed conduction mechanisms (ionic, electronic, protonic) in transition zone minerals like wadsleyite and ringwoodite at high water contents?",
+    "How do minor phases (sulfides, carbonates, metallic iron) affect bulk electrical conductivity through percolation effects not captured by geometric mean mixing?"
+  ],
+  "exercise_suggestions": [
+    "Calculate the lattice thermal conductivity of Mg-perovskite (bridgmanite) at the top of the lower mantle (24 GPa, 1900 K) using k0 = 10 W/m/K and g = 5. Compare with the value at the core-mantle boundary (136 GPa, 3500 K).",
+    "Plot the electrical conductivity of dry olivine as a function of temperature from 800 K to 2000 K at 5 GPa. Identify the temperature at which conductivity reaches 0.01 S/m.",
+    "Using the hydrous conductivity model, determine the water content needed to produce a conductivity of 0.1 S/m at 1400 K and 5 GPa. Discuss whether this water content is geologically reasonable for the upper mantle.",
+    "Construct an electrical conductivity depth profile for a pyrolite mantle using a 1600 K adiabat. Use olivine parameters above 410 km and ringwoodite/wadsleyite parameters (with assumed values) in the transition zone.",
+    "Compute the Hashin-Shtrikman upper and lower bounds for a two-phase mixture of olivine (sigma = 0.001 S/m, 60%) and basaltic melt (sigma = 10 S/m, 1%). Compare with the geometric mean and discuss which is more appropriate.",
+    "Estimate the skin depth for electromagnetic sounding of a mantle with conductivity 0.01 S/m at periods of 1 day and 1 year. What depth range can each period probe?",
+    "Investigate the sensitivity of the thermal conductivity model to the exponent g. Plot k(P=50 GPa, T=2000 K) as a function of g from 3 to 7 and discuss how uncertainty in g propagates to uncertainty in mantle heat flow.",
+    "Write a script that uses both ThermalConductivityCalculator and ElectricalConductivityCalculator to compute profiles along a mantle geotherm, and compare your thermal conductivity profile with published estimates from Hofmeister (1999)."
+  ],
+  "figure_suggestions": [
+    {
+      "description": "Lattice thermal conductivity of forsterite as a function of temperature (300-3000 K) at pressures of 0, 10, 50, and 130 GPa.",
+      "axes": "X-axis: Temperature [K], Y-axis: Thermal conductivity k_lat [W/m/K]",
+      "key_features": "Show the 1/T decay with temperature; demonstrate that higher pressure curves are shifted upward by the (rho/rho0)^g factor; annotate the crossover where radiative contribution may become important (T > 1500 K)."
+    },
+    {
+      "description": "Arrhenius plot of electrical conductivity for dry and hydrous olivine (100, 500, 1000 ppm H2O) at 5 GPa.",
+      "axes": "X-axis: 10000/T [1/K] (inverse temperature), Y-axis: log10(sigma) [S/m]",
+      "key_features": "Linear trends in the Arrhenius plot; steeper slope for dry olivine (higher activation energy); progressive upward shift with water content; annotate the typical upper mantle temperature range (1200-1600 K)."
+    },
+    {
+      "description": "Comparison of thermal and electrical conductivity depth profiles along a mantle adiabat.",
+      "axes": "X-axis: Depth [km] (0-2890), Y-axis (left): Thermal conductivity [W/m/K], Y-axis (right): log10(Electrical conductivity) [S/m]",
+      "key_features": "Show phase transitions as discontinuities at 410, 520, and 660 km; highlight the competing effects of pressure and temperature on thermal conductivity; mark the asthenospheric low-viscosity zone where electrical conductivity peaks."
+    },
+    {
+      "description": "Sensitivity of electrical conductivity to water content at fixed T = 1400 K and P = 5 GPa.",
+      "axes": "X-axis: Water content [ppm wt] (0-2000), Y-axis: Electrical conductivity [S/m], log scale",
+      "key_features": "Show the sub-linear (r = 0.62) dependence on water; mark the dry baseline; indicate the range of water contents inferred from magnetotelluric studies of the asthenosphere."
+    },
+    {
+      "description": "Geometric mean mixing diagram showing aggregate conductivity as a function of olivine volume fraction in a two-phase olivine-pyroxene mixture.",
+      "axes": "X-axis: Olivine volume fraction (0-1), Y-axis: Aggregate conductivity [S/m], log scale",
+      "key_features": "Straight line on the log scale (property of geometric mean); show HS upper and lower bounds as dashed curves bounding the geometric mean; annotate typical pyrolite composition (60% olivine)."
+    }
+  ],
+  "historical_context": "The study of heat transport in Earth materials has roots in the 19th century work of Lord Kelvin, who used estimates of thermal conductivity to calculate the age of the Earth (famously arriving at an age far too young, unaware of radioactive heat sources). Laboratory measurements of mineral thermal conductivity at high pressure began in earnest in the 1970s-1980s with the development of laser-flash techniques by Chai, Klemens, and others. The critical theoretical advance came with Hofmeister (1999), who synthesized phonon lifetime measurements to derive the k(P,T) parameterization that remains the standard framework.\n\nElectrical conductivity studies followed a parallel path. Early laboratory measurements by Duba and others in the 1970s established the Arrhenius behavior of olivine conductivity. Karato (1990) made the transformative connection between hydrogen content and enhanced conductivity, opening the door to using magnetotelluric observations as a proxy for mantle water content. The subsequent decade saw intense experimental work by Yoshino, Wang, Dai, and others refining the hydrous conductivity parameters, though significant discrepancies between laboratories (particularly on the magnitude of the water effect) remain partially unresolved. The development of large-scale magnetotelluric arrays (USArray, EMSCOPE) in the 2000s provided unprecedented images of mantle electrical structure, driving renewed interest in accurate mineral conductivity models.",
+  "uncertain": [
+    "key_references[5] (Constable 2006 details)",
+    "key_equations[5] (radiative conductivity - not implemented in codebase, magnitude uncertain)",
+    "open_questions[2] (activation parameters for lower mantle minerals)"
+  ]
+}

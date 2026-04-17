@@ -1,0 +1,44 @@
+fields:
+  - name: summary
+    type: string
+    description: "Brief summary of the topic (2-3 sentences)"
+
+  - name: key_papers
+    type: array
+    description: "List of key papers with author, year, journal, and DOI or title. Focus on papers from 2010-2025."
+
+  - name: physical_mechanism
+    type: string
+    description: "Description of the underlying physical mechanism (grain-boundary sliding, dislocation damping, melt squirt, diffusion-assisted relaxation, etc.)"
+
+  - name: mathematical_formulation
+    type: string
+    description: "Key equations or parameterizations used. Include Q(T,P,f,d) formulas, velocity correction expressions, or constitutive relations as applicable."
+
+  - name: experimental_conditions
+    type: string
+    description: "Typical experimental conditions: temperature range, pressure range, frequency range, grain size, composition, and measurement technique."
+
+  - name: key_parameters
+    type: array
+    description: "List of key model parameters with typical values and units (e.g., activation energy E*, activation volume V*, grain-size exponent m, frequency exponent α, reference Q, etc.)"
+
+  - name: velocity_correction_magnitude
+    type: string
+    description: "Typical magnitude of the anelastic velocity correction ΔV/V (%) at seismic frequencies for relevant mantle conditions. Distinguish Vp and Vs corrections."
+
+  - name: implications_for_composition
+    type: string
+    description: "How this topic affects the interpretation of seismic velocities in terms of mantle composition and temperature. What systematic biases arise if anelasticity is neglected?"
+
+  - name: limitations
+    type: string
+    description: "Current limitations, uncertainties, and open questions."
+
+  - name: implementation_notes
+    type: string
+    description: "Notes on how this could be implemented in a mineral physics calculation tool (like ThermoElasticCalculator). What inputs are needed, what outputs are produced, and what approximations are acceptable."
+
+  - name: relevance_score
+    type: integer
+    description: "Relevance to ThermoElasticCalculator on a scale of 1-5 (5 = critical for accurate mantle composition estimation, 1 = peripheral/emerging topic)."

@@ -1,155 +1,342 @@
-<!-- Generated: 2026-03-23 | v1.0.0-ui-fixed | 583 tests passing -->
+<!-- Generated: 2026-03-24 | Files scanned: 246 C# files | Textbook: 31 chapters, 20.3K lines | Research: 43 JSON files | Token estimate: ~1500 -->
 
 # ThermoElasticCalculator Codemaps Index
 
-**Version:** v1.0.0-ui
-**Last Updated:** 2026-03-23
-**Status:** Complete — All 42 calculators, 25 models, 33 views documented
+**Version:** v1.0.0
+**Last Updated:** 2026-03-24
+**Status:** Complete — All 43 calculators, 27 models, 34 views + Textbook (31 chapters) + Research data documented
+
+## Overview
+
+This codemap collection documents a .NET 9.0 Avalonia desktop application for computing thermoelastic properties of mantle minerals. The application implements **Stixrude & Lithgow-Bertelloni (2011) thermodynamics** with **MVVM architecture** and follows a strict separation of concerns (Core library + Desktop UI).
+
+**Key Statistics:**
+- **246 C# source files**
+- **43 calculation engines** (Phase 1-9 organized)
+- **27 data models** (input/output/intermediate)
+- **34 Views + 34 ViewModels** (1:1 mapping, 6 categories)
+- **56 unit test classes** (~479 test methods)
+- **7 E2E test files** (~77 test methods)
+- **95.6% code coverage** (Core library)
+- **46 SLB2011 endmembers** built-in database
+- **31 Textbook chapters** (~20,300 lines, 1.5 MB)
+- **43 Research JSON files** (textbook + anelasticity topics)
+
+---
 
 ## Quick Navigation
 
 ### 1. [architecture.md](./architecture.md)
-**Overview of the entire system**
+**System overview and technology stack**
 
-- High-level system diagram (Desktop UI → Core → Tests)
+**Read this if you need to understand:**
+- How the entire system fits together (Desktop → Core → Tests)
 - Data flow from user input → calculation → output
-- Technology stack (.NET 9, Avalonia 11.2, MathNet.Numerics)
-- Directory structure with file counts
-- Solution layout
+- Technology choices (.NET 9, Avalonia 11.2, MathNet.Numerics)
+- Directory structure and file organization
+- Solution layout and project dependencies
 
-**Target audience:** New developers, architects, project leads
+**Key Content:**
+- 3-layer architecture diagram (Desktop UI | Core Library | Tests)
+- Data flow visualization (User Input → ViewModel → Calculator → Output)
+- Calculation pipeline hierarchy (Phase 1-9 organization)
+- Directory structure table (27 models, 43 calculators, 34 views)
+- Technology stack matrix (runtime, frameworks, versions)
+- Key statistics table (233 files, 556 tests, 95.6% coverage)
 
----
-
-### 2. [core-calculations.md](./core-calculations.md)
-**All 42 calculator classes organized by thermodynamic phase**
-
-- **Phase 1-5:** Core thermodynamics & EOS (5 classes)
-  - MieGruneisenEOSOptimizer, DebyeFunctionCalculator, LandauCalculator, Optimizer, EOSFitter
-
-- **Phase 6-7:** Mixtures, solutions & equilibria (5 classes)
-  - MixtureCalculator, SolutionCalculator, GibbsMinimizer, EquilibriumAggregateCalculator, VProfileCalculator
-
-- **Phase 8:** Specialized thermodynamics (8 classes)
-  - IsentropeCalculator, PhaseDiagramCalculator, HugoniotCalculator, IsomekeCalculator, DepthConverter, etc.
-
-- **Phase 9:** Advanced & planetary (9 classes)
-  - PlanetaryInteriorSolver, MarsInteriorModel, MagmaOceanCalculator, PostPerovskiteCalculator, ULVZCalculator, etc.
-
-- **Inversion & ML:** 4 classes (LevenbergMarquardtOptimizer, MCMCSampler, MLSurrogateModel, TrainingDataGenerator)
-
-- **Inverse Geochemistry:** 5 classes (IronPartitioningSolver, SpinCrossoverCalculator, etc.)
-
-- **Thermal Properties:** 3 classes (ThermalConductivityCalculator, ElasticTensorCalculator, SensitivityKernelCalculator)
-
-- **Verification:** 3 classes (ThermodynamicVerifier, JointLikelihood, WaterContentEstimator)
-
-**Includes:** Key public methods, equations, unit conventions
-
-**Target audience:** Algorithm developers, scientific validation team
+**Target Audience:** New developers, architects, project leads, anyone onboarding
 
 ---
 
-### 3. [core-models.md](./core-models.md)
-**All 25 data model classes**
+### 2. [core-engine.md](./core-engine.md)
+**All 43 calculator classes and 27 data models**
 
-- **Input/Configuration:** MineralParams, RockComposition, SolidSolution, SolutionSite, InteractionParam, PlanetaryConfig
+**Read this if you need to understand:**
+- How calculations work (thermodynamic equations, algorithms)
+- Which calculator to use for a specific problem
+- Input/output data structure for each calculation
+- Thermodynamic theory behind the implementation
+- Unit conventions and equation references
 
-- **Output/Results:** ThermoMineralParams, ResultSummary, PhaseAssemblage, PhaseEntry, OptimizationResult
+**Key Content:**
+- **43 calculators organized by phase (1-9):**
+  - Phase 1-5: Core thermodynamics (Mie-Gruneisen, Debye, Landau, EOS)
+  - Phase 6-7: Mixtures & solutions (HS bounds, van Laar activity)
+  - Phase 8: Specialized thermodynamics (Hugoniot, Isentrope, Phase diagrams)
+  - Phase 9: Planetary & deep Earth (interior solvers, LLSVP, ULVZ)
+  - Optimization & Inversion (LM, MCMC, ML surrogates)
+  - Inverse Geochemistry (Fe partitioning, spin crossover)
+  - Transport Properties (thermal/electrical conductivity, elastic tensor)
+  - Verification & QA (cross-validation, geobarometers)
 
-- **Specialized Thermodynamic:** HugoniotPoint, ElasticTensor, AnelasticResult, SensitivityKernel, MeltParams
+- **27 data models organized by purpose:**
+  - Input configuration (MineralParams, PTProfile, RockComposition)
+  - Output/results (ThermoMineralParams, ResultSummary, PhaseAssemblage)
+  - Specialized (HugoniotPoint, ElasticTensor, AnelasticResult)
+  - Lookup & training (LookupTable, TrainingDataPoint, MCMCChain)
+  - Earth reference (PREMModel, RadialProfile)
 
-- **Profiles & Paths:** PTProfile, PTData, RadialProfile, PREMModel
+- **Key equations:** BM3 EOS, Mie-Gruneisen thermal correction, Debye model, Landau phase transition, HS bounds, seismic velocities
+- **Database:** SLB2011 (46 endmembers), solid solutions, predefined rocks
+- **Unit conventions:** Table of all quantities and units
 
-- **Lookup & Interpolation:** LookupTable, TrainingDataPoint
+**Example Calculator Usage:**
+```csharp
+var mineral = MineralDatabase.GetEndmember("Fo90");
+var calc = new MieGruneisenEOSOptimizer(mineral, pressure: 5.0, temperature: 1800.0);
+var result = calc.ExecOptimize(); // → ThermoMineralParams
+Console.WriteLine($"Vp = {result.Vp} km/s, Vs = {result.Vs} km/s");
+```
 
-- **Statistical & Uncertainty:** MCMCChain, InversionResult, VerificationResult
-
-**Includes:** Properties, design patterns, serialization, factory methods
-
-**Target audience:** Backend developers, data structure designers
+**Target Audience:** Algorithm developers, thermodynamics specialists, scientific validation team
 
 ---
 
-### 4. [desktop-ui.md](./desktop-ui.md)
-**All 33 Avalonia views + 33 ViewModels**
+### 3. [ui-layer.md](./ui-layer.md)
+**All 34 Views and 34 ViewModels (UI/UX Layer)**
 
-- Full view hierarchy organized by 6 categories (EOS&Shock, Phase Equilibria, Mantle&Deep Earth, Material Properties, Composition&Fluids, Inversion&ML)
-- ViewModel-to-Calculator mapping (33 pairs)
-- Data binding flow (View → ViewModel → Model → Calculator)
-- File I/O formats (.mine, .ptpf, .vpf, .rock, .csv, .json)
-- MVVM patterns (RelayCommand, ObservableObject)
-- UI controls used (TextBox, ComboBox, DataGrid, Canvas, Slider)
-- Input validation rules
-- Threading model (background tasks for long calculations)
-- E2E testing coverage (77 tests)
+**Read this if you need to understand:**
+- How to build a new View or modify existing ones
+- MVVM patterns used in this application
+- Navigation and data binding patterns
+- Which ViewModel handles which View
+- Input validation rules and file I/O
 
-**New Views (19 added):**
-- Core Mineralogy: MineralProperties, MineralSpecs
-- EOS & Shock: ShockComparison, HugoniotAnalysis
-- Phase Equilibria: PhaseTransition, PhaseStability, EquilibriumAnalysis
-- Mantle & Deep Earth: PREMProfile, IsotopeProfile, PostPerovskite
-- Material Properties: ElasticTensor, Anelasticity
-- Composition & Fluids: MeltProperties, Solution, WaterContent, FluidPhase
-- Inversion & ML: Inversion, MCMC
-- Results & Visualization: DataExport
+**Key Content:**
+- **MVVM Architecture Overview:**
+  - Pattern: CommunityToolkit.Mvvm (source-generated ObservableObject + RelayCommand)
+  - View (AXAML) ← binding → ViewModel (C#) ← method calls → Calculator/Model
 
-**Target audience:** UI developers, frontend engineers, QA testers
+- **View Hierarchy (34 Views in 6 categories):**
+  1. **Core Mineralogy** (3 views):
+     - MineralEditor — Create/edit mineral parameters
+     - MineralDatabase — Browse 46 SLB2011 endmembers
+     - PTProfile — Batch calculate properties along P-T profile
+
+  2. **Mixture & Rock** (2 views):
+     - Mixture — 2-mineral mixing (Voigt/Reuss/Hill/HS)
+     - RockCalculator — Multi-mineral rock composition
+
+  3. **Phase Equilibria** (4 views):
+     - PhaseDiagram — Interactive phase boundary exploration
+     - Verification — Cross-validate vs. BurnMan + literature
+     - ClassicalGeobarometry — Mineral equilibrium barometer
+     - Geobarometry — Detailed geothermometry
+
+  4. **EOS & Shock** (4 views):
+     - Hugoniot — Shock compression curves
+     - EOSFitter — Fit EOS parameters to P-V data
+     - ThermoElasticFitter — Fit combined thermoelastic properties
+
+  5. **Mantle & Deep Earth** (6 views):
+     - LLSVP — Large low-shear-velocity provinces
+     - ULVZ — Ultra-low-velocity zones
+     - SlabModel — Subducting slab cooling
+     - PlanetaryInterior — Mass-radius relations
+     - PostPerovskite — pPv stability vs. depth
+     - SensitivityKernel — Seismic wave sensitivity
+
+  6. **Material Properties** (5 views):
+     - ThermalConductivity — κ(P,T)
+     - ElectricalConductivity — σ(P,T,fO₂)
+     - ElasticTensor — Stiffness tensor Cᵢⱼₖₗ
+     - Anelasticity — Q⁻¹ seismic attenuation
+     - OxygenFugacity — log(fO₂) buffers
+
+  7. **Composition & Fluids** (4 views):
+     - IronPartitioning — Fe²⁺/Fe³⁺ distribution (KD)
+     - SpinCrossover — High-spin ↔ Low-spin transition
+     - WaterContent — H₂O abundance estimation
+     - MagmaOcean — Primordial magma ocean
+
+  8. **Inversion & ML** (4 views):
+     - CompositionInverter — Invert Vp/Vs → composition
+     - BayesianInversion — Full MCMC inversion framework
+     - MLData — Synthetic training data generation
+     - LookupTable — Pre-computed property grids
+
+  9. **Utility** (3 views):
+     - Results — Display & export calculation results
+     - Chart — Visualize results (OxyPlot)
+     - MainWindow — Navigation hub
+
+- **MVVM Pattern Details:**
+  - `[ObservableProperty]` attributes → auto-generated INotifyPropertyChanged
+  - `[RelayCommand]` attributes → auto-generated ICommand + CanExecute()
+  - Async support: `[RelayCommand] private async Task MyCommand()`
+  - Threading: `Task.Run()` for long calculations
+
+- **File I/O Patterns:**
+  - `.mine` (JSON) — MineralParams
+  - `.ptpf` (JSON) — PTProfile
+  - `.rock` (JSON) — RockComposition
+  - `.csv` — Results table export
+  - Serialization helpers in IO utilities
+
+- **Input Validation:**
+  - Temperature: [100, 10000] K
+  - Pressure: [0.001, 360] GPa
+  - Volume fractions: [0, 1.0], sum → 1.0
+  - Material-specific bounds for elastic parameters
+
+**Example ViewModel Pattern:**
+```csharp
+public partial class HugoniotViewModel : ObservableObject
+{
+    [ObservableProperty] private MineralParams? _selectedMineral;
+    [ObservableProperty] private List<HugoniotPoint>? _hugoniotCurve;
+    [ObservableProperty] private bool _isCalculating;
+
+    [RelayCommand]
+    private async Task Calculate()
+    {
+        IsCalculating = true;
+        try
+        {
+            HugoniotCurve = await Task.Run(() =>
+            {
+                var calc = new HugoniotCalculator(SelectedMineral!);
+                return calc.CalcHugoniot(VelMin, VelMax, NumPoints);
+            });
+        }
+        finally { IsCalculating = false; }
+    }
+}
+```
+
+**Target Audience:** UI developers, frontend engineers, QA testers
+
+---
+
+### 4. [testing.md](./testing.md)
+**Test structure, coverage, and validation strategy**
+
+**Read this if you need to understand:**
+- How to write a new test
+- What test categories exist and where they are
+- How to run tests and measure coverage
+- What's being verified (unit, E2E, cross-validation)
+- Literature verification approach
+
+**Key Content:**
+- **Test Structure (2 projects, 63 test files, ~556 tests):**
+  - **Unit Tests (ThermoElastic.Core.Tests):** 56 classes, ~479 tests
+    - Calculator tests (20+ classes covering all 43 calculators)
+    - Data model tests (15+ classes validating input/output)
+    - Database tests (5 classes for SLB2011 + IO)
+    - Literature verification tests (10+ classes for cross-validation)
+    - Integration tests (5+ classes for workflows)
+
+  - **E2E Tests (ThermoElastic.Desktop.E2E):** 7 files, ~77 tests
+    - ViewModel E2E tests (full View→ViewModel→Calculator flow)
+    - Visual/Screenshot tests (golden image comparison)
+    - Full Stack tests (end-to-end workflows)
+
+- **Key Test Patterns:**
+  - `[Fact]` — single fixed input
+  - `[Theory]` — parameterized with `[InlineData(...)]`
+  - Cross-validation against BurnMan + literature
+  - Screenshot golden image matching
+
+- **Coverage Report:**
+  - Core library: 95.6%
+  - Model classes: 98%
+  - Calculator classes: 94%
+  - Database: 100%
+  - Desktop UI: 75% (UI controls hard to test)
+
+- **Running Tests:**
+  ```bash
+  dotnet test                                  # All tests
+  dotnet test --filter "Category!=E2E"        # Unit only
+  dotnet test --filter "Category=E2E"         # E2E only
+  dotnet test /p:CollectCoverage=true         # With coverage report
+  ```
+
+- **Performance Benchmarks:**
+  - Single mineral calculation: ~1 ms
+  - P-T profile (100 pts): ~100 ms
+  - Phase equilibrium: ~500 ms
+  - MCMC (10k iterations): 5-10 s with progress
+
+**Target Audience:** QA engineers, test specialists, CI/CD maintainers
 
 ---
 
 ### 5. [dependencies.md](./dependencies.md)
-**External dependencies and integration points**
+**External packages and dependency management**
 
-- **.NET Framework:** 9.0
+**Read this if you need to understand:**
+- What external libraries are used and why
+- How to update dependencies
+- Build and publish process
+- Cross-platform support (Windows/macOS/Linux)
+- Licensing and compliance
 
-- **NuGet Packages:**
-  - Core: MathNet.Numerics 5.0.0
-  - Desktop: Avalonia 11.2.3, CommunityToolkit.Mvvm 8.4.0, supporting packages
-  - Tests: xunit 2.9.0, Microsoft.NET.Test.Sdk 17.8.0
+**Key Content:**
+- **.NET Framework:** 9.0 (latest LTS)
+- **NuGet Packages (8 direct dependencies):**
+  - `MathNet.Numerics 5.0.0` — Scientific computing (SVD, linear algebra)
+  - `Avalonia 11.2.3` — Cross-platform XAML UI
+  - `Avalonia.Desktop 11.2.3` — Platform integration
+  - `Avalonia.Controls.DataGrid 11.2.3` — Tables
+  - `Avalonia.Themes.Fluent 11.2.3` — Styling
+  - `Avalonia.Fonts.Inter 11.2.3` — Typography
+  - `CommunityToolkit.Mvvm 8.4.0` — MVVM source generation
+  - `xunit 2.9.0` — Testing framework
 
 - **External Data Sources:**
-  - SLB2011 (46 endmembers) — Stixrude & Lithgow-Bertelloni 2005
-  - PREM (1-D Earth) — Dziewonski & Anderson 1981
-  - BurnMan (cross-validation) — Python implementation
-  - Literature reference data (CSV test files)
+  - **SLB2011** — 46 mineral endmembers (Stixrude & Lithgow-Bertelloni 2005)
+  - **PREM** — 1-D Earth reference model (Dziewonski & Anderson 1981)
+  - **BurnMan** — Python library for cross-validation
 
-- **CI/CD Pipeline:**
-  - GitHub Actions matrix: Ubuntu, Windows, macOS
-  - Self-contained publishable artifacts (win-x64, linux-x64, osx-x64)
-
+- **Dependency Graph:** Visual representation of all project references
+- **CI/CD:** GitHub Actions matrix (Ubuntu, Windows, macOS)
 - **Licensing:** All MIT/Apache 2.0 compatible
 
-- **Version maintenance status:** As of 2026-03-23
-
-**Target audience:** DevOps engineers, dependency managers, IT/deployment teams
+**Target Audience:** DevOps engineers, dependency managers, IT/deployment teams
 
 ---
 
-### 6. [backend.md](./backend.md) — Updated
-**Core library thermodynamic engine (supplemental to core-calculations.md)**
+### 6. [textbook-research.md](./textbook-research.md)
+**Graduate-level textbook and research data foundations**
 
-- Calculation pipeline diagram
-- 42-calculator overview (organized by phase 1-9)
-- 25-model overview
-- Thermodynamic equations (BM3, Debye, HS bounds, Gibbs, Hugoniot, etc.)
-- Unit conventions table
-- Database file summary
+**Read this if you need to understand:**
+- How the 31-chapter textbook is organized
+- Which chapters correspond to which code features
+- What research data is available for each topic
+- How to map between code, textbook, and equations
+- Anelasticity framework design and implementation
 
-**Target audience:** Scientists, thermodynamic algorithm specialists
+**Key Content:**
+- **Textbook:** 31 chapters, 8 parts (Foundations → Advanced Methods)
+  - Part I (Ch01-04): Foundations (BM3, Debye, Gruneisen, elastic moduli)
+  - Part II (Ch05-09): SLB2011 Framework (complete formulation, EOS, database, Landau, magnetic)
+  - Part III (Ch10-11): Mixtures (VRH/HS bounds, rock compositions)
+  - Part IV (Ch12-14): Phase Equilibria (Gibbs, phase diagrams, post-perovskite)
+  - Part V (Ch15-18): Seismic Interpretation (PREM, anelasticity, kernels, inversion)
+  - Part VI (Ch19-21): Deep Earth (slabs, LLSVP, planetary interiors)
+  - Part VII (Ch22-26): Material Properties (spin crossover, Fe partitioning, water, conductivity, anisotropy)
+  - Part VIII (Ch27-31): Advanced Methods (Hugoniot, fitting, MCMC, geobarometry, fO₂)
 
----
+- **Research Data (43 JSON files total):**
+  - **31 textbook chapter summaries** (`research/textbook/results/`)
+  - **12 anelasticity topic files** (`research/anelasticity/results/`)
+  - Structured outlines, field terminology, code mappings
 
-### 7. [frontend.md](./frontend.md) — Updated
-**Desktop UI layer (supplemental to desktop-ui.md)**
+- **Feature → Chapter Mapping Table:**
+  - Maps all 43 calculators to their textbook chapters
+  - Cross-references code classes with equations
 
-- Technology stack (.NET 9, Avalonia 11.2.3)
-- 33 View Hierarchy (organized by 6 categories)
-- 33 ViewModel mapping
-- Navigation pattern
-- File formats
+**Example Reference:**
+```
+Feature: MieGruneisenEOSOptimizer (Phase 1)
+  ↓ Textbook: Chapter 1 (High pressure thermodynamics) + Chapter 5 (SLB2011)
+  ↓ Research: research/textbook/results/ch01_summary.json, ch05_summary.json
+  ↓ Equations: BM3 finite strain, Mie-Gruneisen thermal correction
+```
 
-**Target audience:** UI developers, application architects
+**Target Audience:** Students, educators, researchers, documentation maintainers
 
 ---
 
@@ -157,89 +344,152 @@
 
 ```
 docs/CODEMAPS/
-├── INDEX.md                      [THIS FILE]
-├── architecture.md               [System overview]
-├── core-calculations.md          [42 calculators]
-├── core-models.md                [25 data models]
-├── desktop-ui.md                 [13 views + 13 VMs]
-├── dependencies.md               [NuGet + external data]
-├── backend.md                    [Calculation engine supplement]
-└── frontend.md                   [UI layer supplement]
+├── INDEX.md ← YOU ARE HERE
+├── architecture.md           [System overview]
+├── core-engine.md            [43 calculators + 27 models]
+├── ui-layer.md               [34 Views + 34 ViewModels]
+├── testing.md                [Test structure + coverage]
+├── dependencies.md           [External packages + build]
+└── textbook-research.md      [Textbook + research data]
 ```
-
-## Key Statistics
-
-| Metric | Count | Status |
-|--------|-------|--------|
-| Calculator Classes (Phase 1-9) | 42 | Complete |
-| Model Classes | 25 | Complete |
-| Avalonia Views | 33 | Complete (19 new in v1.0-ui) |
-| ViewModels | 33 | 1:1 with Views |
-| Test Classes | 55 | All documented |
-| Test Methods | 583 | Full coverage |
-| E2E Tests | 77 | All views covered |
-| Database Files | 4 | SLB2011 + rocks |
-| Endmembers | 46 | Pre-loaded |
-| Direct NuGet Dependencies | 8 | Listed |
-| Platforms | 3 | Win/Mac/Linux |
-| .NET Version | 9.0 | Current |
-
-## Documentation Maintenance Schedule
-
-**Update triggers:**
-- New calculator class added
-- Model structure changed
-- View added/removed
-- Dependency version updated
-- Major architectural refactor
-
-**Last maintenance check:** 2026-03-23
-**Automated generation:** Via analysis scripts (see project docs)
 
 ## How to Use These Codemaps
 
-### For Understanding Structure
-Start with **architecture.md** → then dive into specific areas:
-- **Calculation logic?** → core-calculations.md + backend.md
-- **Data models?** → core-models.md
-- **UI flow?** → desktop-ui.md + frontend.md
-- **Building/deploying?** → dependencies.md
+### For Architecture Understanding
+1. **Start:** `architecture.md` — System layers, data flow, tech stack
+2. **Next:** `core-engine.md` — Where calculations live
+3. **Then:** `ui-layer.md` — How UI invokes calculations
+4. **Finally:** `testing.md` — How code is validated
 
-### For Contributing
-1. New calculator? Add to core-calculations.md with phase category
-2. New model? Add to core-models.md with properties table
-3. New view? Add to desktop-ui.md with ViewModel mapping
-4. New dependency? Update dependencies.md
+### For Implementing a New Feature
+1. **New calculator?**
+   - Add class to `src/ThermoElastic.Core/Calculations/`
+   - Follow Phase 1-9 organization (see core-engine.md)
+   - Write unit tests in `tests/ThermoElastic.Core.Tests/`
+   - Update `core-engine.md`
+
+2. **New View (UI)?**
+   - Create `.axaml` in `src/ThermoElastic.Desktop/Views/`
+   - Create matching ViewModel in `src/ThermoElastic.Desktop/ViewModels/`
+   - Add category button to MainWindowViewModel
+   - Write E2E tests in `tests/ThermoElastic.Desktop.E2E/`
+   - Update `ui-layer.md`
+
+3. **New dependency?**
+   - Update `.csproj` file(s)
+   - Document in `dependencies.md`
 
 ### For Code Review
-Cross-reference class names with file locations in codemaps.
-Each codemap links to actual source files:
-```
-src/ThermoElastic.Core/Calculations/ClassName.cs
-src/ThermoElastic.Core/Models/ClassName.cs
-src/ThermoElastic.Desktop/Views/ViewName.axaml
-src/ThermoElastic.Desktop/ViewModels/ViewModelName.cs
-```
+- Use file paths from codemaps to reference exact locations
+- Cross-check class names against tables
+- Verify method signatures match documented patterns
+
+### For Testing a Feature
+- See `testing.md` for test patterns and frameworks
+- Run: `dotnet test --filter "ClassName"` for specific tests
+- Check coverage: `dotnet test /p:CollectCoverage=true`
+
+### For Deployment
+- See `dependencies.md` for build & publish commands
+- Self-contained artifacts include .NET runtime
+- Cross-platform: Win-x64, macOS-x64, Linux-x64
+
+---
+
+## Key Statistics
+
+| Metric | Count | Details |
+|--------|-------|---------|
+| **Codebase** | | |
+| Total C# files | 246 | Source code + tests |
+| Core library classes | 70 | 43 calculators + 27 models |
+| Desktop UI classes | 68 | 34 Views + 34 ViewModels |
+| Database files | 6 | 46 endmembers + solutions + anelasticity |
+| I/O helper files | 2 | JSON/CSV utilities |
+| **Testing** | | |
+| Unit test classes | 57 | ThermoElastic.Core.Tests (incl. anelasticity) |
+| Unit test methods | ~507 | Fact + Theory tests |
+| E2E test files | 8 | ThermoElastic.Desktop.E2E (expanded) |
+| E2E test methods | ~84 | ViewModel + Visual tests |
+| Total test methods | **~591** | **95.6% coverage (Core)** |
+| **Data** | | |
+| SLB2011 endmembers | 46 | Built-in mineral database |
+| Predefined rocks | 4 | Pyrolite, Harzburgite, MORB, Piclogite |
+| Solid solution models | 5 | Olivine, Opx, Cpx, Spinel, Garnet |
+| **Educational Materials** | | |
+| Textbook chapters | 31 | 20,300 lines, 8-part curriculum |
+| Textbook size | 1.5 MB | Markdown format, integrated with code |
+| Research JSON files | 43 | Textbook (31) + anelasticity (12) topic files |
+| Research data size | ~150 KB | Structured topic outlines + references |
+| **Dependencies** | | |
+| Direct NuGet packages | 8 | Listed in dependencies.md |
+| .NET version | 9.0 | Latest LTS |
+| Platforms | 3 | Windows, macOS, Linux |
+
+---
 
 ## Related Documentation
 
 See also:
-- `docs/requirements.md` — Feature specifications
-- `docs/basic-design.md` — Design rationale
-- `docs/detailed-design.md` — Implementation details
-- `docs/user-guide-en.md` — End-user documentation
-- `tests/README.md` — Test strategy
-
-## Version History
-
-| Version | Date | Key Changes |
-|---------|------|-------------|
-| v1.0.0-ui | 2026-03-23 | Added 19 new views (33 total); organized by 6 categories; 77 E2E tests; 556 test methods |
-| v1.0.0 | 2026-03-22 | Added 5 new views (Phase Diagram, Hugoniot, Lookup, Planetary, Kernel); expanded to 42 calculators |
-| v0.5.0 | 2026-03-21 | Initial comprehensive mapping (8 views, 15 calculators) |
-| Earlier | — | Basic structure documentation |
+- `docs/requirements.md` — Feature specifications and v1.0.0 changelog
+- `docs/basic-design.md` — Architecture rationale and design decisions
+- `docs/detailed-design.md` — Implementation details and technical deep-dives
+- `docs/user-guide-en.md` — End-user documentation (in English)
+- `docs/user-guide-ja.md` — End-user documentation (in Japanese)
+- `README.md` — Project overview and setup
 
 ---
 
-**Generated with automated codemap analysis tool**
-**For questions or updates, refer to project maintainers**
+## Version History
+
+| Version | Date | Key Changes | Coverage |
+|---------|------|------------|----------|
+| v1.0.0 | 2026-03-24 | Full system: 43 calculators, 34 views, 591 tests, 31 textbook chapters, research data | 95.6% |
+| v0.9.0 | 2026-03-23 | Pre-textbook: 43 calculators, 34 views, 556 tests | 95.6% |
+| v0.5.0 | 2026-03-21 | Initial comprehensive mapping | 85% |
+| Earlier | — | Basic structure | < 80% |
+
+---
+
+## Contributing to Codemaps
+
+**When to update codemaps:**
+- ✅ New calculator class added
+- ✅ Model structure changed
+- ✅ View added/removed
+- ✅ Major refactoring
+- ✅ Dependencies updated
+- ❌ Code style changes (only update if structure changes)
+- ❌ Documentation-only fixes
+
+**How to update:**
+1. Make code changes
+2. Update relevant codemap(s)
+3. Update freshness timestamp: `<!-- Generated: YYYY-MM-DD | ... -->`
+4. Update version in INDEX.md if major change
+5. Commit with message: "docs: Update codemaps for [feature name]"
+
+---
+
+## Search Tips
+
+**Finding a class:**
+- Calculator? → `core-engine.md` Phase table
+- ViewModel? → `ui-layer.md` Category section
+- Test? → `testing.md` Test Class table
+- Model? → `core-engine.md` Data Models section
+
+**Finding a file path:**
+- All codemaps include file paths in tables/examples
+- Pattern: `src/ThermoElastic.Core/Calculations/ClassName.cs`
+- Pattern: `src/ThermoElastic.Desktop/Views/ViewName.axaml`
+
+**Finding equations:**
+- See `core-engine.md` "Key Equations Implemented" section
+- Birch-Murnaghan 3rd-order, Mie-Gruneisen, Debye, Landau, HS bounds, Hugoniot, etc.
+
+---
+
+**Questions?** Refer to specific codemaps or project maintainers.
+
+**Last generated:** 2026-03-24 | Next sync: When major changes occur

@@ -1,0 +1,309 @@
+{
+  "chapter_summary": "This chapter lays the thermodynamic groundwork for computing the equilibrium properties of minerals under the extreme pressures and temperatures found in Earth's interior. We begin with the two central thermodynamic potentials: the Helmholtz free energy F(V,T), natural for constant-volume processes, and the Gibbs free energy G(P,T), natural for constant-pressure processes. At high pressure the volume of a solid changes substantially, so an accurate description of the strain energy stored in the compressed lattice is essential. We introduce Euler (Eulerian) finite strain theory, which parameterizes the deformation of a solid by the finite strain variable f = [(V0/V)^(2/3) - 1] / 2, where V0 is the zero-pressure reference volume and V is the volume at pressure P.\n\nThe Birch-Murnaghan equation of state (EOS) is derived by expanding the Helmholtz free energy as a Taylor series in the Eulerian finite strain f. The third-order truncation (BM3) yields P(f) = 3 K0 (1+2f)^(5/2) f [1 + 3(K0'-4)f/2], where K0 is the isothermal bulk modulus and K0' its pressure derivative, both evaluated at zero pressure. The fourth-order form adds a term involving the second pressure derivative K0''. This chapter focuses on the third-order form, which is implemented in the code as MineralParams.GetPressure(f). The cold compression energy (the strain energy at 0 K ignoring thermal effects) takes the form F_cold = 9 K0 V0 (f^2/2 + a1 f^3/6), where a1 = 3(K0'-4)/2, showing that the energy is quadratic in strain to lowest order with anharmonic corrections entering at cubic order.\n\nThe isothermal bulk modulus at arbitrary compression, K_T(f), is obtained by differentiating the pressure with respect to volume (or equivalently with respect to f). The result, implemented as BM3KT(f), is K_T = K0 (1+2f)^(5/2) [1 + (3K0'-5)f + (27/2)(K0'-4)f^2]. Understanding K_T(f) is critical because it enters the computation of seismic velocities, thermal pressure, and the iterative equation-of-state solver. Together, these expressions form the isothermal backbone of the SLB2011 framework; thermal contributions from the Debye model (Chapter 2) and Gruneisen corrections (Chapter 3) are added on top.\n\nThe practical importance of this chapter is that every mineral in the SLB2011 database is characterized by reference parameters (V0, K0, K0', G0, G0', etc.), and the finite-strain EOS provides the bridge from these reference values to properties at arbitrary mantle conditions. The inverse problem -- finding the finite strain f that satisfies a target pressure -- is solved numerically by root-finding (BM3Finite), a topic elaborated in Chapter 6.",
+  "prerequisite_knowledge": [
+    "Classical thermodynamics: internal energy, enthalpy, Helmholtz and Gibbs free energies, Maxwell relations",
+    "Calculus: Taylor series expansion, partial derivatives, chain rule",
+    "Continuum mechanics basics: stress, strain, bulk modulus as a second derivative of energy",
+    "Units and dimensional analysis in mineral physics (GPa, cm^3/mol, kJ/mol)"
+  ],
+  "key_equations": [
+    {
+      "equation": "f = \\frac{1}{2}\\left[\\left(\\frac{V_0}{V}\\right)^{2/3} - 1\\right]",
+      "name": "Eulerian finite strain",
+      "variables": {
+        "f": "Eulerian finite strain (dimensionless)",
+        "V_0": "Reference molar volume at zero pressure (cm^3/mol)",
+        "V": "Molar volume at pressure P (cm^3/mol)"
+      },
+      "interpretation": "Measures the degree of compression relative to the reference state. f=0 at ambient pressure; f increases with compression. The Eulerian choice ensures a well-behaved expansion for typical mantle compressions."
+    },
+    {
+      "equation": "P(f) = 3K_0 (1+2f)^{5/2} f \\left[1 + \\frac{3}{2}(K_0' - 4)f\\right]",
+      "name": "Third-order Birch-Murnaghan equation of state (BM3)",
+      "variables": {
+        "P": "Pressure (GPa)",
+        "K_0": "Isothermal bulk modulus at zero pressure (GPa)",
+        "K_0'": "Pressure derivative of K_0 (dimensionless)",
+        "f": "Eulerian finite strain"
+      },
+      "interpretation": "The workhorse EOS for mineral physics. Gives pressure as a function of compression. When K0'=4, the cubic correction vanishes and the EOS reduces to second order. Implemented as MineralParams.GetPressure(f)."
+    },
+    {
+      "equation": "F_{\\text{cold}} = 9K_0 V_0 \\left(\\frac{f^2}{2} + \\frac{a_1 f^3}{6}\\right), \\quad a_1 = \\frac{3}{2}(K_0' - 4)",
+      "name": "Cold compression (Helmholtz) energy",
+      "variables": {
+        "F_cold": "Strain energy at 0 K (energy units, typically kJ/mol when V0 in appropriate units)",
+        "K_0": "Isothermal bulk modulus at zero pressure (GPa)",
+        "V_0": "Reference molar volume (cm^3/mol)",
+        "a_1": "Anharmonic strain coefficient",
+        "f": "Eulerian finite strain"
+      },
+      "interpretation": "The elastic energy stored in the lattice due to compression alone (no thermal contribution). The quadratic term represents harmonic compression; the cubic term captures the stiffening of the lattice at high compression."
+    },
+    {
+      "equation": "K_T(f) = K_0 (1+2f)^{5/2} \\left[1 + (3K_0' - 5)f + \\frac{27}{2}(K_0' - 4)f^2\\right]",
+      "name": "Isothermal bulk modulus as a function of finite strain (BM3)",
+      "variables": {
+        "K_T": "Isothermal bulk modulus at strain f (GPa)",
+        "K_0": "Zero-pressure isothermal bulk modulus (GPa)",
+        "K_0'": "Pressure derivative of K_0 (dimensionless)",
+        "f": "Eulerian finite strain"
+      },
+      "interpretation": "Describes how the stiffness of the mineral increases with compression. Essential for computing seismic velocities and the thermal pressure correction. Implemented as MineralParams.BM3KT(f)."
+    },
+    {
+      "equation": "V(f) = \\frac{V_0}{(1+2f)^{3/2}}",
+      "name": "Volume-strain relation",
+      "variables": {
+        "V": "Volume at strain f (cm^3/mol)",
+        "V_0": "Reference volume (cm^3/mol)",
+        "f": "Eulerian finite strain"
+      },
+      "interpretation": "Direct conversion between volume and finite strain. Implemented as MineralParams.FiniteToVolume(f) and the inverse VolumeToFinite(V)."
+    },
+    {
+      "equation": "P(f) = 3K_0 (1+2f)^{5/2} f \\left[1 + \\frac{3}{2}(K_0'-4)f + \\frac{3}{2}\\left(K_0 K_0'' + (K_0'-4)(K_0'-3) + \\frac{35}{9}\\right)f^2\\right]",
+      "name": "Fourth-order Birch-Murnaghan equation of state (BM4)",
+      "variables": {
+        "K_0''": "Second pressure derivative of the bulk modulus (1/GPa)",
+        "K_0": "Isothermal bulk modulus at zero pressure (GPa)",
+        "K_0'": "Pressure derivative of K_0",
+        "f": "Eulerian finite strain"
+      },
+      "interpretation": "Extends BM3 with an additional parameter K0''. Useful for very high compressions or when experimental data can constrain three elastic parameters. The SLB2011 implementation uses BM3, but K2Prime is stored in MineralParams for potential BM4 use."
+    }
+  ],
+  "physical_concepts": [
+    {
+      "concept": "Eulerian finite strain",
+      "definition": "A dimensionless measure of lattice compression defined as f = [(V0/V)^(2/3) - 1]/2, derived from the Euler (spatial) description of continuum mechanics.",
+      "physical_intuition": "Think of f as a normalized compression ratio. At ambient conditions f is essentially zero. At the base of Earth's mantle (~136 GPa), f for typical silicates is around 0.05-0.10. The (2/3) exponent arises because strain in three dimensions scales as the (2/3) power of the volume ratio.",
+      "common_misconceptions": [
+        "Confusing Eulerian and Lagrangian finite strain -- the Lagrangian form uses (V/V0)^(2/3) and leads to a different (and less well-converging) EOS.",
+        "Assuming f can be treated as infinitesimal strain -- at mantle pressures f is finite and higher-order terms matter significantly."
+      ]
+    },
+    {
+      "concept": "Birch-Murnaghan equation of state",
+      "definition": "An isothermal equation of state derived by expanding the Helmholtz free energy in powers of Eulerian finite strain and differentiating to obtain pressure.",
+      "physical_intuition": "It is essentially a Taylor expansion of the elastic energy around the zero-pressure state, truncated at third or fourth order. The coefficients are the experimentally measurable elastic parameters K0 and K0'. The beauty is that only two parameters (at third order) describe compression behavior over a wide pressure range.",
+      "common_misconceptions": [
+        "Thinking BM3 is empirical -- it is derived from finite strain theory with a clear physical basis.",
+        "Believing K0'=4 is universal -- while many silicates have K0' near 4, it varies from about 3.5 to 6+ depending on the mineral.",
+        "Neglecting that BM EOS is isothermal -- thermal effects must be added separately (via the Mie-Gruneisen-Debye model)."
+      ]
+    },
+    {
+      "concept": "Isothermal bulk modulus K_T",
+      "definition": "The resistance of a material to uniform compression at constant temperature, K_T = -V (dP/dV)_T.",
+      "physical_intuition": "A larger K_T means the material is stiffer and harder to compress. K_T increases strongly with pressure because atoms pushed closer together repel more strongly. For forsterite, K0 ~ 128 GPa, but at the base of the upper mantle K_T can exceed 200 GPa.",
+      "common_misconceptions": [
+        "Confusing K_T (isothermal) with K_S (adiabatic) -- they differ by a factor (1 + alpha*gamma*T), which can be 1-5% at mantle temperatures.",
+        "Assuming K_T is linear in pressure -- the BM3 expression shows it is nonlinear in f, and hence nonlinear in P."
+      ]
+    },
+    {
+      "concept": "Helmholtz free energy F(V,T)",
+      "definition": "The thermodynamic potential F = U - TS, where U is internal energy and S is entropy. Natural variables are volume V and temperature T.",
+      "physical_intuition": "F is the appropriate potential when volume and temperature are controlled. In mineral physics, we decompose F into a cold compression part (function of V alone) and a thermal part (function of V and T). The cold part is the BM strain energy; the thermal part comes from lattice vibrations (Debye model, Chapter 2).",
+      "common_misconceptions": [
+        "Confusing Helmholtz (F) with Gibbs (G) free energy -- G = F + PV is natural for constant P, while F is natural for constant V.",
+        "Forgetting that F is minimized at equilibrium only at constant T and V, not at constant T and P."
+      ]
+    },
+    {
+      "concept": "Cold compression energy",
+      "definition": "The elastic strain energy stored in the lattice at 0 K (or equivalently at the reference temperature with thermal effects subtracted), expressed as F_cold = 9K0V0(f^2/2 + a1*f^3/6).",
+      "physical_intuition": "This is the energy cost of squeezing the crystal lattice without any thermal vibrations. The quadratic term is the harmonic approximation (Hooke's law for the bulk); the cubic term captures the fact that the interatomic potential is not symmetric -- compression costs more energy than expansion by the same amount.",
+      "common_misconceptions": [
+        "Assuming cold compression energy is negligible -- at deep mantle pressures it dominates the total free energy.",
+        "Confusing F_cold with total Helmholtz energy -- thermal contributions from lattice vibrations must be added."
+      ]
+    }
+  ],
+  "key_references": [
+    {
+      "author": "Birch, F.",
+      "year": 1947,
+      "title": "Finite Elastic Strain of Cubic Crystals",
+      "journal": "Physical Review, 71, 809-824",
+      "why_essential": "The foundational paper deriving the finite strain equation of state from Eulerian strain theory. Introduces the Birch-Murnaghan EOS."
+    },
+    {
+      "author": "Birch, F.",
+      "year": 1978,
+      "title": "Finite Strain Isotherm and Velocities for Single-Crystal and Polycrystalline NaCl at High Pressures and 300 K",
+      "journal": "Journal of Geophysical Research, 83, 1257-1268",
+      "why_essential": "Extends the finite strain approach to elastic wave velocities, providing the framework for computing K_T(f) and G(f) used in the codebase."
+    },
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2005,
+      "title": "Thermodynamics of mantle minerals - I. Physical properties",
+      "journal": "Geophysical Journal International, 162, 610-632",
+      "why_essential": "Presents the self-consistent thermodynamic framework (finite strain + Mie-Gruneisen-Debye) that the ThermoElasticCalculator implements. Derives all the key equations for elastic moduli as functions of finite strain."
+    },
+    {
+      "author": "Stixrude, L. and Lithgow-Bertelloni, C.",
+      "year": 2011,
+      "title": "Thermodynamics of mantle minerals - II. Phase equilibria",
+      "journal": "Geophysical Journal International, 184, 1180-1213",
+      "why_essential": "The SLB2011 paper providing the complete mineral database and extending the framework to phase equilibria. The parameter set (V0, K0, K0', etc.) used in MineralParams originates here."
+    },
+    {
+      "author": "Poirier, J.-P.",
+      "year": 2000,
+      "title": "Introduction to the Physics of the Earth's Interior (2nd ed.)",
+      "journal": "Cambridge University Press",
+      "why_essential": "Excellent textbook derivation of the Birch-Murnaghan EOS from finite strain theory, with clear explanation of the Eulerian vs Lagrangian choice."
+    },
+    {
+      "author": "Anderson, O.L.",
+      "year": 1995,
+      "title": "Equations of State of Solids for Geophysics and Ceramic Science",
+      "journal": "Oxford University Press",
+      "why_essential": "Comprehensive treatment of equations of state including BM, Vinet, and logarithmic forms. Provides physical context for why certain EOS forms converge better than others."
+    }
+  ],
+  "worked_examples": [
+    {
+      "problem": "Compute the pressure at which forsterite (Mg2SiO4) is compressed to V/V0 = 0.90 using the BM3 EOS. Use K0 = 128 GPa, K0' = 4.2.",
+      "solution_approach": "1. Compute finite strain: f = [(V0/V)^(2/3) - 1]/2 = [(1/0.90)^(2/3) - 1]/2. (V0/V) = 1/0.90 = 1.1111. (V0/V)^(2/3) = 1.1111^(0.6667) = 1.0718. f = (1.0718 - 1)/2 = 0.0359. 2. Compute BM3 pressure: P = 3*128*(1+2*0.0359)^(5/2)*0.0359*[1 + 1.5*(4.2-4)*0.0359]. (1+2*0.0359)^(5/2) = 1.0718^(2.5) = 1.1836. P = 3*128*1.1836*0.0359*[1 + 0.3*0.0359] = 384*1.1836*0.0359*1.0108 = 16.5 GPa.",
+      "numerical_values": {
+        "V0/V": 1.1111,
+        "f": 0.0359,
+        "P_GPa": 16.5,
+        "K0_GPa": 128,
+        "K0_prime": 4.2
+      },
+      "interpretation": "A 10% volume compression of forsterite produces about 16.5 GPa, corresponding roughly to a depth of ~480 km in Earth's mantle. This is consistent with the transition zone where olivine transforms to wadsleyite."
+    },
+    {
+      "problem": "Using the same forsterite parameters, compute the isothermal bulk modulus K_T at f = 0.0359.",
+      "solution_approach": "Apply BM3KT: K_T = K0*(1+2f)^(5/2)*[1 + (3K0'-5)*f + (27/2)*(K0'-4)*f^2]. With f = 0.0359, K0 = 128, K0' = 4.2: (1+2*0.0359)^(5/2) = 1.1836. term2 = (3*4.2-5)*0.0359 = 7.6*0.0359 = 0.2728. term3 = 13.5*0.2*0.0359^2 = 13.5*0.2*0.001289 = 0.00348. K_T = 128*1.1836*(1 + 0.2728 + 0.00348) = 128*1.1836*1.2763 = 193.4 GPa.",
+      "numerical_values": {
+        "f": 0.0359,
+        "K_T_GPa": 193.4,
+        "K0_GPa": 128,
+        "K0_prime": 4.2
+      },
+      "interpretation": "The bulk modulus increases from 128 GPa at ambient pressure to about 193 GPa at 16.5 GPa -- a 51% increase for only 10% volume reduction. This strong pressure dependence is why the nonlinear EOS is necessary."
+    },
+    {
+      "problem": "Given a target pressure of 24 GPa, find the Eulerian finite strain f for MgO periclase (K0 = 161 GPa, K0' = 3.8) using the BM3 inverse problem.",
+      "solution_approach": "We need to solve P(f) = 24 GPa numerically. This is what BM3Finite() does: it sets up the equation GetPressure(f) - 24 = 0 and applies a root-finding algorithm (Regula Falsi). Initial estimate: f ~ P/(3*K0) = 24/483 = 0.0497. Iterating: P(0.0497) = 3*161*(1.0994)^(2.5)*0.0497*[1+1.5*(-0.2)*0.0497] = 483*1.2582*0.0497*0.9851 = 29.8 GPa (too high). Try f=0.040: P(0.040)=3*161*(1.08)^(2.5)*0.040*[1-0.012] = 483*1.2079*0.040*0.988 = 23.1 GPa. Bisecting yields f ~ 0.0415 for P = 24 GPa.",
+      "numerical_values": {
+        "target_P_GPa": 24,
+        "K0_GPa": 161,
+        "K0_prime": 3.8,
+        "f_solution": 0.0415,
+        "V_over_V0": 0.940
+      },
+      "interpretation": "At 24 GPa (roughly 660 km depth), MgO periclase is compressed by about 6% in volume. The root-finding approach implemented in BM3Finite() typically converges in fewer than 20 iterations with the Regula Falsi method."
+    }
+  ],
+  "connections_to_other_chapters": [
+    {
+      "related_chapter": "Ch02 Debye Model and Thermal Properties",
+      "connection_type": "extension",
+      "explanation": "Chapter 1 provides the cold (isothermal, 0K) compression energy. Chapter 2 adds the thermal contribution via the Debye model, giving the full Helmholtz free energy F = F_cold + F_thermal."
+    },
+    {
+      "related_chapter": "Ch03 Gruneisen Parameter and Anharmonicity",
+      "connection_type": "extension",
+      "explanation": "The Gruneisen parameter gamma links volume change to thermal pressure. It enters through the strain dependence of the Debye temperature, building directly on the finite strain variable f from this chapter."
+    },
+    {
+      "related_chapter": "Ch04 Elastic Moduli and Seismic Velocities",
+      "connection_type": "extension",
+      "explanation": "K_T(f) derived here is the starting point for computing K_S (adiabatic) and ultimately seismic velocities Vp and Vs. BM3GT(f) for the shear modulus follows the same finite strain expansion framework."
+    },
+    {
+      "related_chapter": "Ch05 The Stixrude-Lithgow-Bertelloni Formulation",
+      "connection_type": "application",
+      "explanation": "Chapter 5 assembles all components (BM EOS from Ch01, Debye from Ch02, Gruneisen from Ch03, elastic moduli from Ch04) into the complete SLB2011 framework. The MineralParams class holds the reference parameters that enter the BM3 equations."
+    },
+    {
+      "related_chapter": "Ch06 Mie-Gruneisen Equation of State Solver",
+      "connection_type": "application",
+      "explanation": "The MieGruneisenEOSOptimizer solves for f at a target (P,T) by combining the cold pressure GetPressure(f) from this chapter with the thermal pressure. BM3Finite() provides the initial guess."
+    },
+    {
+      "related_chapter": "Ch12 Gibbs Free Energy and Phase Stability",
+      "connection_type": "prerequisite",
+      "explanation": "The Helmholtz free energy F(V,T) from the BM expansion is converted to Gibbs G = F + PV for phase equilibrium calculations. Accurate F_cold is essential for correct phase boundaries."
+    },
+    {
+      "related_chapter": "Ch27 Shock Compression and Hugoniot",
+      "connection_type": "application",
+      "explanation": "Shock wave data constrain the EOS at very high pressures. The Hugoniot is related to the isothermal BM EOS through thermal corrections, and both share the finite strain framework."
+    },
+    {
+      "related_chapter": "Ch28 Nonlinear Least Squares and Parameter Fitting",
+      "connection_type": "application",
+      "explanation": "The BM3 EOS parameters (K0, K0') are determined by fitting pressure-volume data using nonlinear least squares (Levenberg-Marquardt), as described in Chapter 28."
+    }
+  ],
+  "computational_methods": "The core computational task in this chapter is evaluating the BM3 EOS (forward problem: given f, compute P) and its inverse (given P, find f). The forward problem, implemented as MineralParams.GetPressure(f), is a direct algebraic evaluation requiring O(1) floating-point operations per call.\n\nThe inverse problem, MineralParams.BM3Finite(targetPressure), requires numerical root-finding because the BM3 equation is nonlinear in f. The implementation uses the Regula Falsi (false position) method by default, bracketed between f=0.0001 and a dynamically computed upper bound fMax = max(0.02, 3*P/(3*K0) + 0.01). This dynamic bound avoids both bracket failure at high pressures and unnecessary iterations at low pressures. Convergence is typically achieved in 10-20 iterations to machine precision.\n\nThe BM3KT(f) function evaluates the isothermal bulk modulus analytically, again as a direct algebraic expression. No iteration is needed. Both GetPressure and BM3KT share the common factor (1+2f)^(5/2), which could be cached if performance were critical, though in practice the cost is negligible.\n\nNumerical stability considerations: for very small f (near-zero pressure), the product f*(1+2f)^(5/2) is well-behaved. The implementation guards against negative or near-zero target pressures by returning a small default strain (f=0.0001) to avoid division-by-zero issues downstream. For very high pressures (f > 0.15, corresponding to P > 200 GPa for typical silicates), the BM3 approximation may become less accurate, and the fourth-order BM4 form could be used via the K2Prime parameter stored in MineralParams.",
+  "open_questions": [
+    "At what compression level does the third-order Birch-Murnaghan expansion become insufficiently accurate, and is BM4 or an alternative EOS (Vinet, logarithmic) preferable for super-Earth interior modeling?",
+    "How well does the Eulerian finite strain framework perform for highly anisotropic minerals where a scalar strain variable may not capture directional compression differences?",
+    "Can machine learning approaches trained on ab initio data improve upon the BM parameterization with only 2-3 parameters, especially in the extrapolation regime beyond experimental data?",
+    "What is the true uncertainty in K0' for key mantle minerals, and how do correlated uncertainties between K0 and K0' propagate into pressure estimates at deep mantle conditions?",
+    "Is the implicit assumption of strain continuity in the BM derivation valid across subtle structural phase transitions that do not produce a first-order volume discontinuity?"
+  ],
+  "exercise_suggestions": [
+    "Derive the third-order Birch-Murnaghan EOS by expanding F(f) = a*f^2 + b*f^3 and using P = -(dF/dV)_T with the chain rule dV/df.",
+    "Show that when K0' = 4, the BM3 EOS reduces to the second-order (BM2) form P = 3K0 f (1+2f)^(5/2).",
+    "Compute and plot P(V/V0) for MgSiO3 bridgmanite (K0 = 251 GPa, K0' = 4.02) over the range V/V0 = 0.75 to 1.0. Compare with periclase (K0 = 161 GPa, K0' = 3.8).",
+    "Derive the expression for K_T(f) by computing K_T = -V (dP/dV)_T from the BM3 P(f) equation. Verify your result matches the BM3KT formula.",
+    "Write a numerical program to invert the BM3 EOS: given P, find f using (a) bisection, (b) Newton-Raphson, and (c) Regula Falsi. Compare convergence rates.",
+    "Calculate the cold compression energy F_cold for forsterite at P = 14 GPa (the 410 km discontinuity pressure). Express the result in kJ/mol and compare with the thermal energy at 1600 K (approximately n*R*T where n is the number of atoms).",
+    "Investigate the sensitivity of P(f) to K0' by computing pressure at f = 0.05 for K0' = 3.5, 4.0, 4.5, and 5.0 with K0 = 128 GPa. How large is the pressure difference, and what does this imply for the importance of accurate K0' measurements?",
+    "Compare the BM3 and BM4 equations of state for stishovite (K0 = 314 GPa, K0' = 4.4) at pressures up to 150 GPa. At what pressure does the difference exceed 1 GPa?"
+  ],
+  "figure_suggestions": [
+    {
+      "description": "P-V compression curves for several key mantle minerals (forsterite, bridgmanite, periclase, stishovite) computed from the BM3 EOS",
+      "axes": {
+        "x": "V/V0 (dimensionless, range 0.70-1.00)",
+        "y": "Pressure P (GPa, range 0-150)"
+      },
+      "key_features": "Show how stiffer minerals (higher K0) require higher pressure for the same compression. Mark the pressures corresponding to 410 km and 660 km discontinuities."
+    },
+    {
+      "description": "Isothermal bulk modulus K_T as a function of pressure for forsterite, showing the nonlinear increase",
+      "axes": {
+        "x": "Pressure P (GPa, range 0-25)",
+        "y": "K_T (GPa, range 120-250)"
+      },
+      "key_features": "Compare the BM3 K_T(P) curve with a linear extrapolation K_T = K0 + K0'*P to show where nonlinearity becomes important (typically above 10-15 GPa)."
+    },
+    {
+      "description": "Cold compression energy F_cold(f) showing quadratic and cubic contributions separately",
+      "axes": {
+        "x": "Finite strain f (dimensionless, range 0-0.12)",
+        "y": "F_cold (kJ/mol)"
+      },
+      "key_features": "Plot the total F_cold, the purely quadratic term (9K0V0*f^2/2), and show the cubic correction. Highlight the strain range relevant to Earth's mantle."
+    },
+    {
+      "description": "Sensitivity of BM3 pressure to K0' at fixed K0",
+      "axes": {
+        "x": "Finite strain f (range 0-0.10)",
+        "y": "Pressure P (GPa)"
+      },
+      "key_features": "Family of curves for K0' = 3.5, 4.0, 4.5, 5.0 at fixed K0 = 128 GPa. Show that curves diverge at higher strains, illustrating increasing sensitivity of the EOS to K0' at depth."
+    },
+    {
+      "description": "Comparison of BM3 with other common EOS forms (Vinet, BM4) for a test mineral",
+      "axes": {
+        "x": "V/V0 (range 0.65-1.00)",
+        "y": "Pressure P (GPa, range 0-200)"
+      },
+      "key_features": "Show that BM3, BM4, and Vinet agree well up to moderate compressions (~50 GPa) but diverge at very high pressures, motivating the choice of EOS for different applications."
+    }
+  ],
+  "historical_context": "The finite strain approach to equations of state originated with Francis Birch's seminal 1947 paper, which applied Murnaghan's finite elastic strain theory to the problem of Earth's interior. Birch chose the Eulerian (spatial) description of strain rather than the Lagrangian (material) description, a choice that proved prescient: the Eulerian expansion converges much more rapidly for the compressions encountered in planetary interiors. The resulting equation of state, now universally known as the Birch-Murnaghan EOS, quickly became the standard tool for extrapolating laboratory compression data to deep Earth conditions.\n\nIn the 1970s and 1980s, advances in multi-anvil and diamond-anvil cell experiments allowed K0 and K0' to be measured for a growing number of mantle minerals, making the BM3 EOS increasingly practical. Jeanloz (1981) and others systematically applied BM fitting to mineral P-V data, establishing the elastic parameters that anchor modern mineral physics databases.\n\nThe modern synthesis came with the work of Stixrude and Lithgow-Bertelloni (2005, 2011), who embedded the Birch-Murnaghan cold compression framework within a self-consistent thermodynamic model combining finite strain with the Mie-Gruneisen-Debye thermal model. This SLB framework, which the ThermoElasticCalculator implements, represents the current state-of-the-art for computing the thermoelastic properties of mantle minerals from a small set of reference parameters.",
+  "uncertain": []
+}

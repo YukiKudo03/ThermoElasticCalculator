@@ -37,6 +37,7 @@
                 <TextBlock Text="EOS &amp; Shock" FontWeight="SemiBold" FontSize="11" Foreground="#666" Margin="0,0,0,2" />
                 <Button Content="Hugoniot" Command="{Binding ShowHugoniotCommand}" HorizontalAlignment="Stretch" />
                 <Button Content="EOS Fitter" Command="{Binding ShowEOSFitterCommand}" HorizontalAlignment="Stretch" />
+                <Button Content="Param. Fitter" Command="{Binding ShowThermoElasticFitterCommand}" HorizontalAlignment="Stretch" />
                 <Button Content="Verification" Command="{Binding ShowVerificationDashboardCommand}" HorizontalAlignment="Stretch" />
 
                 <!-- Phase Equilibria -->
@@ -52,6 +53,7 @@
                 <TextBlock Text="Mantle &amp; Deep Earth" FontWeight="SemiBold" FontSize="11" Foreground="#666" Margin="0,0,0,2" />
                 <Button Content="Sensitivity Kernel" Command="{Binding ShowSensitivityKernelCommand}" HorizontalAlignment="Stretch" />
                 <Button Content="Anelasticity" Command="{Binding ShowAnelasticityCommand}" HorizontalAlignment="Stretch" />
+                <Button Content="Q Profile" Command="{Binding ShowQProfileCommand}" HorizontalAlignment="Stretch" />
                 <Button Content="LLSVP" Command="{Binding ShowLLSVPCommand}" HorizontalAlignment="Stretch" />
                 <Button Content="ULVZ" Command="{Binding ShowULVZCommand}" HorizontalAlignment="Stretch" />
                 <Button Content="Slab Model" Command="{Binding ShowSlabModelCommand}" HorizontalAlignment="Stretch" />
@@ -101,6 +103,7 @@
                 <!-- EOS & Shock -->
                 <DataTemplate DataType="vm:HugoniotViewModel"><views:HugoniotView /></DataTemplate>
                 <DataTemplate DataType="vm:EOSFitterViewModel"><views:EOSFitterView /></DataTemplate>
+                <DataTemplate DataType="vm:ThermoElasticFitterViewModel"><views:ThermoElasticFitterView /></DataTemplate>
                 <DataTemplate DataType="vm:VerificationDashboardViewModel"><views:VerificationDashboardView /></DataTemplate>
                 <!-- Phase Equilibria -->
                 <DataTemplate DataType="vm:PhaseDiagramExplorerViewModel"><views:PhaseDiagramExplorerView /></DataTemplate>
@@ -110,6 +113,7 @@
                 <!-- Mantle & Deep Earth -->
                 <DataTemplate DataType="vm:SensitivityKernelViewModel"><views:SensitivityKernelView /></DataTemplate>
                 <DataTemplate DataType="vm:AnelasticityViewModel"><views:AnelasticityView /></DataTemplate>
+                <DataTemplate DataType="vm:QProfileViewModel"><views:QProfileView /></DataTemplate>
                 <DataTemplate DataType="vm:LLSVPViewModel"><views:LLSVPView /></DataTemplate>
                 <DataTemplate DataType="vm:ULVZViewModel"><views:ULVZView /></DataTemplate>
                 <DataTemplate DataType="vm:SlabModelViewModel"><views:SlabModelView /></DataTemplate>

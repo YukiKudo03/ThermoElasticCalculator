@@ -13,7 +13,7 @@ namespace ThermoElastic.Core.Calculations;
 /// Velocity correction follows Anderson &amp; Given (1982):
 ///   V_anelastic = V_elastic * (1 - 1/(2*Q) * cot(pi*alpha/2))
 /// </summary>
-public class AnelasticityCalculator
+public class AnelasticityCalculator : IAnelasticityModel
 {
     // Model parameters (Karato 1993 style with pressure-dependent activation)
     private const double Q0 = 4.35e-4;                // pre-exponential factor
@@ -96,6 +96,37 @@ public class AnelasticityCalculator
             Vp_elastic = Vp_elastic,
             Vs_elastic = Vs_elastic
         };
+    }
+
+    // === IAnelasticityModel interface methods ===
+    // When AnelasticityParams is provided, use its parameters instead of hardcoded defaults.
+    // When null, fall back to the original Karato (1993) constants for backward compatibility.
+
+    double IAnelasticityModel.ComputeQS(double T, double P, double frequency, AnelasticityParams? prms)
+    {
+        if (prms == null) return ComputeQS(T, P, frequency);
+
+        // Use params-based calculation (same formula, custom parameters)
+        double H_eff = prms.ActivationEnergy + P * 1e9 * prms.ActivationVolume;
+        double qs = prms.PreFactor
+            * Math.Exp(prms.FrequencyExponent * H_eff / (R * T))
+            * Math.Pow(frequency / FreqRef, prms.FrequencyExponent);
+
+        double T_solidus = GetSolidusTemperature(P);
+        double t_ratio = T / T_solidus;
+        if (t_ratio > T_ratio_onset)
+            qs *= Math.Exp(-B_premelt * Math.Pow(t_ratio, C_premelt));
+
+        return qs;
+    }
+
+    AnelasticResult IAnelasticityModel.ApplyCorrection(double Vp, double Vs, double KS, double GS,
+        double T, double P, double frequency, AnelasticityParams? prms)
+    {
+        if (prms == null) return ApplyCorrection(Vp, Vs, KS, GS, T, P, frequency);
+
+        double qs = ((IAnelasticityModel)this).ComputeQS(T, P, frequency, prms);
+        return AnelasticCorrectionHelper.Apply(Vp, Vs, KS, GS, qs, prms.QK, prms.FrequencyExponent);
     }
 
     /// <summary>

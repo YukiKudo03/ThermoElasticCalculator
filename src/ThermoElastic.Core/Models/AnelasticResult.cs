@@ -18,7 +18,7 @@ public record AnelasticResult
     /// <summary>Original elastic S-wave velocity [m/s]</summary>
     public double Vs_elastic { get; init; }
     /// <summary>Relative Vs reduction (negative value)</summary>
-    public double DeltaVs_percent => (Vs_anelastic - Vs_elastic) / Vs_elastic * 100.0;
+    public double DeltaVs_percent => Vs_elastic > 0 ? (Vs_anelastic - Vs_elastic) / Vs_elastic * 100.0 : 0.0;
     /// <summary>Relative Vp reduction (negative value)</summary>
-    public double DeltaVp_percent => (Vp_anelastic - Vp_elastic) / Vp_elastic * 100.0;
+    public double DeltaVp_percent => Vp_elastic > 0 ? (Vp_anelastic - Vp_elastic) / Vp_elastic * 100.0 : 0.0;
 }
