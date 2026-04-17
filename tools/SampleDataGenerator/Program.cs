@@ -73,6 +73,54 @@ File.WriteAllText(outputPath, csv.ToString());
 Console.WriteLine();
 Console.WriteLine($"Wrote {pressures.Length * temperatures.Length} data points to: {outputPath}");
 
+// ============================================================================
+// Self-verification: round-trip the generated CSV through the SLB Fitter and
+// confirm we recover the known K0 and G0 within uncertainty.
+// ============================================================================
+Console.WriteLine();
+Console.WriteLine("=== Round-trip verification ===");
+
+var rawCsv = File.ReadAllText(outputPath);
+var loaded = ExperimentalDataset.ParseCsv(rawCsv, "BridgmaniteSynthetic");
+Console.WriteLine($"Loaded {loaded.Data.Count} points from CSV.");
+
+// Perturb the initial guess so the fitter has work to do
+var guess = SLB2011Endmembers.GetAll().First(m => m.PaperName == MineralPaperName);
+double trueK0 = guess.KZero;
+double trueG0 = guess.GZero;
+guess.KZero *= 1.05;  // 5% high on K0
+guess.GZero *= 0.95;  // 5% low on G0
+Console.WriteLine($"Initial guess: K0={guess.KZero:F2} (true {trueK0:F2}), G0={guess.GZero:F2} (true {trueG0:F2})");
+
+var fitter = new SLBParameterFitter();
+var options = new FittingOptions
+{
+    FitV0 = false,       // fix V0 (density-constrained)
+    FitK0 = true,
+    FitK0Prime = false,
+    FitG0 = true,
+    FitG0Prime = false,
+    Target = FitTarget.Joint,
+};
+
+var fit = fitter.Fit(loaded, guess, options);
+
+Console.WriteLine($"Converged: {fit.Optimization.Converged} ({fit.Optimization.Iterations} iterations)");
+Console.WriteLine($"Chi² = {fit.Optimization.ChiSquared:E3}");
+Console.WriteLine($"K0: fitted = {fit.FittedMineral.KZero,7:F2} GPa  (true {trueK0:F2}, err ±{fit.Optimization.Uncertainties[0]:F2})");
+Console.WriteLine($"G0: fitted = {fit.FittedMineral.GZero,7:F2} GPa  (true {trueG0:F2}, err ±{fit.Optimization.Uncertainties[1]:F2})");
+
+double k0Deviation = Math.Abs(fit.FittedMineral.KZero - trueK0);
+double g0Deviation = Math.Abs(fit.FittedMineral.GZero - trueG0);
+bool k0Ok = k0Deviation < 3.0 * fit.Optimization.Uncertainties[0];  // within 3σ
+bool g0Ok = g0Deviation < 3.0 * fit.Optimization.Uncertainties[1];
+
+Console.WriteLine();
+Console.WriteLine(k0Ok && g0Ok
+    ? "✓ Round-trip PASSED: parameters recovered within 3σ."
+    : "✗ Round-trip FAILED: fitted parameters outside 3σ of true values.");
+Environment.Exit(k0Ok && g0Ok ? 0 : 1);
+
 // Box-Muller transform for Gaussian random samples
 static double SampleGaussian(Random rng)
 {

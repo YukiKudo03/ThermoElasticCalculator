@@ -23,7 +23,8 @@ public class ExperimentalDataset
     /// <summary>
     /// Parse CSV text with columns: P(GPa), T(K), Vp(m/s), Vs(m/s), Density(g/cm3), SigmaVp, SigmaVs, SigmaDensity.
     /// Missing values are represented as empty fields or "NaN".
-    /// First line is treated as header if it contains non-numeric text.
+    /// Lines starting with '#' are treated as comments and skipped.
+    /// First non-comment line is treated as header if it contains non-numeric text.
     /// Supports comma, tab, and semicolon delimiters.
     /// </summary>
     public static ExperimentalDataset ParseCsv(string csvText, string name = "Imported")
@@ -34,19 +35,30 @@ public class ExperimentalDataset
         if (lines.Length == 0)
             throw new FormatException("CSV is empty.");
 
-        // Detect delimiter
-        char delimiter = DetectDelimiter(lines[0]);
+        int firstDataIndex = 0;
+        while (firstDataIndex < lines.Length &&
+               (string.IsNullOrWhiteSpace(lines[firstDataIndex]) || lines[firstDataIndex].TrimStart().StartsWith("#")))
+        {
+            firstDataIndex++;
+        }
 
-        int startLine = 0;
+        if (firstDataIndex >= lines.Length)
+            throw new FormatException("CSV contains no data lines (only comments or blank lines).");
+
+        // Detect delimiter from first non-comment line
+        char delimiter = DetectDelimiter(lines[firstDataIndex]);
+
+        int startLine = firstDataIndex;
         // Skip header if first field is not a number
-        var firstFields = lines[0].Split(delimiter);
+        var firstFields = lines[firstDataIndex].Split(delimiter);
         if (firstFields.Length > 0 && !double.TryParse(firstFields[0].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out _))
-            startLine = 1;
+            startLine = firstDataIndex + 1;
 
         for (int i = startLine; i < lines.Length; i++)
         {
             var line = lines[i].Trim();
             if (string.IsNullOrWhiteSpace(line)) continue;
+            if (line.StartsWith("#")) continue;
 
             var fields = line.Split(delimiter);
             if (fields.Length < 2)

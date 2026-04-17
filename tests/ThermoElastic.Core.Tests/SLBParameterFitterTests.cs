@@ -154,6 +154,31 @@ public class SLBParameterFitterTests
         Assert.Throws<FormatException>(() => ExperimentalDataset.ParseCsv(csv));
     }
 
+    [Fact]
+    public void ParseCsv_SkipsHashComments()
+    {
+        // Real-world experimental CSVs often have provenance / citation / unit
+        // comments prefixed with '#'. Parser should skip them transparently.
+        var csv = "# Murakami et al. 2012 Nature, Table S1\n" +
+                  "# Units: P in GPa, T in K, Vp/Vs in m/s\n" +
+                  "P,T,Vp,Vs\n" +
+                  "0.001,300,8500,4900\n" +
+                  "# mid-file comment\n" +
+                  "25,2000,10800,6100";
+
+        var dataset = ExperimentalDataset.ParseCsv(csv, "Test");
+        Assert.Equal(2, dataset.Data.Count);
+        Assert.Equal(0.001, dataset.Data[0].Pressure);
+        Assert.Equal(25.0, dataset.Data[1].Pressure);
+    }
+
+    [Fact]
+    public void ParseCsv_OnlyCommentsThrows()
+    {
+        var csv = "# comment 1\n# comment 2\n";
+        Assert.Throws<FormatException>(() => ExperimentalDataset.ParseCsv(csv));
+    }
+
     /// <summary>
     /// Sparse data: each point has a different subset of observables.
     /// Simulates real Brillouin experiments where Vp, Vs, density are not always
