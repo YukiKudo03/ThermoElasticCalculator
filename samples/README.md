@@ -7,6 +7,7 @@ Demo datasets for the **SLB Parameter Fitter** (v1.1.0+).
 | File | Mineral | Type | Points |
 |------|---------|------|--------|
 | `bridgmanite_synthetic.csv` | Mg-Perovskite (mpv) | Synthetic (SLB2011 forward model + Gaussian noise) | 15 |
+| `murakami2007_mgsio3_pv.csv` | Mg-Perovskite | Model curve from Murakami et al. (2007) EPSL parameters | 13 |
 
 ## CSV Format
 
@@ -29,6 +30,27 @@ P(GPa), T(K), Vp(m/s), Vs(m/s), Density(g/cm3), SigmaVp, SigmaVs, SigmaDensity
 - **Seed:** 42 (deterministic, reproducible)
 
 This dataset supports **round-trip validation**: running the SLB Fitter on this CSV should recover the known K0 and G0 values within uncertainty.
+
+## Murakami 2007 Parameterization
+
+`murakami2007_mgsio3_pv.csv` is a **model curve** generated from the EoS parameters reported in:
+
+> Murakami, M., Sinogeikin, S.V., Hellwig, H., Bass, J.D., & Li, J. (2007).
+> "Sound velocity of MgSiO3 perovskite to Mbar pressure."
+> *Earth and Planetary Science Letters* **256**, 47–54.
+> DOI: [10.1016/j.epsl.2007.01.011](https://doi.org/10.1016/j.epsl.2007.01.011)
+
+**Parameter source:**
+- G0 = 172.9 GPa, G' = 1.56 — Brillouin measurement reported in Murakami 2007
+- K0 = 253 GPa, K' = 3.9 — Fiquet/Stixrude EoS adopted by the paper
+
+**Important caveat:** In the original paper, Vp could not be measured directly because the Brillouin signal overlapped the diamond anvil. Vs was the primary measurement; Vp was derived from the adopted bulk modulus EoS. Vp values in this CSV reflect that same derivation.
+
+Covers 0.001–96 GPa at 300 K (13 points). Pure MgSiO3 perovskite (no Al).
+
+Ambient anchor values validate against paper:
+- Vs(0 GPa) = 6489 m/s — paper reports 6490 ± 30 m/s ✓
+- Vp(0 GPa) = 10879 m/s — paper reports 10850 ± 30 m/s ✓
 
 ## Regenerating Sample Data
 

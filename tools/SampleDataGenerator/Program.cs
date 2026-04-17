@@ -74,6 +74,58 @@ Console.WriteLine();
 Console.WriteLine($"Wrote {pressures.Length * temperatures.Length} data points to: {outputPath}");
 
 // ============================================================================
+// Second CSV: Murakami et al. 2007 EPSL parameterization
+// ----------------------------------------------------------------------------
+// Pure MgSiO3 perovskite at 300 K up to ~96 GPa, using Murakami 2007's own
+// reported EoS parameters:
+//   G0 = 172.9 GPa,  G' = 1.56    (Brillouin, this paper)
+//   K0 = 253 GPa,    K' = 3.9     (adopted Fiquet/Stixrude EoS cited in paper)
+// IMPORTANT: Vs values correspond to what Murakami et al. actually measured.
+// Vp values are DERIVED from the adopted bulk modulus EoS — in the original
+// paper, Vp could not be measured directly because the Brillouin signal
+// overlapped the diamond anvil.
+// ============================================================================
+Console.WriteLine();
+Console.WriteLine("=== Generating Murakami 2007 parameterization CSV ===");
+
+var murakamiMineral = SLB2011Endmembers.GetAll().First(m => m.PaperName == MineralPaperName);
+// Override K0, K', G0, G' with Murakami 2007 reported values (keep DebyeTemp, Gamma, etc.
+// from SLB2011 since those were not reported in the 2007 paper and have minimal impact at 300 K)
+murakamiMineral.KZero = 253.0;      // GPa — Fiquet/Stixrude EoS adopted by Murakami 2007
+murakamiMineral.K1Prime = 3.9;      // dimensionless
+murakamiMineral.GZero = 172.9;      // GPa — Brillouin, Murakami et al. 2007
+murakamiMineral.G1Prime = 1.56;     // dimensionless — Brillouin, Murakami et al. 2007
+
+double[] murakamiPressures = { 0.001, 5.0, 10.0, 15.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 96.0 };
+
+var murakamiCsv = new StringBuilder();
+murakamiCsv.AppendLine("# Model curve derived from Murakami et al. (2007) EPSL 256, 47-54");
+murakamiCsv.AppendLine("# DOI: 10.1016/j.epsl.2007.01.011");
+murakamiCsv.AppendLine("# Paper values: G0=172.9 GPa, G'=1.56 (Brillouin, this paper)");
+murakamiCsv.AppendLine("# Adopted EoS:  K0=253 GPa,  K'=3.9 (Fiquet/Stixrude, cited in paper)");
+murakamiCsv.AppendLine("# Sample: pure MgSiO3 perovskite (bridgmanite), T=300 K");
+murakamiCsv.AppendLine("# NOTE: Vp values are derived from the adopted bulk modulus EoS.");
+murakamiCsv.AppendLine("# In the original paper Vp could not be measured directly because");
+murakamiCsv.AppendLine("# the Brillouin signal overlapped the diamond anvil.");
+murakamiCsv.AppendLine("# Uncertainties reflect Murakami 2007 ambient-pressure error bars (Vs ±30 m/s).");
+murakamiCsv.AppendLine("P(GPa),T(K),Vp(m/s),Vs(m/s),Density(g/cm3),SigmaVp(m/s),SigmaVs(m/s),SigmaDensity(g/cm3)");
+
+foreach (var p in murakamiPressures)
+{
+    var eos = new MieGruneisenEOSOptimizer(murakamiMineral, p, 300.0);
+    var res = eos.ExecOptimize();
+    // No noise — this is a model curve. Fixed sigmas from paper's ambient uncertainty.
+    murakamiCsv.AppendLine(string.Format(CultureInfo.InvariantCulture,
+        "{0:F3},{1:F0},{2:F1},{3:F1},{4:F4},{5:F1},{6:F1},{7:F4}",
+        p, 300.0, res.Vp, res.Vs, res.Density, 30.0, 30.0, 0.02));
+    Console.WriteLine($"  P={p,6:F2} GPa  Vp={res.Vp,6:F0}  Vs={res.Vs,6:F0}  rho={res.Density:F3}");
+}
+
+string murakamiPath = Path.Combine("samples", "murakami2007_mgsio3_pv.csv");
+File.WriteAllText(murakamiPath, murakamiCsv.ToString());
+Console.WriteLine($"Wrote {murakamiPressures.Length} data points to: {murakamiPath}");
+
+// ============================================================================
 // Self-verification: round-trip the generated CSV through the SLB Fitter and
 // confirm we recover the known K0 and G0 within uncertainty.
 // ============================================================================
